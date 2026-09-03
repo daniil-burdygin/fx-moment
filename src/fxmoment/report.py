@@ -3,6 +3,7 @@
 
 from __future__ import annotations
 
+import json
 import subprocess
 from datetime import UTC, datetime
 from pathlib import Path
@@ -33,13 +34,10 @@ def git_hash() -> str:
             ["git", *a], cwd=repo_root(), capture_output=True, text=True, check=True
         ).stdout.strip()
         head = run("rev-parse", "--short", "HEAD")
-        dirty = "-dirty" if run("status", "--porcelain", "--untracked-files=no") else ""
+        dirty = "-dirty" if run("status", "--porcelain") else ""  # неотслеженные файлы тоже грязь
         return head + dirty
     except (subprocess.CalledProcessError, FileNotFoundError):
         return "nogit"
-
-
-_git_hash = git_hash
 
 
 def stamp() -> str:
@@ -72,6 +70,17 @@ def write_report(result: BacktestResult, panel: pd.DataFrame, out_dir: Path | No
     stream.to_csv(out / "stream_summary_h20_tol25.csv", index=False)
     shape_sum = stream_shape_summary(shape)
     shape_sum.to_csv(out / "stream_shape_summary.csv", index=False)
+    meta = load_meta()
+    provenance = {
+        "code": git_hash(),
+        "fetched_at_utc": meta.get("fetched_at_utc"),
+        "last_eff_date": meta.get("last_eff_date"),
+        "built_at_utc": f"{datetime.now(UTC):%Y-%m-%dT%H:%M:%SZ}",
+        "windows": [s.label() for s in result.splits],
+    }
+    (out / "provenance.json").write_text(
+        json.dumps(provenance, ensure_ascii=False, indent=1), encoding="utf-8"
+    )
     lines = [
         "# Бэктест — сводка (h = 20, допуск 25 бп, медианы по окнам walk-forward)",
         "",
@@ -92,6 +101,11 @@ def write_report(result: BacktestResult, panel: pd.DataFrame, out_dir: Path | No
         _md_table(shape_sum.round(3)) if len(shape_sum) else "поток пуст",
         "",
         "## Точность итогового потока по сценариям, h = 20, допуск 25 бп",
+        "",
+        "`freq_per_week_scenario_median` — частота одного сценария; частота коридора — в форме потока выше. "
+        "Для `WINDOW_CLOSING` допуск не действует (tol_up = 0, ADR-0003), поэтому в `matrix.csv` и "
+        "`summary_h20_tol0.csv` строки разворота при всех допусках совпадают — это не устойчивость "
+        "к допуску, а его отсутствие.",
         "",
         _md_table(stream.round(3)) if len(stream) else "поток пуст",
         "",

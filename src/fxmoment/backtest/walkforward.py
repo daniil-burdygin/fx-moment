@@ -27,9 +27,10 @@ def make_splits(
     purge_days: int = PURGE_DAYS,
     min_test_days: int = MIN_TEST_DAYS,
 ) -> list[Split]:
-    """Тестовые окна подряд от first_test до конца индекса. Хвостовое окно короче `min_test_days`
-    дней публикации не создаётся: его даты живут по параметрам последнего окна (`split_for_date`),
-    а в медианы по окнам оно не входит."""
+    """Тестовые окна подряд от first_test до конца индекса. Окно короче `min_test_days` дней
+    публикации не создаётся (хвост в 46 дней весил в медианах как полугодие — аудит 03.09); даты
+    после последнего окна живут на живом окне, см. `split_for_date`. Короткое окно в середине
+    индекса (разрыв данных) пропускается, следующие за ним создаются."""
     splits: list[Split] = []
     test_start = pd.Timestamp(first_test)
     sid = 0
@@ -39,7 +40,8 @@ def make_splits(
         if n_days < min_test_days:
             if not splits:
                 raise ValueError("первое тестовое окно короче минимальной длины")
-            break
+            test_start = test_start + pd.DateOffset(months=test_months)
+            continue
         pos = index.searchsorted(test_start)  # первая дата публикации ≥ test_start
         train_pos = pos - purge_days - 1
         if train_pos < 0:
@@ -50,12 +52,26 @@ def make_splits(
     return splits
 
 
-def split_for_date(splits: list[Split], date: pd.Timestamp) -> Split:
-    """Окно, чьи параметры действуют на дату (после последнего окна — последнее)."""
+def split_for_date(
+    splits: list[Split],
+    date: pd.Timestamp,
+    index: pd.DatetimeIndex | None = None,
+    purge_days: int = PURGE_DAYS,
+) -> Split:
+    """Окно, чьи параметры действуют на дату. Дата после последнего окна — **живое окно**: начало —
+    день после последнего теста, обучение до него минус зазор, id следующий по счёту; для этого
+    нужен индекс ряда. Без индекса — последнее окно (его параметры на полгода старше, аудит 03.09)."""
     date = pd.Timestamp(date)
     if date < splits[0].test_start:
         raise ValueError(f"дата {date.date()} раньше первого тестового окна {splits[0].test_start.date()}")
     for s in splits:
         if s.test_start <= date <= s.test_end:
             return s
-    return splits[-1]
+    last = splits[-1]
+    if index is None:
+        return last
+    test_start = last.test_end + pd.Timedelta(days=1)
+    train_pos = index.searchsorted(test_start) - purge_days - 1
+    if train_pos < 0:
+        raise ValueError("недостаточно истории для живого окна")
+    return Split(last.id + 1, index[train_pos], test_start, max(date, index[-1]))

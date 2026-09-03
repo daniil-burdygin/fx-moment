@@ -2,7 +2,7 @@
 публикации в нижних процентилях своего окна. Собственный индикатор команды: на трендовом ряду
 «нижние процентили уровня» ловят только редкие развороты, а провал относительно тренда распределён
 по времени равномернее. Средняя простая, а не экспоненциальная, чтобы факт в тексте пуша
-(«ниже среднего за 8 недель») был буквально проверяем (аудит 03.09)."""
+(«ниже среднего за N рабочих дней») был буквально проверяем (аудит 03.09)."""
 
 from __future__ import annotations
 
@@ -39,8 +39,8 @@ class Dip(Indicator):
     def fact_fields(self) -> tuple[str, ...]:
         return ("dev_pct", "pct_rank", "window", "span")
 
-    def warmup(self) -> int:
-        return self.span + self.window
+    def warmup(self, index: pd.DatetimeIndex | None = None) -> int:
+        return self.span + self.window - 2  # rolling(span), затем rolling(window) поверх
 
     def compute(self, rate: pd.Series, context: pd.DataFrame | None = None) -> pd.DataFrame:
         trend = rate.rolling(self.span).mean()

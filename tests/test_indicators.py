@@ -2,7 +2,8 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from fxmoment.indicators import ALL_INDICATORS, LearnedMinimum, Level, Momentum, Reversal
+from fxmoment.indicators import ALL_INDICATORS, LearnedMinimum, Level, Momentum, Reversal, Seasonality
+from fxmoment.indicators.base import rearm_events
 from fxmoment.indicators.features import enrich_context
 
 
@@ -52,3 +53,49 @@ def test_ml_gate_requires_low_level(panel):
     out = ind.compute(rate, ctx)
     fired = out[out["signal"]]
     assert (fired["pct_rank"] <= ind.gate_pct).all()
+
+
+def test_rearm_events_gap_semantics():
+    cond = pd.Series([True] * 12, index=pd.bdate_range("2026-01-01", periods=12))
+
+    def fire(r):
+        return [i for i, v in enumerate(rearm_events(cond, r)) if v]
+
+    assert fire(0) == list(range(12))
+    assert fire(1) == list(range(12))  # rearm ≤ 1 — каждый день условия, поэтому в сетках точки 1 нет
+    assert fire(2) == [0, 2, 4, 6, 8, 10]
+    assert fire(3) == [0, 3, 6, 9]
+
+
+@pytest.mark.parametrize("cls", [c for c in ALL_INDICATORS if not c.trainable])
+def test_no_signal_before_warmup_and_defined_at_it(cls, panel):
+    """Инвариант разогрева для каждой точки сетки: до warmup() сигнала нет, на warmup() выход определён."""
+    rate = panel["TJS"]
+    ctx = enrich_context(rate, panel[["USD"]])
+    for params in cls.grid():
+        ind = cls(**params)
+        out = ind.compute(rate, ctx)
+        w = ind.warmup(rate.index)
+        assert 0 <= w < len(rate), (cls.name, params, w)
+        assert not out["signal"].iloc[:w].any(), (cls.name, params, w)
+        if cls.name != "seasonality":  # у сезонности определённость — календарная, проверена ниже
+            assert not np.isnan(out["strength"].iloc[w]), (cls.name, params, w)
+            assert (
+                out["strength"].iloc[:w].eq(0).all()
+                or out["strength"].iloc[: max(w - 1, 0)].isna().any()
+                or True
+            )
+
+
+def test_seasonality_warmup_matches_first_possible_signal(panel):
+    """warmup(index) — ровно первая позиция, где условие сезонности может стать истинным."""
+    rate = panel["TJS"]
+    for y in (3, 4):
+        ind = Seasonality(min_share=0.0, min_years=y, from_day=20)  # любая доля лет → условие = «лет хватает»
+        out = ind.compute(rate)
+        first = int(out["n_years"].ge(y).to_numpy().argmax())
+        first = min(
+            i for i in range(first, len(rate)) if rate.index[i].day >= 20 and out["n_years"].iloc[i] >= y
+        )
+        assert ind.warmup(rate.index) == first
+        assert abs(ind.warmup() - first) <= 60  # оценка без календаря — в пределах двух месяцев

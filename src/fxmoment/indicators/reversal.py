@@ -37,8 +37,8 @@ class Reversal(Indicator):
     def fact_fields(self) -> tuple[str, ...]:
         return ("rise_pct", "min_rate", "days_since_min", "window")
 
-    def warmup(self) -> int:
-        return self.window
+    def warmup(self, index: pd.DatetimeIndex | None = None) -> int:
+        return self.window - 1  # rolling(window).min() впервые определён на позиции window − 1
 
     def compute(self, rate: pd.Series, context: pd.DataFrame | None = None) -> pd.DataFrame:
         wmin = rate.rolling(self.window).min()

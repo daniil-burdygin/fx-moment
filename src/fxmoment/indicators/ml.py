@@ -52,13 +52,11 @@ class LearnedMinimum(Indicator):
         self.model_: HistGradientBoostingClassifier | None = None
         self.threshold_: float = 1.0
         self.fitted_: bool = False
+        self.pos_rate_val_: float = float("nan")  # доля гейтовых дней валидации выше порога
         self.feature_names_: list[str] = []
 
     def fact_fields(self) -> tuple[str, ...]:
         return ("proba", "pct_rank", "window")
-
-    def warmup(self) -> int:
-        return 270  # rank250 плюс vol_rank250 поверх vol20 (features.py)
 
     def _new_model(self) -> HistGradientBoostingClassifier:
         return HistGradientBoostingClassifier(
@@ -89,6 +87,7 @@ class LearnedMinimum(Indicator):
             ok &= x.index >= pd.Timestamp(train_start)
         x, y = x[ok], y[ok].astype(int)
         self.fitted_ = False
+        self.pos_rate_val_ = float("nan")
         if len(x) < 200 or y.nunique() < 2:
             self.model_ = None
             self.threshold_ = 1.0
@@ -101,6 +100,9 @@ class LearnedMinimum(Indicator):
         b_val = benefit_fwd_bps(rate, self.h).reindex(val_idx).to_numpy()
         gate_val = (x[f"rank{self.gate_window}"].reindex(val_idx) <= self.gate_pct).to_numpy()
         self.threshold_ = _choose_threshold(p_val[gate_val], b_val[gate_val], self.fp_cost, self.min_pos_rate)
+        gated = p_val[gate_val]
+        # доля 1,0 значит: порог сел на минимум вероятностей, ML-фильтр не отличим от гейта уровня
+        self.pos_rate_val_ = float((gated >= self.threshold_).mean()) if len(gated) else float("nan")
         self.model_ = model
         self.feature_names_ = list(x.columns)
         self.fitted_ = True

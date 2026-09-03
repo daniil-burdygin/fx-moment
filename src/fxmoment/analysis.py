@@ -46,11 +46,21 @@ def load_result(panel: pd.DataFrame, out_dir: Path | None = None) -> BacktestRes
     """Собирает BacktestResult из CSV отчёта. Окна восстанавливаются по панели, поэтому снимок
     данных должен быть тем же, на котором делался бэктест."""
     out = out_dir or (repo_root() / "reports" / "latest")
+    if not (out / "matrix.csv").exists():
+        raise FileNotFoundError(f"нет {out / 'matrix.csv'} — сначала `fxmoment backtest`")
     signals = pd.read_csv(out / "signals.csv", parse_dates=["date"])
     matrix = pd.read_csv(out / "matrix.csv")
     calibration = pd.read_csv(out / "calibration.csv")
     splits = make_splits(panel.loc[pd.Timestamp(ANALYSIS_START) :].index)
     return BacktestResult(signals, matrix, calibration, splits)
+
+
+def backtest_provenance(out_dir: Path | None = None) -> dict[str, Any]:
+    """Код и снимок, которыми собран бэктест (`provenance.json` из write_report); анализ штампует их
+    рядом со своими, чтобы свежий хеш кода не выдавался за происхождение чужих чисел (аудит 03.09)."""
+    out = out_dir or (repo_root() / "reports" / "latest")
+    path = out / "provenance.json"
+    return json.loads(path.read_text(encoding="utf-8")) if path.exists() else {}
 
 
 # ---------------------------------------------------------------- вспомогательное
@@ -166,9 +176,12 @@ def price_of_waiting_table(
         confirmed_days = pd.DatetimeIndex(conf["slow_date"])
         # безусловная цена ожидания: без подтверждения — изменение курса за те же k дней
         pos = rate.index.get_indexer(fast_days)
-        later = np.minimum(pos + k, len(rate) - 1)
-        delta_k = (rate.to_numpy()[later] / rate.to_numpy()[pos] - 1) * 1e4
+        later = pos + k
+        full_h = later < len(rate)  # горизонт k дней целиком в ряду; иначе цена не считается (не клип)
+        delta_k = np.full(len(pos), np.nan)
+        delta_k[full_h] = (rate.to_numpy()[later[full_h]] / rate.to_numpy()[pos[full_h]] - 1) * 1e4
         delta_all = np.where(pw["confirmed"].to_numpy(), pw["delta_bps"].to_numpy(dtype=float), delta_k)
+        sent_days = confirmed_days.unique()  # два быстрых сигнала с одним подтверждением — один пуш
         # «ждать»: клиент действует в день подтверждения; без подтверждения пуша нет (вклад 0)
         wait_value = np.zeros(len(pw))
         wait_value[pw["confirmed"].to_numpy()] = _excess(confirmed_days, bf, sod, base_bf)
@@ -186,7 +199,9 @@ def price_of_waiting_table(
                 "slow": slow,
                 "k_days": k,
                 "n_fast": int(len(pw)),
+                "n_fast_full_horizon": int(full_h.sum()),
                 "n_slow": int(slow_ev.sum()),
+                "n_sent_wait": int(len(sent_days)),
                 "confirmed_share": float(pw["confirmed"].mean()),
                 "days_waited_median": float(conf["days_waited"].median()) if len(conf) else np.nan,
                 "price_of_waiting_bps": float(delta.mean()) if len(delta) else np.nan,
@@ -216,8 +231,8 @@ def price_of_waiting_table(
                 if len(conf)
                 else np.nan,
                 "wait_excess_per_fast_bps": float(np.nanmean(wait_value)),
-                "wait_excess_per_sent_bps": float(np.nanmean(_excess(confirmed_days, bf, sod, base_bf)))
-                if len(conf)
+                "wait_excess_per_sent_bps": float(np.nanmean(_excess(sent_days, bf, sod, base_bf)))
+                if len(sent_days)
                 else np.nan,
                 "wait_excess_ci_lo": wlo,
                 "wait_excess_ci_hi": whi,
@@ -226,13 +241,27 @@ def price_of_waiting_table(
         )
     df = pd.DataFrame(rows)
     if len(df):
-        best = df[["wait_excess_per_fast_bps", "send_now_excess_bps"]].max(axis=1)
+        w, s = df["wait_excess_per_fast_bps"], df["send_now_excess_bps"]
+        best = pd.concat([w, s], axis=1).max(axis=1)
         df["verdict"] = np.select(
-            [best <= 0, df["wait_excess_per_fast_bps"] > df["send_now_excess_bps"]],
-            ["обе не лучше случайного дня", "ждать подтверждения"],
-            default="слать сразу",
+            [w.isna() | s.isna(), best <= 0, w > s, s > w],
+            ["данных не хватает", "обе не лучше случайного дня", "ждать подтверждения", "слать сразу"],
+            default="стратегии равны",
+        )
+        # интервалы стратегий пересекаются — вердикт по точечным оценкам не доказан
+        df["difference_within_ci"] = (df["wait_excess_ci_lo"] <= df["send_now_excess_ci_hi"]) & (
+            df["send_now_excess_ci_lo"] <= df["wait_excess_ci_hi"]
         )
     return df
+
+
+VERDICTS = (
+    "данных не хватает",
+    "обе не лучше случайного дня",
+    "ждать подтверждения",
+    "слать сразу",
+    "стратегии равны",
+)
 
 
 # ---------------------------------------------------------------- перенос параметров (ADR-0004 п. 3)
@@ -249,7 +278,7 @@ def transfer_table(
     """Параметры, откалиброванные на `source` в каждом окне (из calibration.csv), применяются ко всем
     коридорам; метрики на тестовых окнах. Обучаемый индикатор не переносится — модель не сохраняется."""
     inds = tuple(c for c in (indicators or BASE_INDICATORS) if not c.trainable)
-    full = panel.loc[pd.Timestamp(ANALYSIS_START) :]
+    full = panel  # индикаторы считаются по всей истории (разогрев с 2015), как в run_backtest
     ctx_all = full[[c for c in CONTEXT if c in full.columns]]
     cal = result.calibration[result.calibration["corridor"] == source]
     ran = set(result.matrix["corridor"].unique())
@@ -298,6 +327,8 @@ def transfer_compare(
 ) -> pd.DataFrame:
     """Своя калибровка против перенесённой: медианы lift «по среднему», выгоды сверх случайного дня
     и частоты по окнам. `lift_drop` > 0,2 — порог из concept.md."""
+    if transferred.empty:
+        return pd.DataFrame()
     nat = result.matrix[(result.matrix["h"] == h) & (result.matrix["tol_bps"] == tol_bps)]
     tr = transferred[(transferred["h"] == h) & (transferred["tol_bps"] == tol_bps)]
 
@@ -417,7 +448,7 @@ def frontier_table(
     if exclude_shock:
         ids = shock_split_ids(splits)
         splits = [s for s in splits if s.id not in ids]
-    full = panel.loc[pd.Timestamp(ANALYSIS_START) :]
+    full = panel  # разогрев по всей истории, как у рабочей точки калибровки (иначе точки несопоставимы)
     rate = full[corridor].dropna()
     ctx = enrich_context(rate, full[[c for c in CONTEXT if c in full.columns]])
     for w in sorted({g["window"] for g in grid}):
@@ -470,13 +501,16 @@ def frontier_table(
     return df
 
 
+MIN_EVENTS_POINT = 30  # точка сетки с меньшим числом событий на фронтир и в границы не идёт
+
+
 def _pareto_flags(df: pd.DataFrame, x: str, y: str) -> pd.Series:
     """Верхняя огибающая: точка на фронтире, если нет точки с не меньшей частотой и большим lift."""
     flags = pd.Series(False, index=df.index)
     best = -np.inf
     for i in df.sort_values([x, y], ascending=[False, False]).index:
         yv = df.at[i, y]
-        if not np.isnan(yv) and yv > best and df.at[i, "n_events"] >= 30:
+        if not np.isnan(yv) and yv > best and df.at[i, "n_events"] >= MIN_EVENTS_POINT:
             flags.at[i] = True
             best = yv
     return flags
@@ -500,11 +534,14 @@ def operating_points(
     panel: pd.DataFrame,
     stream_matrix: pd.DataFrame | None,
     corridor: str,
+    stream_shape: pd.DataFrame | None = None,
     h: int = CALIBRATION_H,
     tol_bps: float = PRIMARY_TOL_BPS,
 ) -> dict[str, tuple]:
-    """Рабочие точки для отметки на фронтире: калиброванный уровень и итоговый поток BUY_NOW,
-    агрегированные так же, как точки сетки."""
+    """Рабочие точки для отметки на фронтире: калиброванный уровень и итоговый поток, агрегированные
+    так же, как точки сетки. У точки потока точность — по пушам BUY_NOW (у WINDOW_CLOSING другая
+    метка попадания), а частота — по всем пушам коридора из `stream_shape`, потому что полоса 1–2 в
+    неделю относится к коридору целиком (ADR-0006 п. 1); без формы потока — частота BUY_NOW."""
     pts: dict[str, tuple] = {}
     weeks = _test_weeks(panel[corridor].dropna(), result.splits)
     m = result.matrix
@@ -524,7 +561,12 @@ def operating_points(
         ]
         pt = _pooled_point(st, weeks) if len(st) else None
         if pt:
-            pts["итоговый поток BUY_NOW"] = pt
+            label = "итоговый поток BUY_NOW"
+            if stream_shape is not None and len(stream_shape) and weeks:
+                total = float(stream_shape.loc[stream_shape["corridor"] == corridor, "pushes"].sum())
+                pt = (total / weeks, pt[1])
+                label = "итоговый поток (частота — все пуши, точность — BUY_NOW)"
+            pts[label] = pt
     return pts
 
 
@@ -542,7 +584,7 @@ def plot_frontier(
     lo, hi = FREQUENCY_BAND
     for ax, corridor in zip(axes, corridors, strict=True):
         df = tables[corridor]
-        ok = df["n_events"] >= 30
+        ok = df["n_events"] >= MIN_EVENTS_POINT
         ax.axvspan(lo, hi, color="tab:green", alpha=0.08, label="полоса 1–2 в неделю")
         ax.axhline(1.0, color="grey", linewidth=0.8)
         ax.axhline(1.3, color="grey", linewidth=0.8, linestyle="--")
@@ -606,6 +648,8 @@ def write_analysis(
     tol_needed.to_csv(out / "tolerance_for_confidence.csv", index=False)
     stream_path = out.parent / "stream_matrix.csv"
     sm = pd.read_csv(stream_path) if stream_path.exists() else None
+    shape_path = out.parent / "stream_shape.csv"
+    shape = pd.read_csv(shape_path) if shape_path.exists() and shape_path.stat().st_size > 1 else None
     stream_ns = pd.DataFrame()
     if sm is not None and len(sm):
         stream_ns = stream_summary_without_shock(sm, result.splits)
@@ -618,7 +662,7 @@ def write_analysis(
         tables[corridor].to_csv(out / f"frontier_{corridor}.csv", index=False)
         tables_ns[corridor] = frontier_table(panel, corridor, result.splits, exclude_shock=True)
         tables_ns[corridor].to_csv(out / f"frontier_{corridor}_no_shock.csv", index=False)
-        points[corridor] = operating_points(result, panel, sm, corridor)
+        points[corridor] = operating_points(result, panel, sm, corridor, shape)
     if tables:
         plot_frontier(tables, points, out / "frontier.png")
         plot_frontier(tables_ns, {}, out / "frontier_no_shock.png", subtitle="без окон шокового режима 2022")
@@ -644,13 +688,10 @@ def _band_table(tables: dict[str, pd.DataFrame], points: dict[str, dict[str, tup
     band_rows = []
     lo, hi = FREQUENCY_BAND
     for corridor, df in tables.items():
-        inband = df[(df["freq_per_week"] >= lo) & (df["freq_per_week"] <= hi) & (df["n_events"] >= 30)]
+        enough = df["n_events"] >= MIN_EVENTS_POINT
+        inband = df[(df["freq_per_week"] >= lo) & (df["freq_per_week"] <= hi) & enough]
         best = inband.sort_values("lift_mean", ascending=False).head(1)
-        rare = (
-            df[(df["freq_per_week"] < 0.5) & (df["n_events"] >= 30)]
-            .sort_values("lift_mean", ascending=False)
-            .head(1)
-        )
+        rare = df[(df["freq_per_week"] < 0.5) & enough].sort_values("lift_mean", ascending=False).head(1)
         band_rows.append(
             {
                 "corridor": corridor,
@@ -703,10 +744,15 @@ def _analysis_readme(
         "fast_lift_mean",
         "slow_lift_mean",
         "send_now_excess_bps",
+        "send_now_excess_ci_lo",
+        "send_now_excess_ci_hi",
         "wait_excess_per_fast_bps",
+        "wait_excess_ci_lo",
+        "wait_excess_ci_hi",
         "wait_excess_per_sent_bps",
         "slow_excess_bps",
         "verdict",
+        "difference_within_ci",
     ]
     cmp_cols = [
         "indicator",
@@ -721,10 +767,15 @@ def _analysis_readme(
     ]
     from fxmoment.report import stamp
 
+    prov = backtest_provenance()
     lines = [
         "# Анализы поверх бэктеста (h = 20, допуск 25 бп, тестовые окна walk-forward)",
         "",
         stamp(),
+        f"Бэктест, по которому считались анализы: код `{prov.get('code', '?')}`, снимок "
+        f"{prov.get('fetched_at_utc', '?')}, собран {prov.get('built_at_utc', '?')}."
+        if prov
+        else "Бэктест без `provenance.json` (собран старым кодом) — его хеш неизвестен.",
         "",
         "## Цена ожидания: быстрый `momentum` → подтверждение медленным `level` (пункт 6 постановки)",
         "",
@@ -736,8 +787,11 @@ def _analysis_readme(
         "`send_now_excess_bps` — выгода сверх случайного дня, если слать по быстрому сразу; "
         "`wait_excess_per_fast_bps` — если ждать подтверждения, на один быстрый сигнал (без подтверждения "
         "пуша нет, вклад 0 — непотраченный слот здесь не премируется); `wait_excess_per_sent_bps` — та же "
-        "стратегия на один отправленный пуш. Вердикт — по большей выгоде на быстрый сигнал; если обе "
-        "≤ 0, стратегии не различаются и вердикта нет.",
+        "стратегия на один отправленный пуш (уникальные дни подтверждения, `n_sent_wait`). Вердикт — по "
+        "точечным оценкам выгоды на быстрый сигнал; `difference_within_ci` = True — интервалы стратегий "
+        "перекрываются, и вердикт читать как наклон, а не как доказательство. «Обе не лучше случайного "
+        "дня» — обе выгоды ≤ 0. "
+        "Быстрые сигналы, у которых k дней не поместились в ряд, в цену не входят (`n_fast_full_horizon`).",
         "",
         _md(pw[[c for c in pw_cols if c in pw.columns]]) if len(pw) else "нет данных",
         "",
@@ -794,12 +848,13 @@ def _analysis_readme(
         "",
         "## Фронтир «частота — точность» индикатора уровня (ADR-0008)",
         "",
-        "Каждая точка — фиксированные параметры сетки на всех тестовых окнах, без отбора внутри точки. "
-        "`bound_in_band_*` — лучшая по тесту точка внутри полосы 1–2 в неделю, `bound_rare_*` — среди "
-        "редких (< 0,5): это **апостериорная верхняя граница** (максимум по 210 точкам на тех же "
-        "окнах), не рабочая точка и не рекомендация параметров. Рабочая точка walk-forward — "
-        "`calibrated_*`; её положение под огибающей — цена честной калибровки. "
-        "График — `frontier.png`, точки — `frontier_<коридор>.csv`.",
+        "Каждая точка — фиксированные параметры сетки на всех тестовых окнах, без отбора внутри точки; "
+        "разогрев индикатора — по всей истории, как у рабочей точки. "
+        "`bound_in_band_*` — точка с максимальным lift среди точек в полосе 1–2 в неделю с ≥ 30 событиями, "
+        "`bound_rare_*` — то же среди редких (< 0,5); `*_excess_bps` — выгода этой точки, а не максимум "
+        "выгоды. Это **апостериорная верхняя граница** по lift на тех же окнах, не рабочая точка и не "
+        "рекомендация параметров. Рабочая точка walk-forward — `calibrated_*`; её положение под огибающей — "
+        "цена честной калибровки. График — `frontier.png`, точки — `frontier_<коридор>.csv`.",
         "",
         _md(band) if len(band) else "нет данных",
         "",

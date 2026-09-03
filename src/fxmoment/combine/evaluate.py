@@ -14,11 +14,31 @@ from fxmoment.combine.policy import PolicyParams, apply_policy, storm_flag
 from fxmoment.config import CALIBRATION_H, FREQUENCY_BAND, HORIZONS, PRIMARY_TOL_BPS, TOLERANCES_BPS
 
 DEFAULT_ORDER = ("level", "dip_vs_trend", "ml_localmin", "seasonality", "reversal", "momentum")
-TRUNC = ("hit_mean_trunc", "base_mean_trunc", "n_scored_trunc", "benefit_excess_trunc")
+# Столбцы, по которым считается ранг: из единого списка движка (metrics.TRUNC_SOURCE) без
+# lift_mean_trunc — lift здесь пересчитывается из pooled hit и базы, а не усредняется по окнам.
+TRUNC = tuple(c for c in metrics.TRUNC_COLUMNS if c != "lift_mean_trunc")
+_KEY_COLUMNS = ("corridor", "indicator", "split", "h", "tol_bps")
+
+
+def history_status(matrix: pd.DataFrame | None) -> str | None:
+    """Почему матрица бэктеста непригодна для ранга по истории; None — пригодна. Откат к порядку
+    по умолчанию раньше был молчаливым: старый matrix.csv без нового столбца выключал весь слой
+    ранга и отключений без единого слова (аудит 03.09)."""
+    if matrix is None or matrix.empty:
+        return "матрица бэктеста пуста или отсутствует — нужен `fxmoment backtest`"
+    missing = [c for c in (*_KEY_COLUMNS, *TRUNC) if c not in matrix.columns]
+    if missing:
+        return "в матрице нет столбцов " + ", ".join(missing) + " — она собрана старым кодом"
+    return None
 
 
 def rank_from_history(
-    matrix: pd.DataFrame, corridor: str, before_split: int, h: int = CALIBRATION_H, min_events: int = 20
+    matrix: pd.DataFrame,
+    corridor: str,
+    before_split: int,
+    h: int = CALIBRATION_H,
+    min_events: int = 20,
+    strict: bool = False,
 ) -> tuple[dict[str, int], tuple[str, ...]]:
     """Ранг индикаторов по pooled lift «по среднему» на окнах < before_split и список отключённых.
 
@@ -26,36 +46,39 @@ def rank_from_history(
     досчитываются внутри окна k, и без усечения ранг подсматривал бы в будущее (аудит 03.09).
     Индикатор глушится, если при ≥ min_events событиях pooled lift < 1 ИЛИ средняя выгода сверх
     случайного дня ≤ 0: по условиям кейса сигнал без выгоды в бп не засчитывается, даже если
-    угадывает направление. Без истории (или без усечённых столбцов) — порядок по умолчанию."""
+    угадывает направление. Без истории (первое окно) — порядок по умолчанию. Непригодная матрица
+    (`history_status`) — порядок по умолчанию, при strict=True — ValueError; вызывающий обязан
+    сказать об откате пользователю."""
     default = {name: i for i, name in enumerate(DEFAULT_ORDER)}
+    problem = history_status(matrix)
+    if problem:
+        if strict:
+            raise ValueError(problem)
+        return default, ()
     m = matrix[
         (matrix["corridor"] == corridor)
         & (matrix["split"] < before_split)
         & (matrix["h"] == h)
         & (matrix["tol_bps"] == PRIMARY_TOL_BPS)
-    ]
-    if m.empty or not set(TRUNC) <= set(m.columns):
-        return default, ()
-    m = m.dropna(subset=["hit_mean_trunc"])
+    ].dropna(subset=["hit_mean_trunc", "base_mean_trunc", "n_scored_trunc"])
     if m.empty:
         return default, ()
     g = m.groupby("indicator")
     n = g["n_scored_trunc"].sum()
-    hit = g.apply(
-        lambda d: (d["hit_mean_trunc"] * d["n_scored_trunc"]).sum() / max(d["n_scored_trunc"].sum(), 1),
-        include_groups=False,
-    )
-    base = g.apply(
-        lambda d: (d["base_mean_trunc"] * d["n_scored_trunc"]).sum() / max(d["n_scored_trunc"].sum(), 1),
-        include_groups=False,
-    )
+    hit = g.apply(lambda d: _pooled(d, "hit_mean_trunc", "n_scored_trunc"), include_groups=False)
+    base = g.apply(lambda d: _pooled(d, "base_mean_trunc", "n_scored_trunc"), include_groups=False)
+    excess = g.apply(lambda d: _pooled(d, "benefit_excess_trunc", "n_scored_trunc"), include_groups=False)
     lift = (hit / base.replace(0, np.nan)).astype(float)
-    excess = g.apply(
-        lambda d: (d["benefit_excess_trunc"] * d["n_scored_trunc"]).sum() / max(d["n_scored_trunc"].sum(), 1),
-        include_groups=False,
+    muted = tuple(
+        str(i)
+        for i in lift.index
+        if n[i] >= min_events and not np.isnan(lift[i]) and (lift[i] < 1.0 or not excess[i] > 0)
     )
-    muted = tuple(str(i) for i in lift.index if n[i] >= min_events and (lift[i] < 1.0 or not excess[i] > 0))
-    rank = {str(name): i for i, name in enumerate(lift.fillna(-1).sort_values(ascending=False).index)}
+    # по lift вниз; при равенстве и без lift — порядок по умолчанию (по скорости), не алфавит
+    order = sorted(
+        lift.index, key=lambda i: (-(lift[i] if not np.isnan(lift[i]) else -1.0), default.get(str(i), 99))
+    )
+    rank = {str(name): i for i, name in enumerate(order)}
     for name in DEFAULT_ORDER:  # индикаторы без истории — после ранжированных
         rank.setdefault(name, len(rank))
     return rank, muted
@@ -109,7 +132,7 @@ def evaluate_stream(
             ev = result.signals[
                 (result.signals["corridor"] == corridor) & (result.signals["split"] == split.id)
             ]
-            rank, muted = rank_from_history(result.matrix, corridor, split.id)
+            rank, muted = rank_from_history(result.matrix, corridor, split.id, strict=True)
             dec = ev.iloc[0:0]
             if ev.empty:
                 sent = ev.iloc[0:0]
@@ -148,8 +171,9 @@ def evaluate_stream(
     return decided_df, pd.DataFrame(rows), pd.DataFrame(shape)
 
 
-def _pooled(d: pd.DataFrame, col: str) -> float:
-    w = d["n_scored"].fillna(0).to_numpy(dtype=float)
+def _pooled(d: pd.DataFrame, col: str, weight: str = "n_scored") -> float:
+    """Среднее col, взвешенное по weight; строки с NaN в col или нулевым весом не участвуют."""
+    w = d[weight].fillna(0).to_numpy(dtype=float)
     v = d[col].to_numpy(dtype=float)
     ok = ~np.isnan(v) & (w > 0)
     return float((v[ok] * w[ok]).sum() / w[ok].sum()) if w[ok].sum() > 0 else np.nan
@@ -163,6 +187,8 @@ def stream_summary(
     if stream_matrix.empty:
         return pd.DataFrame()
     m = stream_matrix[(stream_matrix["h"] == h) & (stream_matrix["tol_bps"] == tol_bps)]
+    if m.empty:
+        return pd.DataFrame()
     g = m.groupby(["corridor", "scenario"])
     out = pd.DataFrame(
         {
@@ -174,7 +200,8 @@ def stream_summary(
             "lift_min_median": g["lift"].median(),
             "benefit_excess_median_bps": g["benefit_excess_bps"].median(),
             "benefit_fwd_median_bps": g["benefit_fwd_bps"].median(),
-            "freq_per_week_median": g["freq_per_week"].median(),
+            # частота ОДНОГО сценария; частота коридора — stream_shape_summary
+            "freq_per_week_scenario_median": g["freq_per_week"].median(),
         }
     )
     out["lift_mean_pooled"] = out["hit_mean_pooled"] / out["base_mean_pooled"]

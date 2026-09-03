@@ -22,13 +22,13 @@ class Momentum(Indicator):
 
     @classmethod
     def grid(cls) -> list[dict]:
-        return [{"n": n, "rearm": r} for n in (2, 3, 4, 5, 6) for r in (1, 3)]
+        return [{"n": n, "rearm": r} for n in (2, 3, 4, 5, 6) for r in (2, 3)]
 
     def fact_fields(self) -> tuple[str, ...]:
         return ("streak", "drop_pct")
 
-    def warmup(self) -> int:
-        return self.n
+    def warmup(self, index: pd.DatetimeIndex | None = None) -> int:
+        return self.n  # серия из n снижений впервые возможна на позиции n
 
     def compute(self, rate: pd.Series, context: pd.DataFrame | None = None) -> pd.DataFrame:
         streak = down_streak(rate)

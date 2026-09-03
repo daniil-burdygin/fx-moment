@@ -19,7 +19,6 @@ from fxmoment import labels, metrics
 from fxmoment.backtest.walkforward import Split, make_splits, split_for_date
 from fxmoment.config import (
     ANALYSIS_START,
-    CALIBRATION_FREQ_RANGE,
     CALIBRATION_H,
     CONTEXT,
     CORRIDORS,
@@ -46,13 +45,7 @@ SIGNAL_COLUMNS = [
 ]
 
 # Исходы, усечённые концом тестового окна: для ранжирования индикаторов в следующем окне (ADR-0006).
-TRUNC_COLUMNS = (
-    "hit_mean_trunc",
-    "base_mean_trunc",
-    "n_scored_trunc",
-    "lift_mean_trunc",
-    "benefit_excess_trunc",
-)
+TRUNC_COLUMNS = metrics.TRUNC_COLUMNS
 
 
 @dataclass
@@ -66,6 +59,8 @@ class BacktestResult:
         """Сводка по окнам: медианы lift и выгоды, доли окон с lift ≥ 1,3 и < 1 среди окон с событиями,
         число молчащих окон, pooled hit и база (обе взвешены по событиям окна)."""
         m = self.matrix[(self.matrix["h"] == h) & (self.matrix["tol_bps"] == tol_bps)]
+        if m.empty:
+            return pd.DataFrame()
         g = m.groupby(["indicator", "corridor"])
         out = pd.DataFrame(
             {
@@ -115,15 +110,19 @@ def _calibrate(
     tol_bps: float = PRIMARY_TOL_BPS,
     eval_start: str | pd.Timestamp | None = None,
 ) -> tuple[dict[str, Any], list[dict]]:
-    """Сетка на обучении (ADR-0004). Допустимая точка: n ≥ 30 и частота индикатора в
-    CALIBRATION_FREQ_RANGE, обе меряются после разогрева индикатора и не раньше eval_start.
+    """Сетка на обучении (ADR-0004). Допустимая точка: n ≥ min_n и частота индикатора в [lo, hi]
+    (границы — `cls.calibration_bounds()`, по умолчанию CALIBRATION_FREQ_RANGE и
+    MIN_CALIBRATION_EVENTS; медленный индикатор задаёт свои), обе меряются после разогрева
+    индикатора и не раньше eval_start.
     Целевая функция — **медиана lift «по среднему» по календарным годам обучения** (год входит, если
     в нём ≥ 5 событий): параметры должны работать в большинстве лет, а не в одном удачном; при
     равенстве — больше выгода сверх случайного дня. Максимум сырого hit rate по всему окну
     (первая версия) выбирал точку с одним удачным годом и проваливался вне выборки.
-    Нет допустимых точек — лучшая по выгоде сверх случайного дня среди ближайших к диапазону по
-    частоте. Возвращает параметры (с флагами `_feasible`, `_n_feasible`, `_score`) и журнал сетки."""
-    lo, hi = CALIBRATION_FREQ_RANGE
+    Нет допустимых точек — среди ближайших к диапазону по частоте лучшая по той же целевой функции
+    (медиана годовых lift), затем по выгоде; частота здесь только отсечка, иначе запасная ветка
+    выбирала самую частую точку, а не самую точную (аудит 03.09). Возвращает параметры (с флагами
+    `_feasible`, `_n_feasible`, `_score`) и журнал сетки."""
+    lo, hi, min_n = cls.calibration_bounds()
     hit_all = labels.hit_for_scenario(rate_train, cls.scenario, h, tol_bps, mode="mean")
     bf_all = labels.benefit_fwd_bps(rate_train, h)
     years_all = pd.Series(rate_train.index.year, index=rate_train.index)
@@ -131,7 +130,7 @@ def _calibrate(
     for params in cls.grid():
         ind = cls(**params)
         ev = ind.compute(rate_train, ctx_train)["signal"]
-        first = rate_train.index[min(ind.warmup(), len(rate_train) - 1)]
+        first = rate_train.index[min(ind.warmup(rate_train.index), len(rate_train) - 1)]
         start = max(first, pd.Timestamp(eval_start)) if eval_start is not None else first
         days = rate_train.loc[start:].index
         ev_days = ev[ev.astype(bool)].index.intersection(days)
@@ -150,7 +149,7 @@ def _calibrate(
             if len(hy) >= 5 and len(by) and by.mean() > 0:
                 yearly.append(float(hy.mean() / by.mean()))
         score = float(np.median(yearly)) if yearly else np.nan
-        feasible = n_scored >= 30 and lo <= freq <= hi and bool(yearly)
+        feasible = n_scored >= min_n and lo <= freq <= hi and bool(yearly)
         log.append(
             {
                 **params,
@@ -172,7 +171,9 @@ def _calibrate(
     else:
         df = df.assign(_dist=(df["freq_per_week"].clip(lower=lo, upper=hi) - df["freq_per_week"]).abs())
         near = df[df["_dist"] <= df["_dist"].min() + 1e-9]
-        best = near.sort_values(["benefit_excess_bps", "n_scored"], ascending=[False, False]).iloc[0]
+        best = near.sort_values(
+            ["score", "benefit_excess_bps", "n_scored"], ascending=[False, False, False], na_position="last"
+        ).iloc[0]
     keys = list(cls.grid()[0].keys())
     chosen = {k: _native(best[k]) for k in keys}
     chosen["_feasible"] = bool(best["feasible"])
@@ -206,8 +207,13 @@ def fit_indicator(
         ind = cls()
         ind.fit(rate_train, ctx_train, train_start=eval_start)  # type: ignore[attr-defined]
         params = {
+            **ind.params,  # h, tol_bps, gate_window, gate_pct, fp_cost, min_pos_rate, rearm, seed
             "threshold": round(float(ind.threshold_), 4),  # type: ignore[attr-defined]
             "_fitted": bool(ind.fitted_),  # type: ignore[attr-defined]
+            # доля гейтовых дней валидации выше порога; 1,0 — порог сел на минимум, фильтр пуст
+            "_pos_rate_val": round(float(ind.pos_rate_val_), 3)  # type: ignore[attr-defined]
+            if ind.fitted_  # type: ignore[attr-defined]
+            else None,
         }
         return ind, params, []
     params, log = _calibrate(cls, rate_train, ctx_train, eval_start=eval_start)
@@ -303,13 +309,7 @@ def run_backtest(
                             mt = metrics.evaluate_events(
                                 rate_upto, out["signal"], ind.scenario, h, win, tol, with_ci=False
                             )
-                            row.update(
-                                hit_mean_trunc=mt["hit_mean"],
-                                base_mean_trunc=mt["base_mean"],
-                                n_scored_trunc=mt["n_scored"],
-                                lift_mean_trunc=mt["lift_mean"],
-                                benefit_excess_trunc=mt["benefit_excess_bps"],
-                            )
+                            row.update({c: mt[s] for c, s in metrics.TRUNC_SOURCE.items()})
                         mat_rows.append(row)
     signals = pd.DataFrame(sig_rows, columns=SIGNAL_COLUMNS)
     if len(signals):
@@ -328,12 +328,13 @@ def signals_as_of(
     fixed_params: bool = False,
 ) -> pd.DataFrame:
     """Состояние всех индикаторов на дату среза — по данным с pub_date ≤ cutoff и параметрам,
-    откалиброванным на окне, которое действует в эту дату. `lookback` — сколько предыдущих дней
-    публикации вернуть вместе с датой среза."""
+    откалиброванным на окне, которое действует в эту дату; после последнего тестового окна — на
+    живом окне (обучение до его начала минус зазор, `split_for_date`). `lookback` — сколько
+    предыдущих дней публикации вернуть вместе с датой среза."""
     cutoff = pd.Timestamp(cutoff)
     ana = panel.loc[pd.Timestamp(analysis_start) :]
     splits = splits or make_splits(ana.index)
-    split = split_for_date(splits, cutoff)
+    split = split_for_date(splits, cutoff, ana.index)  # после последнего окна — живое окно
     avail = panel.loc[:cutoff]
     ctx_all = avail[[c for c in CONTEXT if c in avail.columns]]
     rows: list[dict] = []

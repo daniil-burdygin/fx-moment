@@ -10,6 +10,18 @@ import pandas as pd
 
 from fxmoment import labels
 
+# Исходы, усечённые концом тестового окна (ADR-0006): столбец матрицы → метрика evaluate_events на
+# ряде до test_end. Единственный источник списка для движка и политики — раньше две копии разъехались
+# молча (аудит 03.09).
+TRUNC_SOURCE: dict[str, str] = {
+    "hit_mean_trunc": "hit_mean",
+    "base_mean_trunc": "base_mean",
+    "n_scored_trunc": "n_scored",
+    "lift_mean_trunc": "lift_mean",
+    "benefit_excess_trunc": "benefit_excess_bps",
+}
+TRUNC_COLUMNS: tuple[str, ...] = tuple(TRUNC_SOURCE)
+
 
 def bootstrap_ci(
     values: np.ndarray, n_boot: int = 2000, alpha: float = 0.05, seed: int = 0
@@ -43,9 +55,11 @@ def block_bootstrap_ci(
 
 
 def frequency_per_week(n_events: int, start: pd.Timestamp, end: pd.Timestamp) -> float:
-    """События в неделю по календарной длине окна [start, end] включительно."""
+    """События в неделю по календарной длине окна [start, end] включительно; end < start — NaN."""
     days = (pd.Timestamp(end) - pd.Timestamp(start)).days + 1
-    return n_events / (max(days, 1) / 7)
+    if days < 1:
+        return float("nan")
+    return n_events / (days / 7)
 
 
 @dataclass(frozen=True)

@@ -8,7 +8,7 @@ from typing import Any
 import numpy as np
 import pandas as pd
 
-from fxmoment.config import BUY_NOW
+from fxmoment.config import BUY_NOW, CALIBRATION_FREQ_RANGE, MIN_CALIBRATION_EVENTS
 
 
 class Indicator(ABC):
@@ -35,10 +35,17 @@ class Indicator(ABC):
     def fact_fields(self) -> tuple[str, ...]:
         return ()
 
-    def warmup(self) -> int:
-        """Сколько первых дней ряда индикатор не определён (окна, серии). Калибровка меряет частоту
-        и базу только после разогрева, иначе длинные окна выглядят реже коротких (аудит 03.09)."""
+    def warmup(self, index: pd.DatetimeIndex | None = None) -> int:
+        """Позиция первого дня, где выход индикатора определён (до неё сигнала нет). Калибровка меряет
+        частоту и базу только после разогрева, иначе длинные окна выглядят реже коротких (аудит 03.09).
+        `index` — календарь ряда: нужен индикаторам, чей разогрев зависит от дат (сезонность)."""
         return 0
+
+    @classmethod
+    def calibration_bounds(cls) -> tuple[float, float, int]:
+        """(частота от, частота до, минимум событий) для допустимой точки сетки при калибровке.
+        Медленный индикатор переопределяет: месячный сигнал физически не даёт 0,3 в неделю."""
+        return (CALIBRATION_FREQ_RANGE[0], CALIBRATION_FREQ_RANGE[1], MIN_CALIBRATION_EVENTS)
 
     @abstractmethod
     def compute(self, rate: pd.Series, context: pd.DataFrame | None = None) -> pd.DataFrame: ...
@@ -52,7 +59,9 @@ class Indicator(ABC):
 
 def rearm_events(cond: pd.Series, rearm: int) -> pd.Series:
     """Событие — первый день, когда условие истинно, и затем не чаще, чем раз в `rearm` дней
-    (между событиями не меньше `rearm` дней публикации; rearm = 0 — каждый день условия).
+    (между событиями не меньше `rearm` дней публикации; rearm ≤ 1 — каждый день условия:
+    промежуток между соседними днями и так равен одному дню, поэтому точка rearm = 1 в сетках
+    не используется).
 
     Последовательный проход слева направо: состояние зависит только от прошлого."""
     c = cond.fillna(False).to_numpy(dtype=bool)

@@ -37,6 +37,35 @@ class Seasonality(Indicator):
     def fact_fields(self) -> tuple[str, ...]:
         return ("k_years", "n_years", "target_month")
 
+    def warmup(self, index: pd.DatetimeIndex | None = None) -> int:
+        """Первая позиция, где для следующего месяца набрано min_years прошлых лет с парой «месяц,
+        предыдущий месяц» и день ≥ from_day — та же логика, что в compute. Без календаря — оценка
+        252 дня публикации на год. Без разогрева частота точки min_years = 4 занижалась на треть и
+        калибровка выбирала другую точку (аудит 03.09)."""
+        if index is None:
+            return 252 * self.min_years + 20
+        ym = set(zip(index.year, index.month, strict=True))
+        cache: dict[tuple[int, int], int] = {}
+        for i, d in enumerate(index):
+            if d.day < self.from_day:
+                continue
+            key = (d.year + 1, 1) if d.month == 12 else (d.year, d.month + 1)
+            if key not in cache:
+                ty, tm = key
+                cache[key] = sum(
+                    1 for (y, m) in ym if m == tm and y < ty and ((y, m - 1) if m > 1 else (y - 1, 12)) in ym
+                )
+            if cache[key] >= self.min_years:
+                return i
+        return len(index)
+
+    @classmethod
+    def calibration_bounds(cls) -> tuple[float, float, int]:
+        """Сигнал не чаще раза в месяц (rearm = 20): потолок частоты ≈ 0,25 в неделю, событий на
+        трёх годах обучения ≈ 12–18; общий порог 0,3 в неделю и 30 событий для сезонности
+        недостижим при любых данных."""
+        return (0.05, 0.3, 12)
+
     def compute(self, rate: pd.Series, context: pd.DataFrame | None = None) -> pd.DataFrame:
         monthly = rate.groupby([rate.index.year, rate.index.month]).mean()
         monthly.index = pd.MultiIndex.from_tuples(monthly.index, names=["year", "month"])

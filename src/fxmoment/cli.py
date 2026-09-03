@@ -6,6 +6,7 @@ import argparse
 import json
 import sys
 from datetime import date
+from typing import Any
 
 import pandas as pd
 
@@ -63,13 +64,21 @@ def cmd_analyze(args: argparse.Namespace) -> int:
 
     panel = load_panel()
     result = analysis.load_result(panel)
+    known = sorted(result.calibration["corridor"].unique()) if len(result.calibration) else []
+    if args.source not in known:
+        print(f"коридор-источник {args.source!r} не прогонялся; есть: {', '.join(known) or 'ничего'}")
+        return 2
     out = analysis.write_analysis(result, panel, source=args.source, k=args.k)
     pd.set_option("display.width", 250)
     for name, title in (
         ("price_of_waiting.csv", "цена ожидания"),
         ("transfer_compare.csv", f"перенос параметров с {args.source}"),
     ):
-        df = pd.read_csv(out / name)
+        path = out / name
+        if not (path.exists() and path.stat().st_size > 1):
+            print(f"\n=== {title}: нет данных ===")
+            continue
+        df = pd.read_csv(path)
         cols = [c for c in df.columns if not c.endswith("_ci_lo") and not c.endswith("_ci_hi")]
         print(f"\n=== {title} ===")
         print(df[cols].round(3).to_string(index=False))
@@ -85,9 +94,20 @@ def cmd_signals(args: argparse.Namespace) -> int:
 
     panel = load_panel()
     inds = BASE_INDICATORS if args.no_ml else ALL_INDICATORS
-    lookback = max(args.lookback, 15) if args.decide else args.lookback
-    df = signals_as_of(panel, args.as_of, indicators=inds, lookback=lookback)
+    cutoff = pd.Timestamp(args.as_of)
+    lookback = args.lookback
+    split = None
+    if args.decide:
+        from fxmoment.backtest import make_splits, split_for_date
+
+        idx = panel.loc[ANALYSIS_START:].index
+        split = split_for_date(make_splits(idx), cutoff, idx)
+        # политика проигрывается с начала действующего окна: охлаждение и конфликт видят всю его историю
+        lookback = max(lookback, int(((idx >= split.test_start) & (idx <= cutoff)).sum()))
+    df = signals_as_of(panel, cutoff, indicators=inds, lookback=lookback)
     shown = df[df["signal"]] if (args.only_signals or args.decide) else df
+    if args.decide:  # на экран — последние 15 дней публикации, решение считается по всему окну
+        shown = shown[shown["date"] >= df["date"].drop_duplicates().sort_values().iloc[-16:].iloc[0]]
     pd.set_option("display.width", 200)
     cols = ["date", "corridor", "indicator", "scenario", "signal", "strength", "speed", "rate", "facts"]
     print(shown[cols].to_string(index=False))
@@ -97,34 +117,40 @@ def cmd_signals(args: argparse.Namespace) -> int:
                 row["corridor"], row["scenario"], row["indicator"], row["rate"], json.loads(row["facts"])
             )
             print(f"\n[{row['corridor']} {row['date']:%Y-%m-%d} {row['indicator']}] {title}\n  {body}")
-    if args.decide:
-        _print_decisions(panel, df, pd.Timestamp(args.as_of))
+    if args.decide and split is not None:
+        _print_decisions(panel, df, cutoff, split)
     return 0
 
 
-def _print_decisions(panel: pd.DataFrame, state: pd.DataFrame, cutoff: pd.Timestamp) -> None:
-    """Решение политики на дату среза: ранг и отключения — из матрицы последнего бэктеста по окнам
-    до текущего, охлаждение — по событиям последних 15 дней публикации (история отправок раньше
-    этого окна не моделируется)."""
-    from fxmoment.backtest import make_splits, split_for_date
-    from fxmoment.combine import PolicyParams, apply_policy, rank_from_history
+def _print_decisions(panel: pd.DataFrame, state: pd.DataFrame, cutoff: pd.Timestamp, split: Any) -> None:
+    """Решение политики на дату среза той же процедурой, что в бэктесте: ранг и отключения — из
+    матрицы последнего бэктеста по окнам до действующего, шторм — по волатильности, охлаждение и
+    конфликт — по событиям с начала действующего окна (история предыдущего окна не переносится —
+    расхождение с бэктестом возможно только в первые дни окна)."""
+    from fxmoment.combine import PolicyParams, apply_policy, history_status, rank_from_history, storm_flag
     from fxmoment.data.store import repo_root
     from fxmoment.texts import render
 
     matrix_path = repo_root() / "reports" / "latest" / "matrix.csv"
     matrix = pd.read_csv(matrix_path) if matrix_path.exists() else pd.DataFrame()
-    splits = make_splits(panel.loc[ANALYSIS_START:].index)
-    split = split_for_date(splits, cutoff)
+    problem = history_status(matrix)
     fired = state[state["signal"]]
-    print(f"\n=== решение политики на {cutoff:%Y-%m-%d} (ранг по окнам < {split.id}) ===")
+    params = PolicyParams()
+    print(
+        f"\n=== решение политики на {cutoff:%Y-%m-%d}: окно {split.id} ({split.label()}), "
+        f"ранг по окнам < {split.id}, политика проиграна с {split.test_start:%Y-%m-%d} ==="
+    )
+    if problem:
+        print(f"⚠️ ранг по истории недоступен: {problem}; порядок по умолчанию, ничего не отключено")
     for corridor in state["corridor"].unique():
-        rank, muted = rank_from_history(matrix, corridor, split.id) if len(matrix) else ({}, ())
+        rank, muted = rank_from_history(matrix, corridor, split.id)
         ev = fired[fired["corridor"] == corridor]
-        calendar = panel[corridor].dropna().loc[:cutoff].index
+        rate = panel[corridor].dropna().loc[:cutoff]
         if ev.empty:
             print(f"{corridor}: событий нет — молчим")
             continue
-        dec = apply_policy(ev, rank, calendar, PolicyParams(muted=muted))
+        storm = storm_flag(rate, params.storm_vol_window, params.storm_rank_window, params.storm_rank)
+        dec = apply_policy(ev, rank, rate.index, PolicyParams(muted=muted), storm=storm)
         today = dec[dec["date"] == cutoff]
         sent = today[today["decision"] == "sent"]
         if len(sent):
@@ -138,6 +164,8 @@ def _print_decisions(panel: pd.DataFrame, state: pd.DataFrame, cutoff: pd.Timest
             print(f"{corridor}: не отправляем ({reasons})")
         else:
             print(f"{corridor}: на дату среза событий нет — молчим")
+        if bool(storm.get(cutoff, False)):
+            print("   шторм: волатильность за 20 дней в верхних 5 % года — поток молчит")
         if muted:
             print(f"   отключены по прошлым окнам: {', '.join(muted)}")
 
@@ -156,6 +184,10 @@ def cmd_check_texts(args: argparse.Namespace) -> int:
     if args.text:
         hits = check_text(args.text)
         print("\nтекст:", "чисто" if not hits else "; ".join(f"«{f}»: {r}" for f, r in hits))
+        bad += bool(hits)
+    if args.title or args.body:
+        hits = check_message(args.title, args.body)
+        print("\nпуш целиком:", "чисто" if not hits else "; ".join(f"«{f}»: {r}" for f, r in hits))
         bad += bool(hits)
     return 2 if bad else 0
 
@@ -195,7 +227,9 @@ def main(argv: list[str] | None = None) -> int:
     s.set_defaults(func=cmd_signals)
 
     c = sub.add_parser("check-texts", help="прогнать библиотеку текстов и (опц.) свой текст через чекер")
-    c.add_argument("--text", default="")
+    c.add_argument("--text", default="", help="проверить одну строку")
+    c.add_argument("--title", default="", help="заголовок пуша (вместе с --body проверяется целиком)")
+    c.add_argument("--body", default="", help="текст пуша")
     c.set_defaults(func=cmd_check_texts)
 
     args = p.parse_args(argv)

@@ -4,7 +4,7 @@
 
 | Кто | Роль | Telegram |
 |---|---|---|
-| Бурдыгин Даниил Андреевич | AI Product, менеджер проекта | `@daniil_burdygin` |
+| Бурдыгин Даниил Андреевич | AI Product & Engineer, менеджер проекта | `@daniil_burdygin` |
 | Фазлов Илья Ратмирович | AI Engineer | `@ILYA_FAZA` |
 | Андреев Олег Сергеевич | AI Engineer | `@andreevoleg22` |
 

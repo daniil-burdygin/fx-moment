@@ -40,8 +40,8 @@ class Level(Indicator):
     def fact_fields(self) -> tuple[str, ...]:
         return ("pct_rank", "window", "days_since_min")
 
-    def warmup(self) -> int:
-        return self.window
+    def warmup(self, index: pd.DatetimeIndex | None = None) -> int:
+        return self.window - 1  # rolling(window) впервые определён на позиции window − 1
 
     def compute(self, rate: pd.Series, context: pd.DataFrame | None = None) -> pd.DataFrame:
         rank = _cached(context, f"_rank_{self.window}")

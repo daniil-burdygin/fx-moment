@@ -77,3 +77,56 @@ def test_storm_blocks_push():
     storm.iloc[5] = True
     out = apply_policy(ev, {"level": 0}, idx, PolicyParams(), storm=storm)
     assert out["decision"].iloc[0] == "storm"
+
+
+def _row(ind, hit, base, n, split=0, excess=10.0):
+    return {
+        "corridor": "TJS",
+        "indicator": ind,
+        "split": split,
+        "h": 20,
+        "tol_bps": 25.0,
+        "hit_mean_trunc": hit,
+        "base_mean_trunc": base,
+        "n_scored_trunc": n,
+        "benefit_excess_trunc": excess,
+    }
+
+
+def test_rank_orders_by_lift_not_hit_and_weights_by_events():
+    # уровень: hit 0,60 при базе 0,55 (lift 1,09); моментум: hit 0,50 при базе 0,30 (lift 1,67)
+    rank, muted = rank_from_history(
+        pd.DataFrame([_row("level", 0.6, 0.55, 40), _row("momentum", 0.5, 0.3, 40)]), "TJS", 1
+    )
+    assert rank["momentum"] < rank["level"] and muted == ()
+    # взвешивание по событиям: окно с 400 событиями перевешивает окно с 5 (простое среднее дало бы lift 1,3)
+    rows = [_row("level", 0.9, 0.5, 5, split=0), _row("level", 0.4, 0.5, 400, split=1)]
+    _rank, muted = rank_from_history(pd.DataFrame(rows), "TJS", 2)
+    assert muted == ("level",)
+    # NaN в базе одного окна не роняет индикатор в конец ранга
+    rows = [
+        _row("level", 0.6, float("nan"), 40),
+        _row("level", 0.6, 0.5, 40, split=1),
+        _row("momentum", 0.4, 0.5, 40),
+    ]
+    rank, muted = rank_from_history(pd.DataFrame(rows), "TJS", 2)
+    assert rank["level"] == 0 and muted == ("momentum",)
+    # ничья по lift — порядок по умолчанию (по скорости), не алфавит
+    rank, _ = rank_from_history(
+        pd.DataFrame([_row("momentum", 0.6, 0.5, 40), _row("level", 0.6, 0.5, 40)]), "TJS", 1
+    )
+    assert rank["level"] < rank["momentum"]
+
+
+def test_history_status_names_the_problem():
+    import pytest
+
+    from fxmoment.combine import history_status
+
+    assert history_status(pd.DataFrame()) is not None
+    full = pd.DataFrame([_row("level", 0.6, 0.5, 40)])
+    assert history_status(full) is None
+    broken = full.drop(columns=["benefit_excess_trunc"])
+    assert "benefit_excess_trunc" in history_status(broken)
+    with pytest.raises(ValueError):
+        rank_from_history(broken, "TJS", 1, strict=True)
