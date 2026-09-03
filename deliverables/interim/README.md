@@ -17,7 +17,7 @@
 uv run pytest && uv run ruff check . && git status --short
 ```
 
-Тестов должно быть 81, `git status` — пустым, а в трёх файлах провенанса
+Тестов должно быть 83, `git status` — пустым, а в трёх файлах провенанса
 (`reports/latest/provenance.json`, `reports/fixed/provenance.json`,
 `reports/intraday/provenance_bars.json`) должен стоять один и тот же хеш кода
 без суффикса `-dirty`.
