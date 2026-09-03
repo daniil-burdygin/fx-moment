@@ -12,6 +12,7 @@ from typing import Any
 import pandas as pd
 
 from fxmoment.config import ALL_CURRENCIES, ANALYSIS_START, MOEX_RAW_START, RAW_START
+from fxmoment.data.forecast import FORECAST_START
 
 
 def cmd_fetch(args: argparse.Namespace) -> int:
@@ -102,7 +103,14 @@ def cmd_backtest(args: argparse.Namespace) -> int:
     from fxmoment.indicators import ALL_INDICATORS, BASE_INDICATORS
     from fxmoment.report import write_report
 
+    if args.with_forecast and args.fixed_params:
+        print("--with-forecast и --fixed-params вместе не прогоняются: контроль замера один, reports/latest")
+        return 2
     panel = load_panel()
+    if args.with_forecast:
+        from fxmoment.data.forecast import attach_forecast
+
+        panel = attach_forecast(panel)  # столбцы `<валюта>_fc_<признак>`, отчёт → reports/timesfm/
     inds = BASE_INDICATORS if args.no_ml else ALL_INDICATORS
     corridors = tuple(args.corridors.split(",")) if args.corridors else None
     kwargs = {"corridors": corridors} if corridors else {}
@@ -111,7 +119,8 @@ def cmd_backtest(args: argparse.Namespace) -> int:
     )
     from fxmoment.data.store import repo_root
 
-    out_dir = repo_root() / "reports" / ("fixed" if args.fixed_params else "latest")
+    name = "timesfm" if args.with_forecast else ("fixed" if args.fixed_params else "latest")
+    out_dir = repo_root() / "reports" / name
     out = write_report(result, panel, out_dir)
     pd.set_option("display.width", 250)
     for h in (20, 5):
@@ -126,6 +135,53 @@ def cmd_backtest(args: argparse.Namespace) -> int:
             print(f"\n=== {title} ===")
             print(pd.read_csv(path).round(3).to_string(index=False))
     print(f"\nотчёт → {out}")
+    return 0
+
+
+def cmd_fetch_forecast(args: argparse.Namespace) -> int:
+    """Снимок прогнозов TimesFM 3 → data/derived/ (замер). Код 1 — самопроверка не сошлась,
+    снимок не записан: вердикту такого прогона верить нельзя."""
+    from fxmoment.data import forecast as fc
+    from fxmoment.data.store import load_panel
+
+    panel = load_panel()
+    currencies = tuple(args.currencies.split(",")) if args.currencies else fc.FORECAST_CURRENCIES
+    model = fc.load_model(args.device or None, batch_size=args.batch)
+    print(f"модель {fc.MODEL_ID}@{fc.MODEL_REVISION[:8]} на {model.device}")
+    snap = fc.build_snapshot(
+        panel, model, currencies, start=args.start, batch=max(args.batch, 1) * 4, log=print
+    )
+    worst = fc.self_check(model, panel, snap, n=args.check)
+    ok = worst <= fc.SELF_CHECK_TOL_BPS
+    verdict = "ок" if ok else "НЕ СОШЛОСЬ"
+    print(f"самопроверка: {args.check} строк поодиночке, наибольшее расхождение {worst:.4f} бп → {verdict}")
+    if not ok:
+        return 1
+    fc.save_snapshot(
+        snap,
+        {"device": str(model.device), "self_check_rows": int(args.check), "self_check_max_diff_bps": worst},
+    )
+    print(f"снимок → {fc.FORECAST_CSV} ({len(snap)} строк)")
+    return 0
+
+
+def cmd_analyze_forecast(args: argparse.Namespace) -> int:
+    from fxmoment import forecast_eval
+    from fxmoment.data.store import load_panel
+
+    out = forecast_eval.write_forecast_report(load_panel(), window_from=args.window_from)
+    pd.set_option("display.width", 250)
+    for name, title in (
+        ("forecast_skill.csv", "навык прогноза против «курс не изменится»"),
+        ("forecast_rule.csv", "прогноз как правило, h = 20, допуск 25 бп"),
+        ("ml_compare.csv", "обучаемый индикатор с признаками прогноза и без, все окна"),
+        ("ml_compare_late.csv", f"то же, окна с {args.window_from}"),
+    ):
+        path = out / name
+        if path.exists() and path.stat().st_size > 1:
+            print(f"\n=== {title} ===")
+            print(pd.read_csv(path).round(3).to_string(index=False))
+    print(f"\nзамер → {out}")
     return 0
 
 
@@ -304,6 +360,25 @@ def main(argv: list[str] | None = None) -> int:
     )
     b.set_defaults(func=cmd_backtest)
 
+    b.add_argument(
+        "--with-forecast",
+        action="store_true",
+        help="признаки прогноза TimesFM из data/derived/ в обучаемый индикатор; отчёт → reports/timesfm/",
+    )
+    ff = sub.add_parser("fetch-forecast", help="снимок прогнозов TimesFM 3 → data/derived/ (замер)")
+    ff.add_argument("--start", default=FORECAST_START, help="первая дата публикации прогноза")
+    ff.add_argument("--currencies", default="", help="через запятую, по умолчанию пять коридоров и USD")
+    ff.add_argument("--device", default="", help="mps / cpu, по умолчанию mps при наличии")
+    ff.add_argument("--batch", type=int, default=64, help="рядов на проход модели")
+    ff.add_argument("--check", type=int, default=8, help="строк самопроверки поодиночке")
+    ff.set_defaults(func=cmd_fetch_forecast)
+    af = sub.add_parser(
+        "analyze-forecast", help="замер TimesFM: навык, правило, признаки → reports/timesfm/analysis/"
+    )
+    af.add_argument(
+        "--window-from", default="2024-01", help="окна не раньше этой метки — после среза предобучения модели"
+    )
+    af.set_defaults(func=cmd_analyze_forecast)
     a = sub.add_parser("analyze", help="анализы поверх reports/latest → reports/latest/analysis/")
     a.add_argument("--source", default="KZT", help="коридор-источник для переноса параметров")
     a.add_argument("--k", type=int, default=10, help="дней публикации ожидания подтверждения")

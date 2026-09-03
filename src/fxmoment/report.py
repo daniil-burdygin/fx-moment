@@ -43,7 +43,13 @@ def git_hash() -> str:
         head = run("rev-parse", "--short", "HEAD")
         # неотслеженные файлы тоже грязь: новый модуль меняет поведение, оставаясь вне индекса
         changed = run(
-            "status", "--porcelain", "--", ".", ":(exclude)reports", ":(exclude)data/raw/*.meta.json"
+            "status",
+            "--porcelain",
+            "--",
+            ".",
+            ":(exclude)reports",
+            ":(exclude)data/raw/*.meta.json",
+            ":(exclude)data/derived/*.meta.json",
         )
         dirty = "-dirty" if changed else ""
         return head + dirty

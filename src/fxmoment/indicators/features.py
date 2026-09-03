@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import pandas as pd
 
+from fxmoment.data.forecast import ML_FEATURES, USD_FEATURE, is_forecast_column, split_column
 from fxmoment.indicators.base import down_streak, rolling_pct_rank, up_streak
 
 RANK_WINDOWS = (20, 60, 120, 250)
@@ -26,6 +27,14 @@ def enrich_context(rate: pd.Series, context: pd.DataFrame | None, scale: int = 1
         w = _scale_step(w0, scale)
         ctx[f"_rank_{w}"] = rolling_pct_rank(rate, w)
         ctx[f"_dsm_{w}"] = rolling_days_since_min(rate, w)
+    # прогнозные столбцы снимка TimesFM (замер): свой коридор → `_fc_<признак>`, доллар → один признак.
+    # Чужие коридоры в признаки не идут: пять коридоров — почти один фактор, и это был бы тот же USD.
+    for col in [c for c in ctx.columns if is_forecast_column(c)]:
+        ccy, feat = split_column(str(col))
+        if ccy == rate.name:
+            ctx[f"_fc_{feat}"] = ctx[col]
+        elif ccy == "USD" and feat == USD_FEATURE:
+            ctx[f"_usd_fc_{feat}"] = ctx[col]
     return ctx
 
 
@@ -58,4 +67,13 @@ def build_features(rate: pd.Series, context: pd.DataFrame | None = None) -> pd.D
         local = rate / usd
         f["local_ret5"] = local.pct_change(5)
         f["local_rank60"] = rolling_pct_rank(local, 60)
+    if context is not None:
+        # прогноз TimesFM на дату T (снимок `data/derived/`, замер): в бп к курсу действия
+        for feat in ML_FEATURES:
+            key = f"_fc_{feat}"
+            if key in context.columns:
+                f[f"fc_{feat.removesuffix('_bps')}"] = context[key].reindex(rate.index)
+        key = f"_usd_fc_{USD_FEATURE}"
+        if key in context.columns:
+            f[f"usd_fc_{USD_FEATURE.removesuffix('_bps')}"] = context[key].reindex(rate.index)
     return f

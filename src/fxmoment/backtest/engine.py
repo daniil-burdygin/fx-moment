@@ -26,6 +26,7 @@ from fxmoment.config import (
     PRIMARY_TOL_BPS,
     TOLERANCES_BPS,
 )
+from fxmoment.data.forecast import is_forecast_column
 from fxmoment.indicators import ALL_INDICATORS, Indicator
 from fxmoment.indicators.features import enrich_context
 
@@ -266,6 +267,12 @@ def _event_rows(
     return rows
 
 
+def context_columns(panel: pd.DataFrame, context: tuple[str, ...]) -> list[str]:
+    """Столбцы контекста: валюты из `context` плюс прогнозные столбцы снимка TimesFM, если панель
+    их несёт (`backtest --with-forecast`); без снимка список тот же, что и раньше."""
+    return [c for c in panel.columns if c in context or is_forecast_column(c)]
+
+
 def run_backtest(
     panel: pd.DataFrame,
     corridors: tuple[str, ...] = CORRIDORS,
@@ -285,7 +292,7 @@ def run_backtest(
     задаётся: полоса частоты — свойство канала, а не шага ряда."""
     ana = panel.loc[pd.Timestamp(analysis_start) :]
     splits = splits or make_splits(ana.index)
-    ctx_all = panel[[c for c in context if c in panel.columns]]
+    ctx_all = panel[context_columns(panel, context)]
     sig_rows: list[dict] = []
     mat_rows: list[dict] = []
     cal_rows: list[dict] = []
@@ -370,7 +377,7 @@ def signals_as_of(
     splits = splits or make_splits(ana.index)
     split = split_for_date(splits, cutoff, ana.index)  # после последнего окна — живое окно
     avail = panel.loc[:cutoff]
-    ctx_all = avail[[c for c in CONTEXT if c in avail.columns]]
+    ctx_all = avail[context_columns(avail, CONTEXT)]
     rows: list[dict] = []
     for corridor in corridors:
         rate = avail[corridor].dropna()

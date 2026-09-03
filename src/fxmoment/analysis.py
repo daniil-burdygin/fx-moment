@@ -598,6 +598,83 @@ def tax_window_summary(day_table: pd.DataFrame) -> pd.DataFrame:
 # ---------------------------------------------------------------- калибровка против априорных
 
 
+def paired_pooled_comparison(
+    matrix_a: pd.DataFrame,
+    matrix_b: pd.DataFrame,
+    h: int = CALIBRATION_H,
+    tol_bps: float = PRIMARY_TOL_BPS,
+    n_boot: int = 4000,
+    seed: int = 7,
+    window_from: str | None = None,
+) -> pd.DataFrame:
+    """Два прогона на одних окнах: pooled lift «по среднему» и выгода сверх случайного дня
+    (взвешенная событиями) по каждому индикатору и суммарно, разница b − a и её интервал.
+
+    Сравнение парное и блочное: блок — пара «коридор × окно», и на каждой итерации бутстрепа оба
+    прогона пересобираются по ОДНИМ И ТЕМ ЖЕ блокам. Иначе интервал мерил бы ещё и разницу в том,
+    какие полугодия попали в выборку, а не разницу прогонов. `window_from` оставляет окна не раньше
+    метки (`2024-01`) — например, после среза предобучения внешней модели."""
+    rows: list[dict] = []
+    rng = np.random.default_rng(seed)
+    rng_benefit = np.random.default_rng(seed + 1)
+
+    def blocks(m: pd.DataFrame, indicator: str | None) -> pd.DataFrame:
+        s = m[(m["h"] == h) & (m["tol_bps"] == tol_bps)]
+        if window_from:
+            s = s[s["window"] >= window_from]
+        if indicator:
+            s = s[s["indicator"] == indicator]
+        s = s.dropna(subset=["hit_mean", "base_mean", "n_scored"])
+        benefit = s["benefit_excess_bps"].fillna(0.0) if "benefit_excess_bps" in s.columns else 0.0
+        n = s["n_scored"]
+        s = s.assign(num=s["hit_mean"] * n, den=s["base_mean"] * n, bnum=benefit * n)
+        return s.groupby(["corridor", "split"])[["num", "den", "n_scored", "bnum"]].sum()
+
+    def ratio(x: np.ndarray, num: int, den: int) -> np.ndarray:
+        with np.errstate(divide="ignore", invalid="ignore"):
+            return np.where(x[..., den] > 0, x[..., num] / x[..., den], np.nan)
+
+    names = sorted(set(matrix_a["indicator"]) | set(matrix_b["indicator"]))
+    for indicator in [*names, None]:
+        ga, gb = blocks(matrix_a, indicator), blocks(matrix_b, indicator)
+        keys = sorted(set(ga.index) | set(gb.index))
+        if not keys:
+            continue
+        a = ga.reindex(keys).fillna(0.0).to_numpy(dtype=float)
+        b = gb.reindex(keys).fillna(0.0).to_numpy(dtype=float)
+        lift_a, lift_b = float(ratio(a.sum(axis=0), 0, 1)), float(ratio(b.sum(axis=0), 0, 1))
+        ben_a, ben_b = float(ratio(a.sum(axis=0), 3, 2)), float(ratio(b.sum(axis=0), 3, 2))
+        idx = rng.integers(0, len(keys), (n_boot, len(keys)))
+        sa, sb = a[idx].sum(axis=1), b[idx].sum(axis=1)
+        ok = (sa[:, 1] > 0) & (sb[:, 1] > 0)
+        diff = sb[ok, 0] / sb[ok, 1] - sa[ok, 0] / sa[ok, 1]
+        lo, hi = (np.percentile(diff, [2.5, 97.5]) if ok.sum() > 1 else (np.nan, np.nan))
+        idx_b = rng_benefit.integers(0, len(keys), (n_boot, len(keys)))
+        sa, sb = a[idx_b].sum(axis=1), b[idx_b].sum(axis=1)
+        okb = (sa[:, 2] > 0) & (sb[:, 2] > 0)
+        bdiff = sb[okb, 3] / sb[okb, 2] - sa[okb, 3] / sa[okb, 2]
+        blo, bhi = (np.percentile(bdiff, [2.5, 97.5]) if okb.sum() > 1 else (np.nan, np.nan))
+        rows.append(
+            {
+                "indicator": indicator or "all",
+                "blocks": len(keys),
+                "events_a": int(a[:, 2].sum()),
+                "events_b": int(b[:, 2].sum()),
+                "lift_a": lift_a,
+                "lift_b": lift_b,
+                "diff_lift": lift_b - lift_a,
+                "diff_lift_ci_lo": float(lo),
+                "diff_lift_ci_hi": float(hi),
+                "benefit_a": ben_a,
+                "benefit_b": ben_b,
+                "diff_benefit": ben_b - ben_a,
+                "diff_benefit_ci_lo": float(blo),
+                "diff_benefit_ci_hi": float(bhi),
+            }
+        )
+    return pd.DataFrame(rows)
+
+
 def calibration_vs_fixed(
     matrix: pd.DataFrame,
     fixed_matrix: pd.DataFrame,
@@ -606,59 +683,34 @@ def calibration_vs_fixed(
     n_boot: int = 4000,
     seed: int = 7,
 ) -> pd.DataFrame:
-    """Стоит ли калибровка по сетке своих денег: pooled lift калиброванных правил против априорных.
-
-    Сравнение парное и блочное: блок — пара «коридор × окно», и на каждой итерации бутстрепа оба
-    прогона пересобираются по ОДНИМ И ТЕМ ЖЕ блокам. Иначе интервал мерил бы ещё и разницу в том,
-    какие полугодия попали в выборку, а не разницу правил.
+    """Стоит ли калибровка по сетке своих денег: pooled lift калиброванных правил против априорных —
+    `paired_pooled_comparison` в прежних именах столбцов.
 
     Раньше эти интервалы считались вручную и жили только в тексте `docs/STATUS.md` — то есть числа
     отчёта не было, а утверждение было (аудит 03.09). Теперь оно есть здесь и в `README.md`.
 
     Строка `all` — суммарно по всем правилам. У обучаемого индикатора разницы нет по построению:
     `--fixed-params` трогает только правила, модель обучается одинаково."""
-    rows: list[dict] = []
-    rng = np.random.default_rng(seed)
-
-    def blocks(m: pd.DataFrame, indicator: str | None) -> pd.DataFrame:
-        s = m[(m["h"] == h) & (m["tol_bps"] == tol_bps)]
-        if indicator:
-            s = s[s["indicator"] == indicator]
-        s = s.dropna(subset=["hit_mean", "base_mean", "n_scored"])
-        s = s.assign(num=s["hit_mean"] * s["n_scored"], den=s["base_mean"] * s["n_scored"])
-        return s.groupby(["corridor", "split"])[["num", "den", "n_scored"]].sum()
-
-    names = sorted(set(matrix["indicator"]) | set(fixed_matrix["indicator"]))
-    for indicator in [*names, None]:
-        ga, gb = blocks(matrix, indicator), blocks(fixed_matrix, indicator)
-        keys = sorted(set(ga.index) | set(gb.index))
-        if not keys:
-            continue
-        a = ga.reindex(keys).fillna(0.0).to_numpy(dtype=float)
-        b = gb.reindex(keys).fillna(0.0).to_numpy(dtype=float)
-        lift_a = a[:, 0].sum() / a[:, 1].sum() if a[:, 1].sum() else np.nan
-        lift_b = b[:, 0].sum() / b[:, 1].sum() if b[:, 1].sum() else np.nan
-        idx = rng.integers(0, len(keys), (n_boot, len(keys)))
-        sa, sb = a[idx].sum(axis=1), b[idx].sum(axis=1)
-        ok = (sa[:, 1] > 0) & (sb[:, 1] > 0)
-        diff = sb[ok, 0] / sb[ok, 1] - sa[ok, 0] / sa[ok, 1]
-        lo, hi = (np.percentile(diff, [2.5, 97.5]) if ok.sum() > 1 else (np.nan, np.nan))
-        better = "априорные" if lo > 0 else ("калибровка" if hi < 0 else "разницы нет")
-        rows.append(
-            {
-                "indicator": indicator or "all",
-                "blocks": len(keys),
-                "events_calibrated": int(a[:, 2].sum()),
-                "events_fixed": int(b[:, 2].sum()),
-                "lift_calibrated": lift_a,
-                "lift_fixed": lift_b,
-                "diff_fixed_minus_calibrated": lift_b - lift_a,
-                "diff_ci_lo": float(lo),
-                "diff_ci_hi": float(hi),
-                "better": better,
-            }
-        )
-    return pd.DataFrame(rows)
+    cmp = paired_pooled_comparison(matrix, fixed_matrix, h=h, tol_bps=tol_bps, n_boot=n_boot, seed=seed)
+    if not len(cmp):
+        return cmp
+    out = pd.DataFrame(
+        {
+            "indicator": cmp["indicator"],
+            "blocks": cmp["blocks"],
+            "events_calibrated": cmp["events_a"],
+            "events_fixed": cmp["events_b"],
+            "lift_calibrated": cmp["lift_a"],
+            "lift_fixed": cmp["lift_b"],
+            "diff_fixed_minus_calibrated": cmp["diff_lift"],
+            "diff_ci_lo": cmp["diff_lift_ci_lo"],
+            "diff_ci_hi": cmp["diff_lift_ci_hi"],
+        }
+    )
+    out["better"] = np.where(
+        out["diff_ci_lo"] > 0, "априорные", np.where(out["diff_ci_hi"] < 0, "калибровка", "разницы нет")
+    )
+    return out
 
 
 # ---------------------------------------------------------------- достижимость уровней вероятности

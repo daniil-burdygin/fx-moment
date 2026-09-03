@@ -20,6 +20,10 @@ dev = [
     "pytest>=8",
     "ruff>=0.6",
 ]
+# снимок прогнозов TimesFM 3 (замер, docs/decisions/timesfm-experiment.md): `uv run --group forecast …`
+forecast = [
+    "timesfm[torch]>=3.0.1",
+]
 
 [build-system]
 requires = ["hatchling"]
