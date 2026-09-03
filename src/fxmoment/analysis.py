@@ -598,6 +598,125 @@ def tax_window_summary(day_table: pd.DataFrame) -> pd.DataFrame:
 # ---------------------------------------------------------------- калибровка против априорных
 
 
+BLOCK_KEYS: dict[str, list[str]] = {"corridor_split": ["corridor", "split"], "split": ["split"]}
+BY_WINDOW_SUFFIX = "_by_window"
+
+
+def paired_pooled_comparison(
+    matrix_a: pd.DataFrame,
+    matrix_b: pd.DataFrame,
+    h: int = CALIBRATION_H,
+    tol_bps: float = PRIMARY_TOL_BPS,
+    n_boot: int = 4000,
+    seed: int = 7,
+    window_from: str | None = None,
+    block: str = "corridor_split",
+) -> pd.DataFrame:
+    """Два прогона на одних окнах: pooled lift «по среднему» и выгода сверх случайного дня
+    (взвешенная событиями) по каждому индикатору и суммарно, разница b − a и её интервал.
+
+    Сравнение парное и блочное: на каждой итерации бутстрепа оба прогона пересобираются по ОДНИМ И
+    ТЕМ ЖЕ блокам. Иначе интервал мерил бы ещё и разницу в том, какие полугодия попали в выборку, а
+    не разницу прогонов. `window_from` оставляет окна не раньше метки (`2024-01`) — например, после
+    среза предобучения внешней модели.
+
+    `block` — что считается наблюдением: `corridor_split` — пара «коридор × окно» (55 блоков на пяти
+    коридорах), `split` — окно целиком, суммы по коридорам (11 блоков). Коридоры скоррелированы с
+    USD/RUB на 0,83–0,97, и блок по паре считает пять коридоров пятью независимыми наблюдениями —
+    интервал выходит уже, чем он есть. Блок по окну честнее к общему фактору, но по 11 блокам
+    процентильный интервал груб. Точечные оценки от блока не зависят: суммы одни и те же."""
+    if block not in BLOCK_KEYS:
+        raise ValueError(f"неизвестный блок {block!r}; допустимы {', '.join(BLOCK_KEYS)}")
+    rows: list[dict] = []
+    rng = np.random.default_rng(seed)
+    rng_benefit = np.random.default_rng(seed + 1)
+
+    def blocks(m: pd.DataFrame, indicator: str | None) -> pd.DataFrame:
+        s = m[(m["h"] == h) & (m["tol_bps"] == tol_bps)]
+        if window_from:
+            s = s[s["window"] >= window_from]
+        if indicator:
+            s = s[s["indicator"] == indicator]
+        s = s.dropna(subset=["hit_mean", "base_mean", "n_scored"])
+        benefit = s["benefit_excess_bps"].fillna(0.0) if "benefit_excess_bps" in s.columns else 0.0
+        n = s["n_scored"]
+        s = s.assign(num=s["hit_mean"] * n, den=s["base_mean"] * n, bnum=benefit * n)
+        return s.groupby(BLOCK_KEYS[block])[["num", "den", "n_scored", "bnum"]].sum()
+
+    def ratio(x: np.ndarray, num: int, den: int) -> np.ndarray:
+        with np.errstate(divide="ignore", invalid="ignore"):
+            return np.where(x[..., den] > 0, x[..., num] / x[..., den], np.nan)
+
+    names = sorted(set(matrix_a["indicator"]) | set(matrix_b["indicator"]))
+    for indicator in [*names, None]:
+        ga, gb = blocks(matrix_a, indicator), blocks(matrix_b, indicator)
+        keys = sorted(set(ga.index) | set(gb.index))
+        if not keys:
+            continue
+        a = ga.reindex(keys).fillna(0.0).to_numpy(dtype=float)
+        b = gb.reindex(keys).fillna(0.0).to_numpy(dtype=float)
+        lift_a, lift_b = float(ratio(a.sum(axis=0), 0, 1)), float(ratio(b.sum(axis=0), 0, 1))
+        ben_a, ben_b = float(ratio(a.sum(axis=0), 3, 2)), float(ratio(b.sum(axis=0), 3, 2))
+        idx = rng.integers(0, len(keys), (n_boot, len(keys)))
+        sa, sb = a[idx].sum(axis=1), b[idx].sum(axis=1)
+        ok = (sa[:, 1] > 0) & (sb[:, 1] > 0)
+        diff = sb[ok, 0] / sb[ok, 1] - sa[ok, 0] / sa[ok, 1]
+        lo, hi = (np.percentile(diff, [2.5, 97.5]) if ok.sum() > 1 else (np.nan, np.nan))
+        idx_b = rng_benefit.integers(0, len(keys), (n_boot, len(keys)))
+        sa, sb = a[idx_b].sum(axis=1), b[idx_b].sum(axis=1)
+        okb = (sa[:, 2] > 0) & (sb[:, 2] > 0)
+        bdiff = sb[okb, 3] / sb[okb, 2] - sa[okb, 3] / sa[okb, 2]
+        blo, bhi = (np.percentile(bdiff, [2.5, 97.5]) if okb.sum() > 1 else (np.nan, np.nan))
+        rows.append(
+            {
+                "indicator": indicator or "all",
+                "block": block,
+                "blocks": len(keys),
+                "events_a": int(a[:, 2].sum()),
+                "events_b": int(b[:, 2].sum()),
+                "lift_a": lift_a,
+                "lift_b": lift_b,
+                "diff_lift": lift_b - lift_a,
+                "diff_lift_ci_lo": float(lo),
+                "diff_lift_ci_hi": float(hi),
+                "benefit_a": ben_a,
+                "benefit_b": ben_b,
+                "diff_benefit": ben_b - ben_a,
+                "diff_benefit_ci_lo": float(blo),
+                "diff_benefit_ci_hi": float(bhi),
+            }
+        )
+    return pd.DataFrame(rows)
+
+
+CI_COLUMNS: tuple[str, ...] = (
+    "blocks",
+    "diff_lift_ci_lo",
+    "diff_lift_ci_hi",
+    "diff_benefit_ci_lo",
+    "diff_benefit_ci_hi",
+)
+
+
+def paired_pooled_both(matrix_a: pd.DataFrame, matrix_b: pd.DataFrame, **kwargs: Any) -> pd.DataFrame:
+    """Оба интервала рядом: по парам «коридор × окно» (столбцы `paired_pooled_comparison`) и по окнам
+    (те же столбцы с суффиксом `_by_window`). Точечные оценки у обоих блоков одни, поэтому
+    дублируются только интервалы и число блоков."""
+    pair = paired_pooled_comparison(matrix_a, matrix_b, block="corridor_split", **kwargs)
+    if not len(pair):
+        return pair
+    win = paired_pooled_comparison(matrix_a, matrix_b, block="split", **kwargs)
+    win = win.set_index("indicator")[list(CI_COLUMNS)].add_suffix(BY_WINDOW_SUFFIX)
+    return pair.drop(columns=["block"]).join(win, on="indicator")
+
+
+def read_interval(
+    lo: pd.Series, hi: pd.Series, above: str, below: str, none: str = "разницы нет"
+) -> np.ndarray:
+    """Вердикт по интервалу разницы b − a: целиком выше нуля — `above`, целиком ниже — `below`."""
+    return np.where(lo > 0, above, np.where(hi < 0, below, none))
+
+
 def calibration_vs_fixed(
     matrix: pd.DataFrame,
     fixed_matrix: pd.DataFrame,
@@ -606,59 +725,39 @@ def calibration_vs_fixed(
     n_boot: int = 4000,
     seed: int = 7,
 ) -> pd.DataFrame:
-    """Стоит ли калибровка по сетке своих денег: pooled lift калиброванных правил против априорных.
-
-    Сравнение парное и блочное: блок — пара «коридор × окно», и на каждой итерации бутстрепа оба
-    прогона пересобираются по ОДНИМ И ТЕМ ЖЕ блокам. Иначе интервал мерил бы ещё и разницу в том,
-    какие полугодия попали в выборку, а не разницу правил.
+    """Стоит ли калибровка по сетке своих денег: pooled lift калиброванных правил против априорных —
+    `paired_pooled_both` в прежних именах столбцов, интервал по парам «коридор × окно» и рядом
+    по окнам (`*_by_window`, 11 блоков).
 
     Раньше эти интервалы считались вручную и жили только в тексте `docs/STATUS.md` — то есть числа
     отчёта не было, а утверждение было (аудит 03.09). Теперь оно есть здесь и в `README.md`.
 
     Строка `all` — суммарно по всем правилам. У обучаемого индикатора разницы нет по построению:
     `--fixed-params` трогает только правила, модель обучается одинаково."""
-    rows: list[dict] = []
-    rng = np.random.default_rng(seed)
-
-    def blocks(m: pd.DataFrame, indicator: str | None) -> pd.DataFrame:
-        s = m[(m["h"] == h) & (m["tol_bps"] == tol_bps)]
-        if indicator:
-            s = s[s["indicator"] == indicator]
-        s = s.dropna(subset=["hit_mean", "base_mean", "n_scored"])
-        s = s.assign(num=s["hit_mean"] * s["n_scored"], den=s["base_mean"] * s["n_scored"])
-        return s.groupby(["corridor", "split"])[["num", "den", "n_scored"]].sum()
-
-    names = sorted(set(matrix["indicator"]) | set(fixed_matrix["indicator"]))
-    for indicator in [*names, None]:
-        ga, gb = blocks(matrix, indicator), blocks(fixed_matrix, indicator)
-        keys = sorted(set(ga.index) | set(gb.index))
-        if not keys:
-            continue
-        a = ga.reindex(keys).fillna(0.0).to_numpy(dtype=float)
-        b = gb.reindex(keys).fillna(0.0).to_numpy(dtype=float)
-        lift_a = a[:, 0].sum() / a[:, 1].sum() if a[:, 1].sum() else np.nan
-        lift_b = b[:, 0].sum() / b[:, 1].sum() if b[:, 1].sum() else np.nan
-        idx = rng.integers(0, len(keys), (n_boot, len(keys)))
-        sa, sb = a[idx].sum(axis=1), b[idx].sum(axis=1)
-        ok = (sa[:, 1] > 0) & (sb[:, 1] > 0)
-        diff = sb[ok, 0] / sb[ok, 1] - sa[ok, 0] / sa[ok, 1]
-        lo, hi = (np.percentile(diff, [2.5, 97.5]) if ok.sum() > 1 else (np.nan, np.nan))
-        better = "априорные" if lo > 0 else ("калибровка" if hi < 0 else "разницы нет")
-        rows.append(
-            {
-                "indicator": indicator or "all",
-                "blocks": len(keys),
-                "events_calibrated": int(a[:, 2].sum()),
-                "events_fixed": int(b[:, 2].sum()),
-                "lift_calibrated": lift_a,
-                "lift_fixed": lift_b,
-                "diff_fixed_minus_calibrated": lift_b - lift_a,
-                "diff_ci_lo": float(lo),
-                "diff_ci_hi": float(hi),
-                "better": better,
-            }
-        )
-    return pd.DataFrame(rows)
+    cmp = paired_pooled_both(matrix, fixed_matrix, h=h, tol_bps=tol_bps, n_boot=n_boot, seed=seed)
+    if not len(cmp):
+        return cmp
+    out = pd.DataFrame(
+        {
+            "indicator": cmp["indicator"],
+            "blocks": cmp["blocks"],
+            "events_calibrated": cmp["events_a"],
+            "events_fixed": cmp["events_b"],
+            "lift_calibrated": cmp["lift_a"],
+            "lift_fixed": cmp["lift_b"],
+            "diff_fixed_minus_calibrated": cmp["diff_lift"],
+            "diff_ci_lo": cmp["diff_lift_ci_lo"],
+            "diff_ci_hi": cmp["diff_lift_ci_hi"],
+        }
+    )
+    out["better"] = read_interval(out["diff_ci_lo"], out["diff_ci_hi"], "априорные", "калибровка")
+    out["blocks_by_window"] = cmp["blocks" + BY_WINDOW_SUFFIX]
+    out["diff_ci_lo_by_window"] = cmp["diff_lift_ci_lo" + BY_WINDOW_SUFFIX]
+    out["diff_ci_hi_by_window"] = cmp["diff_lift_ci_hi" + BY_WINDOW_SUFFIX]
+    out["better_by_window"] = read_interval(
+        out["diff_ci_lo_by_window"], out["diff_ci_hi_by_window"], "априорные", "калибровка"
+    )
+    return out
 
 
 # ---------------------------------------------------------------- достижимость уровней вероятности
@@ -959,6 +1058,7 @@ def write_analysis(
     if sm is not None and len(sm):
         stream_ns = stream_summary_without_shock(sm, result.splits)
         stream_ns.to_csv(out / "stream_summary_no_shock_h20_tol25.csv", index=False)
+    extra = _final_analyses(result, panel, out, sm)
     tables: dict[str, pd.DataFrame] = {}
     points: dict[str, dict[str, tuple]] = {}
     tables_ns: dict[str, pd.DataFrame] = {}
@@ -986,10 +1086,41 @@ def write_analysis(
             monthly,
             tax,
             fixed_cmp,
+            extra,
         ),
         encoding="utf-8",
     )
     return out
+
+
+def _final_analyses(
+    result: BacktestResult, panel: pd.DataFrame, out: Path, stream_matrix: pd.DataFrame | None
+) -> dict[str, pd.DataFrame]:
+    """Три таблицы, добавленные 03.09 вечером (💬 пункты 4, 3, 6): календарное правило как база стека,
+    выживаемость пуша до исполнения, разворот как сожаление. Импорт локальный: модули сами читают
+    помощников отсюда."""
+    from fxmoment.baselines import calendar_matrix, calendar_summary, calendar_vs_stack
+    from fxmoment.execution import execution_survival_table, load_spreads
+    from fxmoment.regret import reversal_regret_table
+
+    ran = tuple(c for c in CORRIDORS if c in result.signals["corridor"].unique())
+    cal = calendar_matrix(panel, result.splits, corridors=ran)
+    cal.to_csv(out / "calendar_rule_windows.csv", index=False)
+    cal_sum = calendar_summary(cal)
+    cal_sum.to_csv(out / "calendar_rule.csv", index=False)
+    cal_cmp = calendar_vs_stack(cal, result.matrix, stream_matrix)
+    cal_cmp.to_csv(out / "calendar_vs_stack.csv", index=False)
+    dec_path = out.parent / "stream_decisions.csv"
+    decided = (
+        pd.read_csv(dec_path, parse_dates=["date"])
+        if dec_path.exists() and dec_path.stat().st_size > 1
+        else None
+    )
+    survival = execution_survival_table(result.signals, decided, panel, load_spreads(panel))
+    survival.to_csv(out / "execution_survival.csv", index=False)
+    regret = reversal_regret_table(result.signals, decided, panel, result.splits)
+    regret.to_csv(out / "reversal_regret.csv", index=False)
+    return {"calendar": cal_sum, "calendar_vs_stack": cal_cmp, "survival": survival, "regret": regret}
 
 
 def _py(v: Any) -> Any:
@@ -1078,9 +1209,61 @@ def _analysis_readme(
     monthly: pd.DataFrame,
     tax: pd.DataFrame,
     fixed_cmp: pd.DataFrame | None = None,
+    extra: dict[str, pd.DataFrame] | None = None,
 ) -> str:
+    from fxmoment.execution import STREAM_LABEL
+
+    extra = extra or {}
     band = _band_table(tables, points)
     band_ns = _band_table(tables_ns, {})
+    cal = extra.get("calendar", pd.DataFrame())
+    cal_first = cal[cal["indicator"].str.endswith(":first")] if len(cal) else cal
+    cal_all = cal[cal["indicator"].str.endswith(":all") & (cal["corridor"] == "all")] if len(cal) else cal
+    cal_cmp = extra.get("calendar_vs_stack", pd.DataFrame())
+    cmp_show = [
+        "rule",
+        "stack",
+        "events_rule",
+        "events_stack",
+        "lift_rule",
+        "lift_stack",
+        "diff_lift",
+        "diff_lift_ci_lo",
+        "diff_lift_ci_hi",
+        "verdict_lift",
+        "diff_lift_ci_lo_by_window",
+        "diff_lift_ci_hi_by_window",
+        "verdict_lift_by_window",
+        "benefit_rule",
+        "benefit_stack",
+        "diff_benefit",
+        "verdict_benefit",
+        "verdict_benefit_by_window",
+    ]
+    surv = extra.get("survival", pd.DataFrame())
+    surv_stream = surv[surv["source"] == STREAM_LABEL] if len(surv) else surv
+    surv_show = [
+        "corridor",
+        "spread_source",
+        "n",
+        "gate_fact_T",
+        "gate_fact_T1",
+        "gate_survival",
+        "own_fact_n",
+        "own_fact_T1",
+        "own_survival",
+        "n_scored",
+        "benefit_fwd_bps",
+        "benefit_fwd_exec_bps",
+        "benefit_fwd_at_p90_spread_bps",
+        "hit_mean",
+        "hit_mean_exec",
+        "share_positive",
+        "share_positive_exec",
+        "spread_mean_bps",
+        "spread_p90_dev_bps",
+    ]
+    regret = extra.get("regret", pd.DataFrame())
     pw_cols = [
         "corridor",
         "n_fast",
@@ -1238,17 +1421,23 @@ def _analysis_readme(
         _md(tax) if len(tax) else "нет данных",
         "",
         "Это диагностика, а не индикатор: среднее за месяц включает будущие дни этого месяца. "
-        "Причинная проверка той же гипотезы — индикатор сезонности, он смотрит только на прошлые годы.",
+        "Причинная проверка той же гипотезы — индикатор сезонности, он смотрит только на прошлые годы. "
+        "`dev_outside_bps` самостоятельной информации не несёт: отклонения от среднего за свой месяц "
+        "в сумме по всем числам дают ноль, поэтому оно равно `dev_in_window_bps`, взятому с обратным "
+        "знаком и умноженному на отношение числа дней. Столбец оставлен для читаемости строки, а не "
+        "как второй замер.",
         "",
         "## Калибровка против априорных параметров",
         "",
         "Стоит ли сетка своих денег. `lift_calibrated` — pooled lift «по среднему» правил, "
         "откалиброванных walk-forward (`reports/latest`); `lift_fixed` — тех же правил на априорных "
         "точках без сетки (`reports/fixed`, команда `backtest --fixed-params`). Интервал разницы — "
-        "парный блочный бутстреп по парам «коридор × окно»: на каждой итерации оба прогона "
-        "пересобираются по одним и тем же блокам, иначе интервал мерил бы ещё и разницу в том, какие "
-        "полугодия попали в выборку. Столбец `better` читает интервал: «разницы нет» значит, что он "
-        "содержит ноль.",
+        "парный блочный бутстреп: на каждой итерации оба прогона пересобираются по одним и тем же "
+        "блокам, иначе интервал мерил бы ещё и разницу в том, какие полугодия попали в выборку. Блок — "
+        "пара «коридор × окно» (`diff_ci_*`, 55 блоков) и рядом окно целиком (`*_by_window`, 11 блоков): "
+        "коридоры скоррелированы с USD/RUB на 0,83–0,97, и первый интервал считает пять почти одинаковых "
+        "коридоров пятью наблюдениями, то есть уже, чем он есть; второй честнее к общему фактору, но по 11 "
+        "блокам груб. Столбцы `better*` читают интервал: «разницы нет» значит, что он содержит ноль.",
         "",
         "У обучаемого индикатора разницы нет по построению: `--fixed-params` трогает только правила, "
         "модель обучается одинаково. Контроль смещён в пользу априорных точек — они заданы до сетки, "
@@ -1260,9 +1449,61 @@ def _analysis_readme(
             else "контрольного прогона нет — сделайте `fxmoment backtest --fixed-params`"
         ),
         "",
-        "`dev_outside_bps` самостоятельной информации не несёт: отклонения от среднего за свой месяц "
-        "в сумме по всем числам дают ноль, поэтому оно равно `dev_in_window_bps`, взятому с обратным "
-        "знаком и умноженному на отношение числа дней. Столбец оставлен для читаемости строки, а не "
-        "как второй замер.",
+        "## Календарное правило как прозрачная база",
+        "",
+        "Правило без индикаторов, параметров и модели. `day20-25` — первый день публикации с 20-го по "
+        "25-е число каждого месяца; `day20-28` — то же для налогового окна; `day25` — первый день "
+        "публикации с 25-го. Режим `first` — один пуш в месяц (у окна 20–28 его нет: первый день с 20-го тот "
+        "же, что у 20–25); `all` — каждый день окна: клиент переводит в любой его день, это правило для "
+        "экрана, а не пуш. Оценка той же метрикой и на тех же окнах, что у "
+        "индикаторов; медианы — по активным окнам, pooled — взвешенно по событиям; строка `all` — по всем "
+        "коридорам. По окнам — `calendar_rule_windows.csv`.",
+        "",
+        _md(cal_first) if len(cal_first) else "нет данных",
+        "",
+        "Режим `all`, по всем коридорам:",
+        "",
+        _md(cal_all) if len(cal_all) else "нет данных",
+        "",
+        "Стек против правила (режим `first`): парный блочный бутстреп, `diff_*` = стек − правило, интервалы "
+        "по парам «коридор × окно» и по окнам (`*_by_window`). Вердикт «разницы нет» — интервал содержит "
+        "ноль, и стек от календаря не отличим. `stream BUY_NOW` — пуши итогового потока после политики. "
+        "Все столбцы — `calendar_vs_stack.csv`.",
+        "",
+        _md(cal_cmp[[c for c in cmp_show if c in cal_cmp.columns]]) if len(cal_cmp) else "нет данных",
+        "",
+        "## Выживаемость сигнала до исполнения",
+        "",
+        "Пуш уходит вечером T по курсу действия, клиент переводит на T+1 по курсу приложения. "
+        "`gate_fact_T` и `gate_fact_T1` — доля пушей, у которых гейт уровня ADR-0005 (`rank120 ≤ 0,2`) "
+        "истинен на T и на T+1; `gate_survival` — доля переживших среди тех, у кого он был истинен на T. "
+        "`own_*` — то же для собственного процентильного факта индикатора, на который ссылается текст "
+        "(уровень, провал, гейт обучаемого; у сезонности и моментума такого факта нет, `own_fact_n` — "
+        "сколько пушей его имеют). `*_exec` — попадание «по среднему», выгода вперёд и доля пушей с "
+        "положительной выгодой при исполнении по курсу a_T·(1 + ε), где ε — отклонение сегодняшнего "
+        "расхождения приложения с фиксингом от его среднего, со знаком. Среднее (`spread_mean_bps`) снято: "
+        "постоянный спред одинаково удорожает день пуша и любой другой день клиента и на выбор дня не "
+        "влияет. Распределение взято из сверки биржи с фиксингом за период оценки (`spread_source`: CNY — "
+        "пара, где оба источника мерят один курс; KZT и AMD — их собственные пары, верхняя граница "
+        "разброса), ожидание — по всему распределению; `benefit_fwd_at_p90_spread_bps` — при ε в девятом "
+        "дециле (`spread_p90_dev_bps`). Здесь пуши `BUY_NOW` итогового потока; по индикаторам — "
+        "`execution_survival.csv`.",
+        "",
+        _md(surv_stream[[c for c in surv_show if c in surv_stream.columns]])
+        if len(surv_stream)
+        else "нет данных",
+        "",
+        "## Разворот как факт: сожаление с даты последнего BUY_NOW",
+        "",
+        "«Окно закрывается» меряется не как прогноз, а как факт для того, кто получил `BUY_NOW` и не "
+        "перевёл: `regret_*` — изменение курса действия с даты последнего `BUY_NOW` за 20 дней публикации "
+        "до разворота, бп (> 0 — ожидание стоило денег); `share_regret_gt_tol` — доля пар с сожалением "
+        "больше рабочего допуска 25 бп; `paired_share` — доля разворотов, перед которыми такой `BUY_NOW` "
+        "был. `pairing` — по событиям индикаторов (`events`) или по отправленным пушам потока (`stream`). "
+        "Прогнозные прочтения рядом, чтобы монетку не прятать: `*_fwd` — через 20 дней курс не ниже (как "
+        "в матрице), `*_rest_of_month` — сегодня не хуже среднего оставшихся дней месяца; базы — по всем "
+        "дням окна события.",
+        "",
+        _md(regret) if len(regret) else "нет данных",
     ]
     return "\n".join(lines)

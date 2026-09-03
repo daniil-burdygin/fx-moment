@@ -141,16 +141,24 @@ def cmd_analyze(args: argparse.Namespace) -> int:
         return 2
     out = analysis.write_analysis(result, panel, source=args.source, k=args.k)
     pd.set_option("display.width", 250)
+    from fxmoment.execution import STREAM_LABEL
+
     for name, title in (
         ("price_of_waiting.csv", "цена ожидания"),
         ("transfer_compare.csv", f"перенос параметров с {args.source}"),
+        ("calendar_vs_stack.csv", "стек против календарного правила"),
+        ("execution_survival.csv", "выживаемость пушей потока до исполнения"),
+        ("reversal_regret.csv", "разворот как сожаление с даты последнего BUY_NOW"),
     ):
         path = out / name
         if not (path.exists() and path.stat().st_size > 1):
             print(f"\n=== {title}: нет данных ===")
             continue
         df = pd.read_csv(path)
+        if "source" in df.columns and name.startswith("execution"):
+            df = df[df["source"] == STREAM_LABEL]
         cols = [c for c in df.columns if not c.endswith("_ci_lo") and not c.endswith("_ci_hi")]
+        cols = [c for c in cols if "_ci_lo_" not in c and "_ci_hi_" not in c]
         print(f"\n=== {title} ===")
         print(df[cols].round(3).to_string(index=False))
     print(f"\nанализы → {out}")
