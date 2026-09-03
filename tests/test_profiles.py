@@ -101,3 +101,18 @@ def test_fit_indicator_defaults_do_not_scale(panel):
     )
     assert params_a == params_b
     assert a.params == b.params
+
+
+def test_pooled_lift_ignores_silent_windows():
+    """Молчащее окно даёт NaN при ненулевом весе; без отсева весь столбец обращался бы в NaN."""
+    from fxmoment.intraday import _pooled_lift
+
+    m = pd.DataFrame(
+        {
+            "n_scored": [10.0, 5.0, 0.0],
+            "hit_mean": [0.6, 0.4, float("nan")],
+            "base_mean": [0.5, 0.5, float("nan")],
+        }
+    )
+    assert _pooled_lift(m) == pytest.approx((0.6 * 10 + 0.4 * 5) / 15 / 0.5)
+    assert pd.isna(_pooled_lift(m.iloc[2:]))

@@ -15,6 +15,7 @@ import json
 from datetime import UTC, datetime
 from pathlib import Path
 
+import numpy as np
 import pandas as pd
 
 from fxmoment.backtest.engine import BacktestResult, run_backtest
@@ -112,19 +113,39 @@ def daily_vs_intraday(
                     "intraday_events": int(i["n_events"].sum()),
                     "intraday_lift_mean_pooled": _pooled_lift(i),
                     "intraday_excess_median_bps": float(i["benefit_excess_bps"].median()),
+                    "note": _compare_note(corridor, indicator, len(d), len(i)),
                 }
             )
     return pd.DataFrame(rows)
 
 
+def _compare_note(corridor: str, indicator: str, n_daily: int, n_intraday: int) -> str:
+    """Почему половина строки пуста. Пустая клетка без объяснения читается как «ноль событий»,
+    а не как «здесь вообще не считали»."""
+    if not n_daily and corridor not in DAILY.corridors:
+        return f"{corridor} — контекст рублёвой стороны, дневного прогона по нему нет"
+    if not n_intraday:
+        return "на часовой оси индикатор выключен профилем (ADR-0010)"
+    if not n_daily:
+        return "на дневной оси индикатор в этих окнах не считался"
+    return ""
+
+
 def _pooled_lift(m: pd.DataFrame) -> float:
+    """Pooled lift «по среднему»: hit и база взвешены числом оценённых событий окна.
+
+    Молчащие окна дают NaN в hit_mean при ненулевом весе, и без их отсева весь столбец
+    обращался бы в NaN — тот же отсев, что в `engine._pooled` (найдено на первом прогоне)."""
     if m.empty:
         return float("nan")
     w = m["n_scored"].fillna(0).to_numpy(dtype=float)
-    if w.sum() <= 0:
+    hit_v = m["hit_mean"].to_numpy(dtype=float)
+    base_v = m["base_mean"].to_numpy(dtype=float)
+    ok = ~np.isnan(hit_v) & ~np.isnan(base_v) & (w > 0)
+    if not ok.any():
         return float("nan")
-    hit = (m["hit_mean"].to_numpy(dtype=float) * w).sum() / w.sum()
-    base = (m["base_mean"].to_numpy(dtype=float) * w).sum() / w.sum()
+    hit = (hit_v[ok] * w[ok]).sum() / w[ok].sum()
+    base = (base_v[ok] * w[ok]).sum() / w[ok].sum()
     return float(hit / base) if base else float("nan")
 
 
