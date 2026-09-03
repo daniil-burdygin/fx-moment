@@ -58,4 +58,12 @@ def build_features(rate: pd.Series, context: pd.DataFrame | None = None) -> pd.D
         local = rate / usd
         f["local_ret5"] = local.pct_change(5)
         f["local_rank60"] = rolling_pct_rank(local, 60)
+    if context is not None and {"USD", "EUR"} <= set(context.columns):
+        # EUR/USD — заменитель индекса доллара из тех же курсов ЦБ: делим EUR/RUB на USD/RUB,
+        # рублёвая сторона сокращается, остаётся мировой курс. У остальных признаков рубль стоит
+        # в обеих частях, поэтому свой доллар они не отличают от общего движения к нему.
+        eurusd = context["EUR"].reindex(rate.index) / context["USD"].reindex(rate.index)
+        f["eurusd_ret5"] = eurusd.pct_change(5)
+        f["eurusd_ret20"] = eurusd.pct_change(20)
+        f["eurusd_rank250"] = rolling_pct_rank(eurusd, 250)
     return f
