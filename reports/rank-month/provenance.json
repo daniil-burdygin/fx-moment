@@ -1,8 +1,8 @@
 {
- "code": "901efcb",
+ "code": "7280800",
  "fetched_at_utc": "2026-09-03T00:04:48+00:00",
  "last_eff_date": "2026-09-03",
- "built_at_utc": "2026-09-03T17:37:43Z",
+ "built_at_utc": "2026-09-03T21:06:02Z",
  "windows": [
   "2021-01…2021-06",
   "2021-07…2021-12",
@@ -17,5 +17,7 @@
   "2026-01…2026-06"
  ],
  "first_test": "2021-01-01",
- "rank_base": "month"
+ "rank_base": "month",
+ "ml": "local",
+ "extra_indicators": []
 }

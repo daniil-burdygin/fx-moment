@@ -1,17 +1,21 @@
 {
- "code": "901efcb",
- "built_at_utc": "2026-09-03T17:34:53Z",
+ "code": "7280800",
+ "built_at_utc": "2026-09-03T21:07:09Z",
  "latest": {
-  "code": "83b0280",
-  "built_at_utc": "2026-09-03T09:31:50Z",
-  "first_test": null,
-  "rank_base": null
+  "code": "7280800",
+  "built_at_utc": "2026-09-03T21:05:54Z",
+  "first_test": "2021-01-01",
+  "rank_base": "window",
+  "ml": "local",
+  "extra_indicators": []
  },
  "variant": {
-  "code": "901efcb",
-  "built_at_utc": "2026-09-03T17:34:52Z",
+  "code": "7280800",
+  "built_at_utc": "2026-09-03T21:07:01Z",
   "first_test": "2019-01-01",
-  "rank_base": "window"
+  "rank_base": "window",
+  "ml": "local",
+  "extra_indicators": []
  },
  "common_windows": [
   "2021-01…2021-06",
@@ -32,6 +36,8 @@
   "2020-01…2020-06",
   "2020-07…2020-12"
  ],
+ "variant_only_indicators": [],
+ "pairs": {},
  "matrix_rows_compared": 6600,
  "matrix_columns_differ": []
 }

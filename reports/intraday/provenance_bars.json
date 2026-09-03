@@ -1,14 +1,14 @@
 {
- "code": "83b0280",
+ "code": "7280800",
  "fetched_at_utc": "2026-09-03T02:30:05+00:00",
  "interval_length": null,
  "profile": "intraday",
  "bars_per_day": 9,
  "daily_report": {
-  "code": "83b0280",
+  "code": "7280800",
   "fetched_at_utc": "2026-09-03T00:04:48+00:00",
   "last_eff_date": "2026-09-03",
-  "built_at_utc": "2026-09-03T09:31:50Z",
+  "built_at_utc": "2026-09-03T21:05:54Z",
   "windows": [
    "2021-01…2021-06",
    "2021-07…2021-12",
@@ -21,9 +21,13 @@
    "2025-01…2025-06",
    "2025-07…2025-12",
    "2026-01…2026-06"
-  ]
+  ],
+  "first_test": "2021-01-01",
+  "rank_base": "window",
+  "ml": "local",
+  "extra_indicators": []
  },
- "built_at_utc": "2026-09-03T09:35:32Z",
+ "built_at_utc": "2026-09-03T21:08:26Z",
  "windows": {
   "KZT": [
    "2022-12…2023-05",

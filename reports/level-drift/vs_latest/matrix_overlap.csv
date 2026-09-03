@@ -32,3 +32,5 @@ base_mean_trunc,6600,0,0.0
 n_scored_trunc,6600,0,0.0
 lift_mean_trunc,6600,0,0.0
 benefit_excess_trunc,6600,0,0.0
+base_mean_month_trunc,6600,0,0.0
+benefit_excess_month_trunc,6600,0,0.0
