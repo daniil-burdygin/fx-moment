@@ -14,21 +14,29 @@ from fxmoment.combine.policy import PolicyParams, apply_policy, storm_flag
 from fxmoment.config import CALIBRATION_H, FREQUENCY_BAND, HORIZONS, PRIMARY_TOL_BPS, TOLERANCES_BPS
 
 DEFAULT_ORDER = ("level", "dip_vs_trend", "ml_localmin", "seasonality", "reversal", "momentum")
-# Столбцы, по которым считается ранг: из единого списка движка (metrics.TRUNC_SOURCE) без
-# lift_mean_trunc — lift здесь пересчитывается из pooled hit и базы, а не усредняется по окнам.
-TRUNC = tuple(c for c in metrics.TRUNC_COLUMNS if c != "lift_mean_trunc")
+# Столбцы, по которым считается ранг, по базе: (hit, база, события, выгода) — усечённые концом
+# окна, из единых списков движка (metrics.TRUNC_SOURCE, MONTH_TRUNC_SOURCE); lift пересчитывается
+# из pooled hit и базы, а не усредняется по окнам.
+RANK_COLUMNS: dict[str, tuple[str, str, str, str]] = {
+    "window": ("hit_mean_trunc", "base_mean_trunc", "n_scored_trunc", "benefit_excess_trunc"),
+    "month": ("hit_mean_trunc", "base_mean_month_trunc", "n_scored_trunc", "benefit_excess_month_trunc"),
+}
 _KEY_COLUMNS = ("corridor", "indicator", "split", "h", "tol_bps")
 
 
-def history_status(matrix: pd.DataFrame | None, h: int | None = None) -> str | None:
+def history_status(
+    matrix: pd.DataFrame | None, h: int | None = None, rank_base: str = "window"
+) -> str | None:
     """Почему матрица бэктеста непригодна для ранга по истории; None — пригодна. Откат к порядку
     по умолчанию раньше был молчаливым: старый matrix.csv без нового столбца выключал весь слой
     ранга и отключений без единого слова (аудит 03.09). Второй такой же откат нашёл аудит 03.09
     вечером: матрица другой оси (профиль ряда, ADR-0010) горизонта `h` не содержит вовсе, срез
     выходил пустым, и слой выключался — поэтому горизонт проверяется здесь, а не в тишине."""
+    if rank_base not in RANK_COLUMNS:
+        return f"неизвестная база ранга {rank_base!r}; допустимы {', '.join(RANK_COLUMNS)}"
     if matrix is None or matrix.empty:
         return "матрица бэктеста пуста или отсутствует — нужен `fxmoment backtest`"
-    missing = [c for c in (*_KEY_COLUMNS, *TRUNC) if c not in matrix.columns]
+    missing = [c for c in (*_KEY_COLUMNS, *RANK_COLUMNS[rank_base]) if c not in matrix.columns]
     if missing:
         return "в матрице нет столбцов " + ", ".join(missing) + " — она собрана старым кодом"
     if h is not None and not (matrix["h"] == h).any():
@@ -43,8 +51,10 @@ def rank_from_history(
     h: int = CALIBRATION_H,
     min_events: int = 20,
     strict: bool = False,
+    rank_base: str = "window",
 ) -> tuple[dict[str, int], tuple[str, ...]]:
     """Ранг индикаторов по pooled lift «по среднему» на окнах < before_split и список отключённых.
+    `rank_base` — база lift и выгоды: окно (ADR-0006) или календарный месяц (ADR-0011, вариант).
 
     Исходы берутся усечённые концом окна (`*_trunc`): полные исходы последних h дней окна k−1
     досчитываются внутри окна k, и без усечения ранг подсматривал бы в будущее (аудит 03.09).
@@ -54,24 +64,25 @@ def rank_from_history(
     (`history_status`) — порядок по умолчанию, при strict=True — ValueError; вызывающий обязан
     сказать об откате пользователю."""
     default = {name: i for i, name in enumerate(DEFAULT_ORDER)}
-    problem = history_status(matrix, h)
+    problem = history_status(matrix, h, rank_base)
     if problem:
         if strict:
             raise ValueError(problem)
         return default, ()
+    hit_c, base_c, n_c, excess_c = RANK_COLUMNS[rank_base]
     m = matrix[
         (matrix["corridor"] == corridor)
         & (matrix["split"] < before_split)
         & (matrix["h"] == h)
         & (matrix["tol_bps"] == PRIMARY_TOL_BPS)
-    ].dropna(subset=["hit_mean_trunc", "base_mean_trunc", "n_scored_trunc"])
+    ].dropna(subset=[hit_c, base_c, n_c])
     if m.empty:
         return default, ()
     g = m.groupby("indicator")
-    n = g["n_scored_trunc"].sum()
-    hit = g.apply(lambda d: _pooled(d, "hit_mean_trunc", "n_scored_trunc"), include_groups=False)
-    base = g.apply(lambda d: _pooled(d, "base_mean_trunc", "n_scored_trunc"), include_groups=False)
-    excess = g.apply(lambda d: _pooled(d, "benefit_excess_trunc", "n_scored_trunc"), include_groups=False)
+    n = g[n_c].sum()
+    hit = g.apply(lambda d: _pooled(d, hit_c, n_c), include_groups=False)
+    base = g.apply(lambda d: _pooled(d, base_c, n_c), include_groups=False)
+    excess = g.apply(lambda d: _pooled(d, excess_c, n_c), include_groups=False)
     lift = (hit / base.replace(0, np.nan)).astype(float)
     muted = tuple(
         str(i)
@@ -140,7 +151,7 @@ def evaluate_stream(
                 (result.signals["corridor"] == corridor) & (result.signals["split"] == split.id)
             ]
             rank, muted = rank_from_history(
-                result.matrix, corridor, split.id, h=calibration_h, strict=True
+                result.matrix, corridor, split.id, h=calibration_h, strict=True, rank_base=params.rank_base
             )
             dec = ev.iloc[0:0]
             if ev.empty:
@@ -154,9 +165,7 @@ def evaluate_stream(
             shape.append(
                 {
                     "corridor": corridor,
-                    **_shape_row(
-                        rate, sent["date"] if len(sent) else [], split, storm, dec, series_gap
-                    ),
+                    **_shape_row(rate, sent["date"] if len(sent) else [], split, storm, dec, series_gap),
                 }
             )
             for scenario in sent["push_scenario"].unique() if len(sent) else []:

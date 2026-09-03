@@ -21,6 +21,34 @@ TRUNC_SOURCE: dict[str, str] = {
     "benefit_excess_trunc": "benefit_excess_bps",
 }
 TRUNC_COLUMNS: tuple[str, ...] = tuple(TRUNC_SOURCE)
+# То же на месячной базе (ADR-0011) для варианта ранга по месяцу; пишутся рядом, ранг по умолчанию
+# их не читает.
+MONTH_TRUNC_SOURCE: dict[str, str] = {
+    "base_mean_month_trunc": "base_mean",
+    "benefit_excess_month_trunc": "benefit_excess_bps",
+}
+MONTH_TRUNC_COLUMNS: tuple[str, ...] = tuple(MONTH_TRUNC_SOURCE)
+BASES: tuple[str, ...] = ("window", "month")
+MIN_MONTH_DAYS = 5  # месяц короче — база окна (ADR-0011 п. 3)
+
+
+def monthly_base(
+    series: pd.Series, days: pd.DatetimeIndex, events: pd.DatetimeIndex, min_days: int = MIN_MONTH_DAYS
+) -> np.ndarray:
+    """База случайного дня по календарному месяцу события (ADR-0011): среднее ряда по дням публикации
+    окна в том же месяце; месяц короче `min_days` размеченных дней отдаёт базу окна."""
+    valid = series.loc[days].dropna()
+    window_base = float(valid.mean()) if len(valid) else np.nan
+    out = np.full(len(events), window_base)
+    if not len(valid) or not len(events):
+        return out
+    by_month = valid.groupby(valid.index.to_period("M"))
+    means, counts = by_month.mean(), by_month.size()
+    for i, t in enumerate(events):
+        m = pd.Timestamp(t).to_period("M")
+        if m in counts.index and counts[m] >= min_days:
+            out[i] = float(means[m])
+    return out
 
 
 def bootstrap_ci(
@@ -94,36 +122,51 @@ def evaluate_events(
     tol_bps: float = 0.0,
     wait_k: int = 5,
     with_ci: bool = True,
+    base: str = "window",
 ) -> dict:
-    """Метрики одного индикатора на одном коридоре в одном оценочном окне для горизонта h."""
+    """Метрики одного индикатора на одном коридоре в одном оценочном окне для горизонта h.
+
+    `base` — с чем сравнивается событие в прочтении «по среднему» и в выгоде сверх случайного дня:
+    `window` — все дни публикации окна (ADR-0003, головная), `month` — дни того же календарного
+    месяца (ADR-0011, вариант для ранга). Строгое прочтение `hit_rate`/`base_rate` всегда по окну."""
+    if base not in BASES:
+        raise ValueError(f"неизвестная база {base!r}; допустимы {', '.join(BASES)}")
     start, end = window
     days = rate.loc[start:end].index
     hit_all = labels.hit_for_scenario(rate, scenario, h, tol_bps)
     base_days = hit_all.loc[days].dropna()
-    base = float(base_days.mean()) if len(base_days) else np.nan
+    base_rate = float(base_days.mean()) if len(base_days) else np.nan
     ev_idx = events.loc[start:end]
     ev_idx = ev_idx[ev_idx.fillna(False).astype(bool)].index
     hits = hit_all.loc[ev_idx].dropna()
     n = int(len(hits))
     hit = float(hits.mean()) if n else np.nan
-    lift = hit / base if n and base and base > 0 else np.nan
+    lift = hit / base_rate if n and base_rate and base_rate > 0 else np.nan
     # прочтение «по среднему»: клиент против своего типичного дня в горизонте
     hit_mean_all = labels.hit_for_scenario(rate, scenario, h, tol_bps, mode="mean")
-    base_mean = float(hit_mean_all.loc[days].dropna().mean()) if len(days) else np.nan
     hits_mean = hit_mean_all.loc[ev_idx].dropna()
+    if base == "month":
+        base_mean = (
+            float(monthly_base(hit_mean_all, days, hits_mean.index).mean()) if len(hits_mean) else np.nan
+        )
+    else:
+        base_mean = float(hit_mean_all.loc[days].dropna().mean()) if len(days) else np.nan
     hit_mean = float(hits_mean.mean()) if len(hits_mean) else np.nan
     lift_mean = hit_mean / base_mean if len(hits_mean) and base_mean and base_mean > 0 else np.nan
     bf_all = labels.benefit_fwd_bps(rate, h)
-    bf_base = float(bf_all.loc[days].dropna().mean()) if len(days) else np.nan  # выгода случайного дня
     bf = bf_all.loc[ev_idx].dropna()
+    if base == "month":  # выгода случайного дня — по месяцу каждого события
+        bf_base = float(monthly_base(bf_all, days, bf.index).mean()) if len(bf) else np.nan
+    else:
+        bf_base = float(bf_all.loc[days].dropna().mean()) if len(days) else np.nan
     bs = labels.benefit_sym_bps(rate, h).loc[ev_idx].dropna()
     wk = labels.wait_benefit_bps(rate, wait_k).loc[ev_idx].dropna()
     ci_lo, ci_hi = bootstrap_ci(bf.to_numpy()) if (with_ci and n >= 5) else (np.nan, np.nan)
     bci_lo, bci_hi = block_bootstrap_ci(bf) if (with_ci and n >= 5) else (np.nan, np.nan)
     lift_lo, lift_hi = (np.nan, np.nan)
-    if with_ci and n >= 5 and base and base > 0:
+    if with_ci and n >= 5 and base_rate and base_rate > 0:
         lo, hi = bootstrap_ci(hits.to_numpy())
-        lift_lo, lift_hi = lo / base, hi / base
+        lift_lo, lift_hi = lo / base_rate, hi / base_rate
     cl = clumpiness(ev_idx, days)
     return {
         "h": h,
@@ -131,7 +174,7 @@ def evaluate_events(
         "n_events": int(len(ev_idx)),
         "n_scored": n,
         "hit_rate": hit,
-        "base_rate": base,
+        "base_rate": base_rate,
         "lift": lift,
         "lift_ci_lo": lift_lo,
         "lift_ci_hi": lift_hi,

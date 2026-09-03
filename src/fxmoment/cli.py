@@ -11,7 +11,9 @@ from typing import Any
 
 import pandas as pd
 
-from fxmoment.config import ALL_CURRENCIES, ANALYSIS_START, MOEX_RAW_START, RAW_START
+from fxmoment.config import ALL_CURRENCIES, ANALYSIS_START, FIRST_TEST, MOEX_RAW_START, RAW_START
+
+PROTECTED_RUNS = ("latest", "fixed", "intraday")  # каталоги основных отчётов: варианты сюда не пишутся
 
 
 def cmd_fetch(args: argparse.Namespace) -> int:
@@ -98,21 +100,33 @@ def cmd_intraday(args: argparse.Namespace) -> int:
 
 def cmd_backtest(args: argparse.Namespace) -> int:
     from fxmoment.backtest import run_backtest
-    from fxmoment.data.store import load_panel
+    from fxmoment.combine import PolicyParams
+    from fxmoment.data.store import load_panel, repo_root
     from fxmoment.indicators import ALL_INDICATORS, BASE_INDICATORS
     from fxmoment.report import write_report
 
+    variant = args.first_test != FIRST_TEST or args.rank_base != "window"
+    if variant and not args.out:
+        print("вариантный прогон (--first-test, --rank-base) пишется только в свой каталог: укажите --out")
+        return 2
+    if args.out and (args.out in PROTECTED_RUNS or "/" in args.out or args.out.startswith(".")):
+        print(f"--out {args.out!r}: имя каталога варианта не может совпадать с основными отчётами")
+        return 2
     panel = load_panel()
     inds = BASE_INDICATORS if args.no_ml else ALL_INDICATORS
     corridors = tuple(args.corridors.split(",")) if args.corridors else None
     kwargs = {"corridors": corridors} if corridors else {}
     result = run_backtest(
-        panel, indicators=inds, analysis_start=args.start, fixed_params=args.fixed_params, **kwargs
+        panel,
+        indicators=inds,
+        analysis_start=args.start,
+        fixed_params=args.fixed_params,
+        first_test=args.first_test,
+        **kwargs,
     )
-    from fxmoment.data.store import repo_root
-
-    out_dir = repo_root() / "reports" / ("fixed" if args.fixed_params else "latest")
-    out = write_report(result, panel, out_dir)
+    name = args.out or ("fixed" if args.fixed_params else "latest")
+    out_dir = repo_root() / "reports" / name
+    out = write_report(result, panel, out_dir, policy=PolicyParams(rank_base=args.rank_base))
     pd.set_option("display.width", 250)
     for h in (20, 5):
         print(f"\n=== h = {h}, допуск {args.tol:g} бп ===")
@@ -126,6 +140,39 @@ def cmd_backtest(args: argparse.Namespace) -> int:
             print(f"\n=== {title} ===")
             print(pd.read_csv(path).round(3).to_string(index=False))
     print(f"\nотчёт → {out}")
+    return 0
+
+
+def cmd_compare_runs(args: argparse.Namespace) -> int:
+    from fxmoment.data.store import load_panel, repo_root
+    from fxmoment.variants import compare_runs
+
+    root = repo_root() / "reports"
+    variant = root / args.variant
+    if args.variant in PROTECTED_RUNS or not (variant / "matrix.csv").exists():
+        print(
+            f"нет вариантного прогона {variant / 'matrix.csv'} — "
+            f"сначала `fxmoment backtest --out {args.variant}`"
+        )
+        return 2
+    out = compare_runs(root / "latest", variant, load_panel())
+    pd.set_option("display.width", 250)
+    for name, title in (
+        ("matrix_overlap.csv", "общие окна: расхождения строк матрицы"),
+        ("stream_compare.csv", "итоговый поток: вариант против latest"),
+        ("stream_raw.csv", "итоговый поток без базы: доля попаданий и выгода вперёд"),
+        ("stream_shape.csv", "форма потока: вариант против latest"),
+        ("extra_windows.csv", "окна только у варианта: индикаторы"),
+        ("extra_windows_stream.csv", "окна только у варианта: итоговый поток"),
+        ("extra_windows_shape.csv", "окна только у варианта: форма потока"),
+    ):
+        path = out / name
+        if path.exists() and path.stat().st_size > 1:
+            df = pd.read_csv(path)
+            cols = [c for c in df.columns if "_ci_" not in c]
+            print(f"\n=== {title} ===")
+            print(df[cols].round(3).to_string(index=False))
+    print(f"\nсравнение → {out}")
     return 0
 
 
@@ -310,7 +357,23 @@ def main(argv: list[str] | None = None) -> int:
         action="store_true",
         help="правила с априорными параметрами без калибровки → reports/fixed/ (контроль калибровки)",
     )
+    b.add_argument(
+        "--first-test", default=FIRST_TEST, help="начало первого тестового окна (вариант «тест с 2019»)"
+    )
+    b.add_argument(
+        "--rank-base",
+        choices=("window", "month"),
+        default="window",
+        help="база lift для ранга и отключений индикаторов: окно (ADR-0006) или месяц (ADR-0011)",
+    )
+    b.add_argument("--out", default="", help="каталог варианта внутри reports/ (обязателен для вариантов)")
     b.set_defaults(func=cmd_backtest)
+
+    cr = sub.add_parser(
+        "compare-runs", help="вариантный прогон против reports/latest → reports/<вариант>/vs_latest/"
+    )
+    cr.add_argument("--variant", required=True, help="имя каталога варианта внутри reports/")
+    cr.set_defaults(func=cmd_compare_runs)
 
     a = sub.add_parser("analyze", help="анализы поверх reports/latest → reports/latest/analysis/")
     a.add_argument("--source", default="KZT", help="коридор-источник для переноса параметров")

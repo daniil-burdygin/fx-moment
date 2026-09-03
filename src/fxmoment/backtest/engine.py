@@ -22,6 +22,7 @@ from fxmoment.config import (
     CALIBRATION_H,
     CONTEXT,
     CORRIDORS,
+    FIRST_TEST,
     HORIZONS,
     PRIMARY_TOL_BPS,
     TOLERANCES_BPS,
@@ -279,12 +280,15 @@ def run_backtest(
     grid_scale: int = 1,
     bounds: tuple[float, float, int] | None = None,
     context: tuple[str, ...] = CONTEXT,
+    first_test: str = FIRST_TEST,
 ) -> BacktestResult:
     """`calibration_h`, `grid_scale` и `context` задаются профилем ряда (ADR-0010): по умолчанию —
     дневная ось ЦБ, на часовой оси Мосбиржи горизонт и окна сеток в барах. `bounds` профилем не
-    задаётся: полоса частоты — свойство канала, а не шага ряда."""
+    задаётся: полоса частоты — свойство канала, а не шага ряда. `first_test` — начало первого
+    тестового окна (вариант «тест с 2019»): обучение расширяющееся от `analysis_start`, поэтому окна,
+    общие с прогоном по умолчанию, обязаны дать те же строки матрицы."""
     ana = panel.loc[pd.Timestamp(analysis_start) :]
-    splits = splits or make_splits(ana.index)
+    splits = splits or make_splits(ana.index, first_test=first_test)
     ctx_all = panel[[c for c in context if c in panel.columns]]
     sig_rows: list[dict] = []
     mat_rows: list[dict] = []
@@ -340,6 +344,17 @@ def run_backtest(
                                 rate_upto, out["signal"], ind.scenario, h, win, tol, with_ci=False
                             )
                             row.update({c: mt[s] for c, s in metrics.TRUNC_SOURCE.items()})
+                            mm = metrics.evaluate_events(
+                                rate_upto,
+                                out["signal"],
+                                ind.scenario,
+                                h,
+                                win,
+                                tol,
+                                with_ci=False,
+                                base="month",
+                            )
+                            row.update({c: mm[s] for c, s in metrics.MONTH_TRUNC_SOURCE.items()})
                         mat_rows.append(row)
     signals = pd.DataFrame(sig_rows, columns=SIGNAL_COLUMNS)
     if len(signals):
