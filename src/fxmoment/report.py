@@ -7,6 +7,7 @@ import json
 import subprocess
 from datetime import UTC, datetime
 from pathlib import Path
+from typing import Any
 
 import matplotlib
 
@@ -61,7 +62,14 @@ def stamp() -> str:
     )
 
 
-def write_report(result: BacktestResult, panel: pd.DataFrame, out_dir: Path | None = None) -> Path:
+def write_report(
+    result: BacktestResult, panel: pd.DataFrame, out_dir: Path | None = None, policy: Any = None
+) -> Path:
+    """`policy` — параметры политики потока (`PolicyParams`); None — умолчания. Вариант ранга и начало
+    первого окна пишутся в провенанс, чтобы каталог варианта нельзя было принять за основной."""
+    from fxmoment.combine import PolicyParams
+
+    policy = policy or PolicyParams()
     out = out_dir or (repo_root() / "reports" / "latest")
     out.mkdir(parents=True, exist_ok=True)
     result.signals.to_csv(out / "signals.csv", index=False)
@@ -76,7 +84,7 @@ def write_report(result: BacktestResult, panel: pd.DataFrame, out_dir: Path | No
 
     # горизонт и порог серии берутся у профиля, а не совпадают с умолчанием случайно
     decided, stream_matrix, shape = evaluate_stream(
-        result, panel, calibration_h=DAILY.calibration_h, series_gap=DAILY.series_gap
+        result, panel, params=policy, calibration_h=DAILY.calibration_h, series_gap=DAILY.series_gap
     )
     decided.to_csv(out / "stream_decisions.csv", index=False)
     stream_matrix.to_csv(out / "stream_matrix.csv", index=False)
@@ -92,12 +100,15 @@ def write_report(result: BacktestResult, panel: pd.DataFrame, out_dir: Path | No
         "last_eff_date": meta.get("last_eff_date"),
         "built_at_utc": f"{datetime.now(UTC):%Y-%m-%dT%H:%M:%SZ}",
         "windows": [s.label() for s in result.splits],
+        "first_test": f"{result.splits[0].test_start:%Y-%m-%d}" if result.splits else None,
+        "rank_base": policy.rank_base,
     }
     (out / "provenance.json").write_text(
         json.dumps(provenance, ensure_ascii=False, indent=1), encoding="utf-8"
     )
+    variant = "" if policy.rank_base == "window" else f"; ранг индикаторов на базе «{policy.rank_base}»"
     lines = [
-        "# Бэктест — сводка (h = 20, допуск 25 бп, медианы по окнам walk-forward)",
+        "# Бэктест — сводка (h = 20, допуск 25 бп, медианы по окнам walk-forward" + variant + ")",
         "",
         stamp(),
         "",

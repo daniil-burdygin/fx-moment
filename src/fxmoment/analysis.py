@@ -23,6 +23,7 @@ from fxmoment.config import (
     CALIBRATION_H,
     CONTEXT,
     CORRIDORS,
+    FIRST_TEST,
     FREQUENCY_BAND,
     PRIMARY_TOL_BPS,
     SHOCK_REGIME,
@@ -51,8 +52,21 @@ def load_result(panel: pd.DataFrame, out_dir: Path | None = None) -> BacktestRes
     signals = pd.read_csv(out / "signals.csv", parse_dates=["date"])
     matrix = pd.read_csv(out / "matrix.csv")
     calibration = pd.read_csv(out / "calibration.csv")
-    splits = make_splits(panel.loc[pd.Timestamp(ANALYSIS_START) :].index)
+    windows = backtest_provenance(out).get("windows") or []
+    first_test = first_test_from_labels(windows) or FIRST_TEST
+    splits = make_splits(panel.loc[pd.Timestamp(ANALYSIS_START) :].index, first_test=first_test)
+    if windows and [s.label() for s in splits] != list(windows):
+        raise ValueError(f"окна отчёта {out} не совпадают с окнами по панели — другой снимок данных")
     return BacktestResult(signals, matrix, calibration, splits)
+
+
+def first_test_from_labels(windows: list[str]) -> str | None:
+    """Начало первого тестового окна по меткам провенанса (`2019-01…2019-06` → `2019-01-01`):
+    вариантный прогон «тест с 2019» иначе читался бы с окнами прогона по умолчанию."""
+    if not windows:
+        return None
+    head = str(windows[0]).split("…")[0]
+    return f"{head}-01" if len(head) == 7 else None
 
 
 def backtest_provenance(out_dir: Path | None = None) -> dict[str, Any]:
