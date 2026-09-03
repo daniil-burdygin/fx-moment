@@ -1,14 +1,14 @@
 {
- "code": "9862c7a",
+ "code": "83b0280",
  "fetched_at_utc": "2026-09-03T02:30:05+00:00",
  "interval_length": null,
  "profile": "intraday",
  "bars_per_day": 9,
  "daily_report": {
-  "code": "9862c7a",
+  "code": "83b0280",
   "fetched_at_utc": "2026-09-03T00:04:48+00:00",
   "last_eff_date": "2026-09-03",
-  "built_at_utc": "2026-09-03T06:11:26Z",
+  "built_at_utc": "2026-09-03T09:31:50Z",
   "windows": [
    "2021-01…2021-06",
    "2021-07…2021-12",
@@ -23,7 +23,7 @@
    "2026-01…2026-06"
   ]
  },
- "built_at_utc": "2026-09-03T06:15:11Z",
+ "built_at_utc": "2026-09-03T09:35:32Z",
  "windows": {
   "KZT": [
    "2022-12…2023-05",
