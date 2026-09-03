@@ -703,14 +703,15 @@ def _band_table(tables: dict[str, pd.DataFrame], points: dict[str, dict[str, tup
                 "bound_rare_freq": float(rare["freq_per_week"].iloc[0]) if len(rare) else np.nan,
                 "bound_rare_lift_mean": float(rare["lift_mean"].iloc[0]) if len(rare) else np.nan,
                 "bound_rare_excess_bps": float(rare["benefit_excess_bps"].iloc[0]) if len(rare) else np.nan,
-                "calibrated_freq": points.get(corridor, {}).get(
-                    "level (калибровка walk-forward)", (np.nan, np.nan)
-                )[0],
-                "calibrated_lift_mean": points.get(corridor, {}).get(
-                    "level (калибровка walk-forward)", (np.nan, np.nan)
-                )[1],
             }
         )
+        # рабочая точка известна только для полного набора окон: она считается по потоку, который
+        # окон шокового режима не исключает. Без неё столбца нет вовсе — пустой столбец в отчёте
+        # читался бы как «калибровка не дала точки», а не как «здесь этот вопрос не задан».
+        if points:
+            pt = points.get(corridor, {}).get("level (калибровка walk-forward)", (np.nan, np.nan))
+            band_rows[-1]["calibrated_freq"] = pt[0]
+            band_rows[-1]["calibrated_lift_mean"] = pt[1]
     return pd.DataFrame(band_rows)
 
 
@@ -858,7 +859,8 @@ def _analysis_readme(
         "",
         _md(band) if len(band) else "нет данных",
         "",
-        "То же без окон шокового режима 2022 (`frontier_no_shock.png`):",
+        "То же без окон шокового режима 2022 (`frontier_no_shock.png`); рабочей точки здесь нет — "
+        "она считается по итоговому потоку, а он шоковые окна не исключает:",
         "",
         _md(band_ns) if len(band_ns) else "нет данных",
     ]

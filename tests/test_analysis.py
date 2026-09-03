@@ -55,3 +55,20 @@ def test_frontier_points_are_out_of_sample_and_flagged(panel):
     if len(sm):
         st = analysis.stream_summary_without_shock(sm, splits)
         assert "freq_per_week_scenario_median" in st.columns
+
+
+def test_band_table_omits_operating_point_when_it_is_not_defined(panel):
+    """Столбцов рабочей точки нет вовсе, когда её не считали, — вместо столбца из NaN.
+
+    Пустой столбец в отчёте читается как «калибровка точки не дала», хотя вопрос там
+    просто не задан: без шоковых окон рабочей точки нет, поток их не исключает.
+    """
+    _, splits = _small_result(panel)
+    grid = [{"window": 60, "pct": p, "stall_days": 0, "rearm": 3} for p in (0.1, 0.3)]
+    tables = {"TJS": analysis.frontier_table(panel, "TJS", splits, grid=grid)}
+    with_point = analysis._band_table(tables, {"TJS": {"level (калибровка walk-forward)": (0.4, 1.2)}})
+    without = analysis._band_table(tables, {})
+    assert list(with_point["calibrated_lift_mean"]) == [1.2]
+    assert "calibrated_lift_mean" not in without.columns
+    assert "calibrated_freq" not in without.columns
+    assert set(without.columns) < set(with_point.columns)
