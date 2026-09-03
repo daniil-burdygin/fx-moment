@@ -371,6 +371,215 @@ def stream_summary_without_shock(
     return stream_summary(stream_matrix[~stream_matrix["split"].isin(ids)], h=h, tol_bps=tol_bps)
 
 
+# ---------------------------------------------------------------- база: полугодие против месяца
+
+
+MIN_MONTH_DAYS = 5  # дней публикации в календарном месяце, иначе месячная база слишком шумная
+
+
+def _base_by_split(
+    series: pd.Series, days: pd.DatetimeIndex, sod: pd.Series, splits: list[Split]
+) -> dict[int, float]:
+    """Среднее ряда по тестовым дням каждого окна — нынешняя база случайного дня."""
+    return {s.id: float(series.reindex(days[sod.reindex(days) == s.id]).dropna().mean()) for s in splits}
+
+
+def monthly_baseline_table(
+    result: BacktestResult,
+    panel: pd.DataFrame,
+    h: int = CALIBRATION_H,
+    tol_bps: float = PRIMARY_TOL_BPS,
+) -> pd.DataFrame:
+    """База случайного дня, стратифицированная по КАЛЕНДАРНОМУ МЕСЯЦУ, против нынешней — по окну.
+
+    Зачем. Нынешняя база сравнивает сигнал со средним днём полугодового окна, а клиент, переводящий
+    раз в месяц, выбирает день внутри месяца. Если внутри полугодия есть месяцы систематически лучше
+    прочих, часть нынешнего lift — заслуга попадания в удачный месяц, а не в удачный день.
+
+    Месяц с числом дней публикации меньше `MIN_MONTH_DAYS` отдаётся базе окна: месячная оценка по
+    трём дням шумнее того, что она измеряет. Сколько раз так вышло — в `fallback_events`.
+
+    Интервал разницы выгод — бутстреп по событиям; события внутри месяца перекрываются горизонтом,
+    поэтому интервал оптимистичен, и это тот же оптимизм, что у остальных интервалов отчёта."""
+    rows: list[dict] = []
+    for corridor, grp in result.signals.groupby("corridor"):
+        rate = panel[corridor].dropna()
+        days = _test_days(rate, result.splits)
+        if not len(days):
+            continue
+        sod = _split_of_day(rate, result.splits)
+        hit_all = labels.hit_for_scenario(rate, BUY_NOW, h, tol_bps, mode="mean")
+        bf_all = labels.benefit_fwd_bps(rate, h)
+        base_hit_split = _base_by_split(hit_all, days, sod, result.splits)
+        base_bf_split = _base_by_split(bf_all, days, sod, result.splits)
+        month_of = pd.Series(days.to_period("M"), index=days)
+        base_hit_month: dict[pd.Period, float] = {}
+        base_bf_month: dict[pd.Period, float] = {}
+        for m, idx in month_of.groupby(month_of):
+            d = idx.index
+            if len(d) < MIN_MONTH_DAYS:
+                continue
+            base_hit_month[m] = float(hit_all.reindex(d).dropna().mean())
+            base_bf_month[m] = float(bf_all.reindex(d).dropna().mean())
+        for indicator, ev in grp.groupby("indicator"):
+            dates = pd.DatetimeIndex(pd.to_datetime(ev["date"])).intersection(days)
+            hv = hit_all.reindex(dates)
+            ok = hv.notna()
+            dates_ok = dates[ok.to_numpy()]
+            if not len(dates_ok):
+                continue
+            split_ids = pd.Series(dates_ok).map(sod)
+            months = pd.Series(dates_ok).map(month_of)
+            base_split = split_ids.map(base_hit_split).to_numpy(dtype=float)
+            base_month = months.map(base_hit_month).to_numpy(dtype=float)
+            fallback = np.isnan(base_month)
+            base_month = np.where(fallback, base_split, base_month)
+            bf_ev = bf_all.reindex(dates_ok).to_numpy(dtype=float)
+            bf_split = split_ids.map(base_bf_split).to_numpy(dtype=float)
+            bf_month = np.where(fallback, bf_split, months.map(base_bf_month).to_numpy(dtype=float))
+            hit = float(hv[ok].mean())
+            mean_base_split = float(np.nanmean(base_split))
+            mean_base_month = float(np.nanmean(base_month))
+            excess_split = bf_ev - bf_split
+            excess_month = bf_ev - bf_month
+            diff = excess_month - excess_split
+            lo, hi = _ci(diff) if len(diff) >= 5 else (np.nan, np.nan)
+            rows.append(
+                {
+                    "indicator": indicator,
+                    "corridor": corridor,
+                    "events": int(len(dates_ok)),
+                    "fallback_events": int(fallback.sum()),
+                    "hit_mean_pooled": hit,
+                    "base_window": mean_base_split,
+                    "base_month": mean_base_month,
+                    "lift_window": hit / mean_base_split if mean_base_split > 0 else np.nan,
+                    "lift_month": hit / mean_base_month if mean_base_month > 0 else np.nan,
+                    "excess_window_bps": float(np.nanmean(excess_split)),
+                    "excess_month_bps": float(np.nanmean(excess_month)),
+                    "excess_diff_bps": float(np.nanmean(diff)),
+                    "excess_diff_ci_lo": lo,
+                    "excess_diff_ci_hi": hi,
+                }
+            )
+    return pd.DataFrame(rows).sort_values(["indicator", "corridor"]).reset_index(drop=True)
+
+
+# ---------------------------------------------------------------- сезонность и налоговый период
+
+
+TAX_WINDOW = (20, 28)  # числа месяца, на которые приходится продажа валюты экспортёрами под налоги
+
+
+def day_of_month_table(
+    panel: pd.DataFrame,
+    splits: list[Split],
+    corridors: tuple[str, ...] = CORRIDORS,
+) -> pd.DataFrame:
+    """Отклонение курса от среднего за свой календарный месяц по числам месяца, бп.
+
+    Гипотеза о механизме сезонности: экспортёры продают валюту под налоги к 28-му, рубль к концу
+    месяца крепче, и курс валюты получателя в рублях в эти дни ниже — то есть отправителю дешевле.
+    Отрицательное отклонение в окне 20–28 подтверждает механизм.
+
+    Рядом — та же величина после снятия ЛИНЕЙНОГО тренда внутри месяца (`dev_detrended_bps`).
+    Рубль за период ослаб, и у растущего ряда начало месяца механически ниже среднего за месяц, а
+    конец выше — независимо от всякой сезонности. Линейная составляющая это и снимает; то, что
+    остаётся, линейным дрейфом объяснить нельзя.
+
+    Это ДИАГНОСТИКА, а не индикатор: среднее за месяц включает будущие дни этого месяца, и в
+    сигнальный контур такая величина попасть не может. Причинная проверка той же гипотезы —
+    индикатор сезонности, который смотрит только на прошлые годы."""
+    rows = []
+    for corridor in corridors:
+        if corridor not in panel.columns:
+            continue
+        rate = panel[corridor].dropna()
+        days = _test_days(rate, splits)
+        r = rate.reindex(days).dropna()
+        if not len(r):
+            continue
+        month = r.index.to_period("M")
+        dev_bps = (r / r.groupby(month).transform("mean") - 1) * 1e4
+        detrended = _detrend_within_month(r, month)
+        for day in sorted(set(r.index.day)):
+            mask = r.index.day == day
+            v = dev_bps[mask].to_numpy(dtype=float)
+            vd = detrended[mask].to_numpy(dtype=float)
+            lo, hi = _ci(v) if len(v) >= 5 else (np.nan, np.nan)
+            dlo, dhi = _ci(vd) if len(vd) >= 5 else (np.nan, np.nan)
+            rows.append(
+                {
+                    "corridor": corridor,
+                    "day_of_month": int(day),
+                    "n_days": int(len(v)),
+                    "dev_from_month_mean_bps": float(v.mean()),
+                    "ci_lo": lo,
+                    "ci_hi": hi,
+                    "dev_detrended_bps": float(vd.mean()),
+                    "detrended_ci_lo": dlo,
+                    "detrended_ci_hi": dhi,
+                    "in_tax_window": TAX_WINDOW[0] <= int(day) <= TAX_WINDOW[1],
+                }
+            )
+    return pd.DataFrame(rows)
+
+
+def _detrend_within_month(r: pd.Series, month: pd.PeriodIndex) -> pd.Series:
+    """Остаток после снятия линейного тренда внутри каждого месяца, бп от среднего за месяц.
+
+    Месяц короче трёх дней публикации остаётся как есть: прямую по двум точкам провести можно,
+    но остаток от неё тождественно нулевой и в среднее не должен идти."""
+    out = pd.Series(np.nan, index=r.index)
+    for _, idx in pd.Series(month, index=r.index).groupby(month):
+        d = idx.index
+        y = r.reindex(d).to_numpy(dtype=float)
+        if len(d) < 3 or not np.isfinite(y).all():
+            continue
+        x = np.arange(len(d), dtype=float)
+        slope, intercept = np.polyfit(x, y, 1)
+        resid = y - (slope * x + intercept)
+        out.loc[d] = resid / y.mean() * 1e4
+    return out
+
+
+def _weighted(g: pd.DataFrame, column: str = "dev_from_month_mean_bps") -> float:
+    """Среднее отклонение, взвешенное числом дней: у чисел 29–31 наблюдений меньше."""
+    n = float(g["n_days"].sum())
+    return float((g[column] * g["n_days"]).sum() / n) if n else float("nan")
+
+
+def tax_window_summary(day_table: pd.DataFrame) -> pd.DataFrame:
+    """Сводка по гипотезе: отклонение внутри налогового окна против остальных дней месяца."""
+    rows = []
+    for corridor, g in day_table.groupby("corridor"):
+        inside = g[g["in_tax_window"]]
+        outside = g[~g["in_tax_window"]]
+        n_in = int(inside["n_days"].sum())
+        n_out = int(outside["n_days"].sum())
+        mean_in = _weighted(inside) if n_in else np.nan
+        mean_out = _weighted(outside) if n_out else np.nan
+        det_in = _weighted(inside, "dev_detrended_bps") if n_in else np.nan
+        det_out = _weighted(outside, "dev_detrended_bps") if n_out else np.nan
+        rows.append(
+            {
+                "corridor": corridor,
+                "days_in_window": n_in,
+                "days_outside": n_out,
+                "dev_in_window_bps": mean_in,
+                "dev_outside_bps": mean_out,
+                "difference_bps": mean_in - mean_out,
+                "detrended_in_window_bps": det_in,
+                "detrended_outside_bps": det_out,
+                "detrended_difference_bps": det_in - det_out,
+                # механизм подтверждается, если в налоговом окне курс НИЖЕ (отправителю дешевле),
+                # и подтверждается ЧЕСТНО, только если это выживает снятие тренда
+                "supports_hypothesis": bool(mean_in < mean_out and det_in < det_out),
+            }
+        )
+    return pd.DataFrame(rows)
+
+
 # ---------------------------------------------------------------- достижимость уровней вероятности
 
 
@@ -646,6 +855,14 @@ def write_analysis(
     conf.to_csv(out / "confidence_by_h_tol.csv", index=False)
     tol_needed = tolerance_for_confidence(result, panel)
     tol_needed.to_csv(out / "tolerance_for_confidence.csv", index=False)
+    monthly = monthly_baseline_table(result, panel)
+    monthly.to_csv(out / "monthly_baseline.csv", index=False)
+    dom = day_of_month_table(panel, result.splits)
+    dom.to_csv(out / "day_of_month.csv", index=False)
+    tax = tax_window_summary(dom) if len(dom) else pd.DataFrame()
+    tax.to_csv(out / "tax_window.csv", index=False)
+    if len(dom):
+        plot_day_of_month(dom, out / "day_of_month.png")
     stream_path = out.parent / "stream_matrix.csv"
     sm = pd.read_csv(stream_path) if stream_path.exists() else None
     shape_path = out.parent / "stream_shape.csv"
@@ -667,7 +884,9 @@ def write_analysis(
         plot_frontier(tables, points, out / "frontier.png")
         plot_frontier(tables_ns, {}, out / "frontier_no_shock.png", subtitle="без окон шокового режима 2022")
     (out / "README.md").write_text(
-        _analysis_readme(pw, pw_ns, cmp_, no_shock, stream_ns, conf, tol_needed, tables, tables_ns, points),
+        _analysis_readme(
+            pw, pw_ns, cmp_, no_shock, stream_ns, conf, tol_needed, tables, tables_ns, points, monthly, tax
+        ),
         encoding="utf-8",
     )
     return out
@@ -715,6 +934,36 @@ def _band_table(tables: dict[str, pd.DataFrame], points: dict[str, dict[str, tup
     return pd.DataFrame(band_rows)
 
 
+def plot_day_of_month(day_table: pd.DataFrame, path: Path) -> None:
+    """Форма месяца: отклонение курса по числам, до и после снятия линейного тренда."""
+    import matplotlib
+
+    matplotlib.use("Agg")
+    import matplotlib.pyplot as plt
+
+    fig, (ax_raw, ax_det) = plt.subplots(1, 2, figsize=(12, 4.5), sharex=True)
+    for ax, col, title in (
+        (ax_raw, "dev_from_month_mean_bps", "Отклонение от среднего за месяц"),
+        (ax_det, "dev_detrended_bps", "То же после снятия линейного тренда"),
+    ):
+        for corridor, g in day_table.groupby("corridor"):
+            g = g.sort_values("day_of_month")
+            ax.plot(g["day_of_month"], g[col], marker=".", linewidth=1, alpha=0.6, label=str(corridor))
+        mean = day_table.groupby("day_of_month")[col].mean()
+        ax.plot(mean.index, mean.to_numpy(), color="black", linewidth=2.2, label="среднее")
+        ax.axhline(0, color="grey", linewidth=1)
+        ax.axvspan(TAX_WINDOW[0], TAX_WINDOW[1], color="tab:orange", alpha=0.12)
+        ax.set_title(title)
+        ax.set_xlabel("число месяца (оранжевое — окно налогов, 20–28)")
+        ax.set_ylabel("бп; ниже нуля — отправителю дешевле")
+        ax.grid(alpha=0.3)
+    ax_raw.legend(fontsize=8, ncol=2)
+    fig.suptitle("Форма месяца: когда внутри месяца курс ниже своего среднего")
+    fig.tight_layout()
+    fig.savefig(path, dpi=130)
+    plt.close(fig)
+
+
 def _analysis_readme(
     pw: pd.DataFrame,
     pw_ns: pd.DataFrame,
@@ -726,6 +975,8 @@ def _analysis_readme(
     tables: dict[str, pd.DataFrame],
     tables_ns: dict[str, pd.DataFrame],
     points: dict[str, dict[str, tuple]],
+    monthly: pd.DataFrame,
+    tax: pd.DataFrame,
 ) -> str:
     band = _band_table(tables, points)
     band_ns = _band_table(tables_ns, {})
@@ -863,5 +1114,29 @@ def _analysis_readme(
         "она считается по итоговому потоку, а он шоковые окна не исключает:",
         "",
         _md(band_ns) if len(band_ns) else "нет данных",
+        "",
+        "## База: полугодовое окно против календарного месяца",
+        "",
+        "Нынешняя база сравнивает сигнал со средним днём полугодового окна. Клиент, переводящий раз в "
+        "месяц, выбирает день внутри месяца, и его альтернатива — типичный день ЭТОГО месяца. Две базы "
+        "отвечают на разные вопросы, и обе стоят в отчёте: месячная — «попали ли мы в удачный день», "
+        "оконная — «выиграл ли клиент за полугодие». `excess_diff_*` — насколько выгода растёт при "
+        "переходе на месячную базу, с бутстреп-интервалом по событиям.",
+        "",
+        _md(monthly) if len(monthly) else "нет данных",
+        "",
+        "## Сезонность и налоговый период",
+        "",
+        "Гипотеза о механизме: экспортёры продают валюту под налоги к 28-му числу, рубль к концу месяца "
+        "крепче, и курс валюты получателя в рублях в эти дни ниже — отправителю дешевле. "
+        "`dev_in_window_bps` — отклонение от среднего за свой месяц внутри окна 20–28 числа, "
+        "`detrended_*` — то же после снятия линейного тренда внутри месяца: у растущего ряда начало "
+        "месяца механически ниже среднего, а конец выше, и без этой поправки часть эффекта была бы "
+        "дрейфом рубля. Числа по дням — `day_of_month.csv`, график — `day_of_month.png`.",
+        "",
+        _md(tax) if len(tax) else "нет данных",
+        "",
+        "Это диагностика, а не индикатор: среднее за месяц включает будущие дни этого месяца. "
+        "Причинная проверка той же гипотезы — индикатор сезонности, он смотрит только на прошлые годы.",
     ]
     return "\n".join(lines)

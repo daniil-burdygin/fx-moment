@@ -1,7 +1,9 @@
+import numpy as np
 import pandas as pd
 
 from fxmoment import analysis
 from fxmoment.backtest import make_splits, run_backtest
+from fxmoment.backtest.engine import BacktestResult
 from fxmoment.combine import evaluate_stream
 from fxmoment.indicators import Level, Momentum, Seasonality
 
@@ -72,3 +74,69 @@ def test_band_table_omits_operating_point_when_it_is_not_defined(panel):
     assert "calibrated_lift_mean" not in without.columns
     assert "calibrated_freq" not in without.columns
     assert set(without.columns) < set(with_point.columns)
+
+
+def test_monthly_baseline_falls_back_on_short_months(panel):
+    """Месяц короче MIN_MONTH_DAYS отдаётся базе окна и считается в fallback_events: месячная
+    оценка по трём дням шумнее того, что она измеряет."""
+    from fxmoment import analysis
+    from fxmoment.backtest.walkforward import Split, make_splits
+
+    splits = make_splits(panel.index)
+    rate = panel["TJS"].dropna()
+    days = analysis._test_days(rate, splits)
+    # событие в каждый первый день месяца — месяцы длинные, отката быть не должно
+    dates = pd.Series(days[days.day <= 2])
+    signals = pd.DataFrame(
+        {"corridor": "TJS", "indicator": "level", "date": dates, "split": 0, "scenario": "BUY_NOW"}
+    )
+    result = BacktestResult(signals, pd.DataFrame(), pd.DataFrame(), splits)
+    table = analysis.monthly_baseline_table(result, panel)
+    assert len(table) == 1
+    row = table.iloc[0]
+    assert row["fallback_events"] == 0
+    assert row["events"] > 10
+    # обе базы — доли, значит в (0, 1)
+    assert 0 < row["base_window"] < 1 and 0 < row["base_month"] < 1
+
+    # короткое окно даёт месяц из двух дней публикации — он обязан уйти в откат на базу окна
+    short = [Split(0, splits[0].train_end, days[0], days[0] + pd.Timedelta(days=1))]
+    result_short = BacktestResult(
+        signals.assign(date=pd.Series([days[0]])), pd.DataFrame(), pd.DataFrame(), short
+    )
+    table_short = analysis.monthly_baseline_table(result_short, panel)
+    assert table_short.iloc[0]["fallback_events"] == 1
+
+
+def test_day_of_month_detrending_removes_linear_drift():
+    """На чистом линейном тренде без сезонности снятое отклонение обязано быть нулевым, а
+    неснятое — нет: иначе поправка ничего не поправляет."""
+    from fxmoment import analysis
+    from fxmoment.backtest.walkforward import Split
+
+    idx = pd.bdate_range("2024-01-01", "2024-12-31")
+    rate = pd.Series(100 * (1 + 0.001) ** np.arange(len(idx)), index=idx)
+    panel = pd.DataFrame({"TJS": rate})
+    splits = [Split(0, idx[0], idx[0], idx[-1])]
+    table = analysis.day_of_month_table(panel, splits, corridors=("TJS",))
+    assert table["dev_detrended_bps"].abs().max() < 1.0
+    assert table["dev_from_month_mean_bps"].abs().max() > 50.0
+
+
+def test_tax_window_requires_detrended_effect_too():
+    """Вердикт «механизм подтверждается» не ставится, если эффект живёт только до снятия тренда."""
+    from fxmoment import analysis
+
+    table = pd.DataFrame(
+        {
+            "corridor": ["TJS", "TJS"],
+            "day_of_month": [24, 5],
+            "n_days": [10, 10],
+            "dev_from_month_mean_bps": [-50.0, 50.0],
+            "dev_detrended_bps": [5.0, -5.0],  # после снятия тренда знак обратный
+            "in_tax_window": [True, False],
+        }
+    )
+    out = analysis.tax_window_summary(table)
+    assert out.loc[0, "difference_bps"] < 0
+    assert not bool(out.loc[0, "supports_hypothesis"])
