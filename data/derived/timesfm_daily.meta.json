@@ -1,0 +1,24 @@
+{
+  "generated_at_utc": "2026-09-03T16:12:30+00:00",
+  "model": "google/timesfm-3.0-pytorch",
+  "revision": "43046b85ec22d584a13f8098c2ed39c889e129c2",
+  "license": "TimesFM Non-Commercial License v1.0 — только замер, в продукт не идёт",
+  "context_cap": 1024,
+  "horizon": 20,
+  "currencies": [
+    "AMD",
+    "KGS",
+    "KZT",
+    "TJS",
+    "USD",
+    "UZS"
+  ],
+  "rows": 14298,
+  "first_pub_date": "2017-01-09",
+  "last_pub_date": "2026-09-02",
+  "cbr_snapshot_sha256": "cac5008a3985482736216dfd97a580bb1fa19e0712c7576acc535e9bdca704aa",
+  "cbr_fetched_at_utc": "2026-09-03T00:04:48+00:00",
+  "device": "mps",
+  "self_check_rows": 12,
+  "self_check_max_diff_bps": 0.0
+}
