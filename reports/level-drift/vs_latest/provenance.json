@@ -1,6 +1,6 @@
 {
- "code": "c6a7e90-dirty",
- "built_at_utc": "2026-09-03T23:07:12Z",
+ "code": "a636bdb-dirty",
+ "built_at_utc": "2026-09-03T23:34:13Z",
  "latest": {
   "code": "c6a7e90",
   "built_at_utc": "2026-09-03T22:51:23Z",
@@ -10,8 +10,8 @@
   "extra_indicators": []
  },
  "variant": {
-  "code": "c6a7e90-dirty",
-  "built_at_utc": "2026-09-03T23:07:10Z",
+  "code": "a636bdb-dirty",
+  "built_at_utc": "2026-09-03T23:34:11Z",
   "first_test": "2021-01-01",
   "rank_base": "window",
   "ml": "local",
