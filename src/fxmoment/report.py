@@ -28,13 +28,18 @@ MARKERS = {
 
 
 def git_hash() -> str:
-    """Короткий хеш HEAD, с суффиксом -dirty при незакоммиченных изменениях; nogit — вне репозитория."""
+    """Короткий хеш HEAD, с суффиксом -dirty при незакоммиченных изменениях; nogit — вне репозитория.
+
+    Каталог отчётов из проверки исключён: это выход прогона, а не его вход. Пока он входил
+    в проверку, флаг был взведён у любого отчёта, который что-то изменил, — то есть всегда,
+    и по нему нельзя было отличить прогон на закоммиченном коде от прогона на правках."""
     try:
         run = lambda *a: subprocess.run(  # noqa: E731
             ["git", *a], cwd=repo_root(), capture_output=True, text=True, check=True
         ).stdout.strip()
         head = run("rev-parse", "--short", "HEAD")
-        dirty = "-dirty" if run("status", "--porcelain") else ""  # неотслеженные файлы тоже грязь
+        # неотслеженные файлы тоже грязь: новый модуль меняет поведение, оставаясь вне индекса
+        dirty = "-dirty" if run("status", "--porcelain", "--", ".", ":(exclude)reports") else ""
         return head + dirty
     except (subprocess.CalledProcessError, FileNotFoundError):
         return "nogit"
