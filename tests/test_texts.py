@@ -86,3 +86,16 @@ def test_dip_text_names_publication_days_not_weeks():
         "TJS", "BUY_NOW", "dip_vs_trend", 9.12, {"dev_pct": -1.4, "pct_rank": 0.1, "window": 120, "span": 80}
     )
     assert "80 рабочих дней" in title and "включая сегодняшний" in body and "нед" not in title
+
+
+def test_seasonality_month_cases_are_right():
+    """«В декабре … за декабрь»: после «в» предложный, после «за» винительный. Грамматику русского
+    ни один слой прогона текстов не смотрит, поэтому падеж закреплён тестом (находка 03.09)."""
+    from fxmoment.texts import render
+
+    title, body = render(
+        "TJS", "BUY_NOW", "seasonality", 9.12, {"k_years": 7, "n_years": 9, "target_month": 12}
+    )
+    assert "В декабре" in title
+    assert "за декабрь был выше" in body
+    assert "за декабре" not in body

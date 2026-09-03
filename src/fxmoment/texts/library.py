@@ -9,6 +9,7 @@ from fxmoment.config import (
     BUY_NOW,
     CURRENCY_GENITIVE,
     DISPLAY_UNIT,
+    MONTH_NAMES_ACC,
     MONTH_NAMES_PREP,
     UNIT_LABEL,
     WINDOW_CLOSING,
@@ -54,7 +55,7 @@ TEMPLATES: dict[tuple[str, str], Template] = {
         BUY_NOW,
         "seasonality",
         "В {month} курс {cur} в среднем был выше в {k} из {n} последних лет",
-        "Сейчас {rate} ₽ за {unit}. В {k} из {n} последних лет средний курс {cur} за {month} был выше "
+        "Сейчас {rate} ₽ за {unit}. В {k} из {n} последних лет средний курс {cur} за {month_acc} был выше "
         "среднего за предыдущий месяц.",
     ),
     (BUY_NOW, "dip_vs_trend"): Template(
@@ -172,6 +173,7 @@ def render(corridor: str, scenario: str, indicator: str, rate: float, facts: dic
         "k": int(facts.get("k_years", 0) or 0),
         "n_years": int(facts.get("n_years", 0) or 0),
         "month": MONTH_NAMES_PREP.get(int(facts.get("target_month", 1) or 1), ""),
+        "month_acc": MONTH_NAMES_ACC.get(int(facts.get("target_month", 1) or 1), ""),
         "dev": f"{abs(float(facts.get('dev_pct', 0) or 0)):.1f}".replace(".", ","),
         # простая средняя за span дней публикации (dip.py); в неделях не пересчитываем — день
         # публикации не равен 1/5 недели (аудит 03.09), а «рабочих дней» проверяемо буквально
