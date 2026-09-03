@@ -27,14 +27,18 @@ class Reversal(Indicator):
     @classmethod
     def grid(cls) -> list[dict]:
         return [
-            {"window": w, "rise_bps": r, "max_days_since_min": d, "rearm": 5}
+            {"window": w, "rise_bps": r, "max_days_since_min": d, "rearm": a}
             for w in (60, 120)
-            for r in (30, 50, 80)
-            for d in (5, 10)
+            for r in (20, 30, 50, 80)
+            for d in (5, 10, 20)
+            for a in (3, 5)
         ]
 
     def fact_fields(self) -> tuple[str, ...]:
         return ("rise_pct", "min_rate", "days_since_min", "window")
+
+    def warmup(self) -> int:
+        return self.window
 
     def compute(self, rate: pd.Series, context: pd.DataFrame | None = None) -> pd.DataFrame:
         wmin = rate.rolling(self.window).min()

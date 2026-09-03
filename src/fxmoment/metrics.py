@@ -42,9 +42,10 @@ def block_bootstrap_ci(
     return (float(np.quantile(means, alpha / 2)), float(np.quantile(means, 1 - alpha / 2)))
 
 
-def frequency_per_week(event_index: pd.DatetimeIndex, window: pd.DatetimeIndex) -> float:
-    weeks = max((window[-1] - window[0]).days, 1) / 7
-    return len(event_index) / weeks
+def frequency_per_week(n_events: int, start: pd.Timestamp, end: pd.Timestamp) -> float:
+    """События в неделю по календарной длине окна [start, end] включительно."""
+    days = (pd.Timestamp(end) - pd.Timestamp(start)).days + 1
+    return n_events / (max(days, 1) / 7)
 
 
 @dataclass(frozen=True)
@@ -138,7 +139,7 @@ def evaluate_events(
         "benefit_fwd_block_ci_hi": bci_hi,
         "benefit_sym_bps": float(bs.mean()) if len(bs) else np.nan,
         f"vs_wait{wait_k}_bps": float(wk.mean()) if len(wk) else np.nan,
-        "freq_per_week": frequency_per_week(ev_idx, days),
+        "freq_per_week": frequency_per_week(len(ev_idx), start, min(pd.Timestamp(end), rate.index[-1])),
         "clump_share_series": cl.share_series,
         "clump_cv_gaps": cl.cv_gaps,
         "longest_gap_days": cl.longest_gap_days,

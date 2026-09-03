@@ -1,4 +1,5 @@
-"""Отчёт бэктеста: таблицы в reports/, графики коридоров с отметками, фронтир частота—точность."""
+"""Отчёт бэктеста: таблицы в reports/, графики коридоров с отметками. Фронтир и анализы —
+`fxmoment.analysis` (`fxmoment analyze`)."""
 
 from __future__ import annotations
 
@@ -25,17 +26,30 @@ MARKERS = {
 }
 
 
-def _git_hash() -> str:
+def git_hash() -> str:
+    """Короткий хеш HEAD, с суффиксом -dirty при незакоммиченных изменениях; nogit — вне репозитория."""
     try:
-        return subprocess.run(
-            ["git", "rev-parse", "--short", "HEAD"],
-            cwd=repo_root(),
-            capture_output=True,
-            text=True,
-            check=True,
+        run = lambda *a: subprocess.run(  # noqa: E731
+            ["git", *a], cwd=repo_root(), capture_output=True, text=True, check=True
         ).stdout.strip()
-    except Exception:  # noqa: BLE001
+        head = run("rev-parse", "--short", "HEAD")
+        dirty = "-dirty" if run("status", "--porcelain", "--untracked-files=no") else ""
+        return head + dirty
+    except (subprocess.CalledProcessError, FileNotFoundError):
         return "nogit"
+
+
+_git_hash = git_hash
+
+
+def stamp() -> str:
+    """Строка происхождения для отчётов: снимок данных, код, время сборки."""
+    meta = load_meta()
+    return (
+        f"Снимок данных: {meta.get('fetched_at_utc', '?')} "
+        f"(последняя дата действия {meta.get('last_eff_date', '?')}). "
+        f"Код: `{git_hash()}`. Сформировано {datetime.now(UTC):%Y-%m-%d %H:%M} UTC."
+    )
 
 
 def write_report(result: BacktestResult, panel: pd.DataFrame, out_dir: Path | None = None) -> Path:
@@ -48,31 +62,43 @@ def write_report(result: BacktestResult, panel: pd.DataFrame, out_dir: Path | No
     summary.to_csv(out / "summary_h20_tol25.csv", index=False)
     result.summary(h=5).to_csv(out / "summary_h5_tol25.csv", index=False)
     result.summary(h=20, tol_bps=0.0).to_csv(out / "summary_h20_tol0.csv", index=False)
-    from fxmoment.combine import evaluate_stream, stream_summary
+    from fxmoment.combine import evaluate_stream, stream_shape_summary, stream_summary
 
-    decided, stream_matrix = evaluate_stream(result, panel)
+    decided, stream_matrix, shape = evaluate_stream(result, panel)
     decided.to_csv(out / "stream_decisions.csv", index=False)
     stream_matrix.to_csv(out / "stream_matrix.csv", index=False)
-    stream = stream_summary(stream_matrix) if len(stream_matrix) else pd.DataFrame()
+    shape.to_csv(out / "stream_shape.csv", index=False)
+    stream = stream_summary(stream_matrix)
     stream.to_csv(out / "stream_summary_h20_tol25.csv", index=False)
-    meta = load_meta()
+    shape_sum = stream_shape_summary(shape)
+    shape_sum.to_csv(out / "stream_shape_summary.csv", index=False)
     lines = [
         "# Бэктест — сводка (h = 20, допуск 25 бп, медианы по окнам walk-forward)",
         "",
-        f"Снимок данных: {meta.get('fetched_at_utc', '?')} "
-        f"(последняя дата действия {meta.get('last_eff_date', '?')}). "
-        f"Код: `{_git_hash()}`. Сформировано {datetime.now(UTC):%Y-%m-%d %H:%M} UTC.",
+        stamp(),
         "",
         "Окна: " + ", ".join(s.label() for s in result.splits),
         "",
+        "`silent_windows` — окна без событий, они не входят в доли `share_*`. `*_pooled` — hit и база "
+        "«по среднему», взвешенные по событиям окна.",
+        "",
         _md_table(summary.round(3)),
         "",
-        "## Итоговый поток после политики (ADR-0006), h = 20, допуск 25 бп",
+        "## Форма итогового потока по коридорам (все сценарии вместе; ADR-0006), полоса 1–2 в неделю",
+        "",
+        "`storm_days` — дни шторма (волатильность за 20 дней в верхних 5 % своего года), "
+        "`storm_blocked` — пуши, снятые правилом «в шторм молчим».",
+        "",
+        _md_table(shape_sum.round(3)) if len(shape_sum) else "поток пуст",
+        "",
+        "## Точность итогового потока по сценариям, h = 20, допуск 25 бп",
         "",
         _md_table(stream.round(3)) if len(stream) else "поток пуст",
         "",
         "Полная матрица — `matrix.csv` (все горизонты, допуски и окна). События — `signals.csv`, "
-        "решения политики — `stream_decisions.csv`, метрики потока — `stream_matrix.csv`.",
+        "решения политики — `stream_decisions.csv`, метрики потока — `stream_matrix.csv`, "
+        "форма потока по окнам — `stream_shape.csv`. Анализы (цена ожидания, перенос параметров, "
+        "фронтир, без 2022) — `analysis/` после `fxmoment analyze`.",
     ]
     (out / "README.md").write_text("\n".join(lines), encoding="utf-8")
     for corridor in result.signals["corridor"].unique():

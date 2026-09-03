@@ -27,7 +27,12 @@ class Seasonality(Indicator):
 
     @classmethod
     def grid(cls) -> list[dict]:
-        return [{"min_share": s, "min_years": 4, "from_day": 24, "rearm": 20} for s in (0.6, 0.7, 0.8)]
+        return [
+            {"min_share": s, "min_years": y, "from_day": d, "rearm": 20}
+            for s in (0.5, 0.6, 0.7, 0.8)
+            for y in (3, 4)
+            for d in (20, 24)
+        ]
 
     def fact_fields(self) -> tuple[str, ...]:
         return ("k_years", "n_years", "target_month")

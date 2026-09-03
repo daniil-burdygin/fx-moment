@@ -1,5 +1,5 @@
 """Обучаемый индикатор: классический бустинг предсказывает «день — локальный минимум в окне ±h»,
-порог — под целевую точность и асимметричную цену ошибки; пуш — только при факте уровня (ADR-0005)."""
+порог — под асимметричную цену ошибки; пуш — только при факте уровня (ADR-0005)."""
 
 from __future__ import annotations
 
@@ -24,37 +24,41 @@ class LearnedMinimum(Indicator):
         self,
         h: int = 10,
         tol_bps: float = 10.0,
-        target_precision: float = 0.9,
         gate_window: int = 120,
         gate_pct: float = 0.20,
         fp_cost: float = 3.0,
+        min_pos_rate: float = 0.25,
         rearm: int = 5,
         seed: int = 0,
     ) -> None:
         super().__init__(
             h=h,
             tol_bps=tol_bps,
-            target_precision=target_precision,
             gate_window=gate_window,
             gate_pct=gate_pct,
             fp_cost=fp_cost,
+            min_pos_rate=min_pos_rate,
             rearm=rearm,
             seed=seed,
         )
         self.h = h
         self.tol_bps = tol_bps
-        self.target_precision = target_precision
         self.gate_window = gate_window
         self.gate_pct = gate_pct
         self.fp_cost = fp_cost
+        self.min_pos_rate = min_pos_rate
         self.rearm = rearm
         self.seed = seed
         self.model_: HistGradientBoostingClassifier | None = None
         self.threshold_: float = 1.0
+        self.fitted_: bool = False
         self.feature_names_: list[str] = []
 
     def fact_fields(self) -> tuple[str, ...]:
         return ("proba", "pct_rank", "window")
+
+    def warmup(self) -> int:
+        return 270  # rank250 плюс vol_rank250 поверх vol20 (features.py)
 
     def _new_model(self) -> HistGradientBoostingClassifier:
         return HistGradientBoostingClassifier(
@@ -67,25 +71,39 @@ class LearnedMinimum(Indicator):
             random_state=self.seed,
         )
 
-    def fit(self, rate: pd.Series, context: pd.DataFrame | None = None) -> LearnedMinimum:
+    def fit(
+        self,
+        rate: pd.Series,
+        context: pd.DataFrame | None = None,
+        train_start: str | pd.Timestamp | None = None,
+    ) -> LearnedMinimum:
+        """Обучение на первых 80 % строк, порог — на последних 20 % среди дней, прошедших гейт уровня.
+        Рабочая модель — та же, на чьих вероятностях выбран порог: переобучение на 100 % меняло
+        распределение вероятностей, и порог переставал что-либо значить (аудит 03.09).
+        `train_start` — с какой даты брать строки в обучение; история раньше служит только разогревом
+        признаков."""
         x = build_features(rate, context)
         y = local_min_label(rate, self.h, self.tol_bps)
         ok = x.notna().all(axis=1) & y.notna()
+        if train_start is not None:
+            ok &= x.index >= pd.Timestamp(train_start)
         x, y = x[ok], y[ok].astype(int)
+        self.fitted_ = False
         if len(x) < 200 or y.nunique() < 2:
             self.model_ = None
             self.threshold_ = 1.0
             return self
         w = np.where(y.to_numpy() == 1, 1.0, self.fp_cost)
         cut = int(len(x) * 0.8)
-        probe = self._new_model().fit(x.iloc[:cut], y.iloc[:cut], sample_weight=w[:cut])
-        p_val = probe.predict_proba(x.iloc[cut:])[:, 1]
+        model = self._new_model().fit(x.iloc[:cut], y.iloc[:cut], sample_weight=w[:cut])
+        p_val = model.predict_proba(x.iloc[cut:])[:, 1]
         val_idx = x.index[cut:]
         b_val = benefit_fwd_bps(rate, self.h).reindex(val_idx).to_numpy()
         gate_val = (x[f"rank{self.gate_window}"].reindex(val_idx) <= self.gate_pct).to_numpy()
-        self.threshold_ = _choose_threshold(p_val[gate_val], b_val[gate_val], self.fp_cost)
-        self.model_ = self._new_model().fit(x, y, sample_weight=w)
+        self.threshold_ = _choose_threshold(p_val[gate_val], b_val[gate_val], self.fp_cost, self.min_pos_rate)
+        self.model_ = model
         self.feature_names_ = list(x.columns)
+        self.fitted_ = True
         return self
 
     def compute(self, rate: pd.Series, context: pd.DataFrame | None = None) -> pd.DataFrame:

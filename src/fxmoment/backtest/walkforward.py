@@ -6,7 +6,7 @@ from dataclasses import dataclass
 
 import pandas as pd
 
-from fxmoment.config import FIRST_TEST, PURGE_DAYS, TEST_MONTHS
+from fxmoment.config import FIRST_TEST, MIN_TEST_DAYS, PURGE_DAYS, TEST_MONTHS
 
 
 @dataclass(frozen=True)
@@ -25,13 +25,21 @@ def make_splits(
     first_test: str = FIRST_TEST,
     test_months: int = TEST_MONTHS,
     purge_days: int = PURGE_DAYS,
+    min_test_days: int = MIN_TEST_DAYS,
 ) -> list[Split]:
-    """Тестовые окна подряд от first_test до конца индекса (последнее может быть короче)."""
+    """Тестовые окна подряд от first_test до конца индекса. Хвостовое окно короче `min_test_days`
+    дней публикации не создаётся: его даты живут по параметрам последнего окна (`split_for_date`),
+    а в медианы по окнам оно не входит."""
     splits: list[Split] = []
     test_start = pd.Timestamp(first_test)
     sid = 0
     while test_start <= index[-1]:
         test_end = min(test_start + pd.DateOffset(months=test_months) - pd.Timedelta(days=1), index[-1])
+        n_days = int(((index >= test_start) & (index <= test_end)).sum())
+        if n_days < min_test_days:
+            if not splits:
+                raise ValueError("первое тестовое окно короче минимальной длины")
+            break
         pos = index.searchsorted(test_start)  # первая дата публикации ≥ test_start
         train_pos = pos - purge_days - 1
         if train_pos < 0:

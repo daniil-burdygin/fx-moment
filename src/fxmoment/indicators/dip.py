@@ -1,6 +1,8 @@
-"""Провал относительно тренда: отклонение курса от скользящей средней (EMA) в нижних процентилях
-своего окна. Собственный индикатор команды: на трендовом ряду «нижние процентили уровня» ловят
-только редкие развороты, а провал относительно тренда распределён по времени равномернее."""
+"""Провал относительно тренда: отклонение курса от простой скользящей средней за `span` дней
+публикации в нижних процентилях своего окна. Собственный индикатор команды: на трендовом ряду
+«нижние процентили уровня» ловят только редкие развороты, а провал относительно тренда распределён
+по времени равномернее. Средняя простая, а не экспоненциальная, чтобы факт в тексте пуша
+(«ниже среднего за 8 недель») был буквально проверяем (аудит 03.09)."""
 
 from __future__ import annotations
 
@@ -37,8 +39,11 @@ class Dip(Indicator):
     def fact_fields(self) -> tuple[str, ...]:
         return ("dev_pct", "pct_rank", "window", "span")
 
+    def warmup(self) -> int:
+        return self.span + self.window
+
     def compute(self, rate: pd.Series, context: pd.DataFrame | None = None) -> pd.DataFrame:
-        trend = rate.ewm(span=self.span, adjust=False).mean()
+        trend = rate.rolling(self.span).mean()
         dev = rate / trend - 1
         rank = dev.rolling(self.window).apply(lambda w: float(np.mean(w <= w[-1])), raw=True)
         cond = (rank <= self.pct) & (dev < 0)

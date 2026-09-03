@@ -40,6 +40,9 @@ class Level(Indicator):
     def fact_fields(self) -> tuple[str, ...]:
         return ("pct_rank", "window", "days_since_min")
 
+    def warmup(self) -> int:
+        return self.window
+
     def compute(self, rate: pd.Series, context: pd.DataFrame | None = None) -> pd.DataFrame:
         rank = _cached(context, f"_rank_{self.window}")
         if rank is None:

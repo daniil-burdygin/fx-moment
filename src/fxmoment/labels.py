@@ -61,7 +61,8 @@ def hit_for_scenario(
     rate: pd.Series, scenario: str, h: int, tol_bps: float = 0.0, mode: str = "min"
 ) -> pd.Series:
     if scenario == "WINDOW_CLOSING":
-        return hit_window_closing(rate, h, tol_bps)
+        # tol_up = 0 по ADR-0003: допуск смягчает условие BUY_NOW, а здесь он бы его ужесточал
+        return hit_window_closing(rate, h, 0.0)
     return hit_buy_now(rate, h, tol_bps, mode)
 
 

@@ -8,8 +8,6 @@ from __future__ import annotations
 
 import pandas as pd
 
-from fxmoment.config import SHOCK_REGIME
-
 
 def to_publication_panel(long_df: pd.DataFrame) -> pd.DataFrame:
     """Широкая таблица: индекс pub_date, столбцы — валюты, значения — курс за 1 единицу."""
@@ -26,11 +24,3 @@ def to_publication_panel(long_df: pd.DataFrame) -> pd.DataFrame:
 def as_of(panel: pd.DataFrame, cutoff: str | pd.Timestamp) -> pd.DataFrame:
     """Данные, доступные на дату среза: записи с pub_date ≤ cutoff."""
     return panel.loc[: pd.Timestamp(cutoff)]
-
-
-def regime_flag(index: pd.DatetimeIndex) -> pd.Series:
-    """'shock' для режима шоковой волатильности 2022 года, иначе 'normal'."""
-    start, end = (pd.Timestamp(x) for x in SHOCK_REGIME)
-    flag = pd.Series("normal", index=index)
-    flag[(index >= start) & (index <= end)] = "shock"
-    return flag

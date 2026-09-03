@@ -35,6 +35,11 @@ class Indicator(ABC):
     def fact_fields(self) -> tuple[str, ...]:
         return ()
 
+    def warmup(self) -> int:
+        """Сколько первых дней ряда индикатор не определён (окна, серии). Калибровка меряет частоту
+        и базу только после разогрева, иначе длинные окна выглядят реже коротких (аудит 03.09)."""
+        return 0
+
     @abstractmethod
     def compute(self, rate: pd.Series, context: pd.DataFrame | None = None) -> pd.DataFrame: ...
 
@@ -46,14 +51,15 @@ class Indicator(ABC):
 
 
 def rearm_events(cond: pd.Series, rearm: int) -> pd.Series:
-    """Событие — первый день, когда условие истинно, и затем не чаще, чем раз в `rearm` дней.
+    """Событие — первый день, когда условие истинно, и затем не чаще, чем раз в `rearm` дней
+    (между событиями не меньше `rearm` дней публикации; rearm = 0 — каждый день условия).
 
     Последовательный проход слева направо: состояние зависит только от прошлого."""
     c = cond.fillna(False).to_numpy(dtype=bool)
     out = np.zeros(len(c), dtype=bool)
     last = -(10**9)
     for i, v in enumerate(c):
-        if v and i - last > rearm:
+        if v and i - last >= max(rearm, 1):
             out[i] = True
             last = i
     return pd.Series(out, index=cond.index)
