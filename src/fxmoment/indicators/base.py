@@ -27,10 +27,37 @@ class Indicator(ABC):
     def __init__(self, **params: Any) -> None:
         self.params: dict[str, Any] = params
 
+    # Ключи сетки, измеряемые в ШАГАХ РЯДА (дни публикации на дневной оси, бары на внутридневной).
+    # Только они умножаются на масштаб профиля; проценты, пороги в бп и календарные числа — нет.
+    STEP_PARAMS: tuple[str, ...] = ()
+
     @classmethod
     def grid(cls) -> list[dict[str, Any]]:
-        """Сетка параметров для калибровки walk-forward."""
+        """Сетка параметров для калибровки walk-forward, в шагах дневного ряда."""
         return [{}]
+
+    @classmethod
+    def scaled_grid(cls, scale: int = 1) -> list[dict[str, Any]]:
+        """Та же сетка в шагах ряда другой частоты (ADR-0010): окно «120 дней» на часовом ряду —
+        это 120 × баров в дне, а процент и порог в базисных пунктах остаются собой.
+
+        Ноль не превращается в единицу: `stall_days = 0` значит «условие выключено», а не «один шаг».
+        Точки, совпавшие после округления, схлопываются — иначе калибровка считала бы одно и то же
+        по нескольку раз."""
+        if scale == 1:
+            return cls.grid()
+        seen: list[dict[str, Any]] = []
+        for point in cls.grid():
+            scaled = {k: (_scale_step(v, scale) if k in cls.STEP_PARAMS else v) for k, v in point.items()}
+            if scaled not in seen:
+                seen.append(scaled)
+        return seen
+
+    @classmethod
+    def scaled_defaults(cls, scale: int = 1) -> dict[str, Any]:
+        """Параметры по умолчанию в шагах ряда другой частоты (для контрольного прогона без сетки)."""
+        base = cls().params
+        return {k: (_scale_step(v, scale) if k in cls.STEP_PARAMS else v) for k, v in base.items()}
 
     def fact_fields(self) -> tuple[str, ...]:
         return ()
@@ -55,6 +82,13 @@ class Indicator(ABC):
             return self.name
         inner = ",".join(f"{k}={v}" for k, v in sorted(self.params.items()))
         return f"{self.name}({inner})"
+
+
+def _scale_step(value: Any, scale: int) -> Any:
+    """Число шагов ряда в другом масштабе. Ноль остаётся нулём — это выключенное условие."""
+    if not isinstance(value, int) or isinstance(value, bool) or value == 0:
+        return value
+    return max(1, int(round(value * scale)))
 
 
 def rearm_events(cond: pd.Series, rearm: int) -> pd.Series:

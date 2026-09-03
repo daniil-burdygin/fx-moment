@@ -17,6 +17,7 @@ from fxmoment.indicators.base import (
 class Level(Indicator):
     name = "level"
     speed = "medium"
+    STEP_PARAMS = ("window", "stall_days", "rearm")
     scenario = BUY_NOW
     direction = "down"
 

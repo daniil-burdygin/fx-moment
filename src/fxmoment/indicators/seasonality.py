@@ -12,6 +12,8 @@ from fxmoment.indicators.base import Indicator, rearm_events
 
 class Seasonality(Indicator):
     name = "seasonality"
+    # `from_day` — календарное число месяца, не шаг ряда, и не масштабируется.
+    STEP_PARAMS = ("rearm",)
     speed = "slow"
     scenario = BUY_NOW
     direction = "down"

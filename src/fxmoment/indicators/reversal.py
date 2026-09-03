@@ -12,6 +12,7 @@ from fxmoment.indicators.base import Indicator, rearm_events, rolling_days_since
 class Reversal(Indicator):
     name = "reversal"
     speed = "slow"
+    STEP_PARAMS = ("window", "max_days_since_min", "rearm")
     scenario = WINDOW_CLOSING
     direction = "up"
 

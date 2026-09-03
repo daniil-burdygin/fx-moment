@@ -109,9 +109,11 @@ def _calibrate(
     h: int = CALIBRATION_H,
     tol_bps: float = PRIMARY_TOL_BPS,
     eval_start: str | pd.Timestamp | None = None,
+    grid_scale: int = 1,
+    bounds: tuple[float, float, int] | None = None,
 ) -> tuple[dict[str, Any], list[dict]]:
     """Сетка на обучении (ADR-0004). Допустимая точка: n ≥ min_n и частота индикатора в [lo, hi]
-    (границы — `cls.calibration_bounds()`, по умолчанию CALIBRATION_FREQ_RANGE и
+    (границы — `bounds`, иначе `cls.calibration_bounds()`: CALIBRATION_FREQ_RANGE и
     MIN_CALIBRATION_EVENTS; медленный индикатор задаёт свои), обе меряются после разогрева
     индикатора и не раньше eval_start.
     Целевая функция — **медиана lift «по среднему» по календарным годам обучения** (год входит, если
@@ -122,12 +124,12 @@ def _calibrate(
     (медиана годовых lift), затем по выгоде; частота здесь только отсечка, иначе запасная ветка
     выбирала самую частую точку, а не самую точную (аудит 03.09). Возвращает параметры (с флагами
     `_feasible`, `_n_feasible`, `_score`) и журнал сетки."""
-    lo, hi, min_n = cls.calibration_bounds()
+    lo, hi, min_n = bounds or cls.calibration_bounds()
     hit_all = labels.hit_for_scenario(rate_train, cls.scenario, h, tol_bps, mode="mean")
     bf_all = labels.benefit_fwd_bps(rate_train, h)
     years_all = pd.Series(rate_train.index.year, index=rate_train.index)
     log = []
-    for params in cls.grid():
+    for params in cls.scaled_grid(grid_scale):
         ind = cls(**params)
         ev = ind.compute(rate_train, ctx_train)["signal"]
         first = rate_train.index[min(ind.warmup(rate_train.index), len(rate_train) - 1)]
@@ -174,7 +176,7 @@ def _calibrate(
         best = near.sort_values(
             ["score", "benefit_excess_bps", "n_scored"], ascending=[False, False, False], na_position="last"
         ).iloc[0]
-    keys = list(cls.grid()[0].keys())
+    keys = list(cls.scaled_grid(grid_scale)[0].keys())
     chosen = {k: _native(best[k]) for k in keys}
     chosen["_feasible"] = bool(best["feasible"])
     chosen["_n_feasible"] = int(df["feasible"].sum())
@@ -196,12 +198,17 @@ def fit_indicator(
     ctx_train: pd.DataFrame,
     eval_start: str | pd.Timestamp | None = None,
     fixed_params: bool = False,
+    calibration_h: int = CALIBRATION_H,
+    grid_scale: int = 1,
+    bounds: tuple[float, float, int] | None = None,
 ) -> tuple[Indicator, dict[str, Any], list[dict]]:
     """Индикатор с параметрами, выбранными только по данным до конца обучения.
     fixed_params — правила берут априорные параметры по умолчанию (заданы до первого прогона)
-    без сетки: контрольный прогон «стоит ли калибровка своих денег»; ML обучается как обычно."""
+    без сетки: контрольный прогон «стоит ли калибровка своих денег»; ML обучается как обычно.
+    `calibration_h`, `grid_scale` и `bounds` задаются профилем ряда (ADR-0010): на часовой оси
+    горизонт калибровки, окна сетки и допустимая частота другие."""
     if fixed_params and not cls.trainable:
-        ind = cls()
+        ind = cls(**cls.scaled_defaults(grid_scale))
         return ind, {**ind.params, "_feasible": None, "_n_feasible": 0, "_fixed": True}, []
     if cls.trainable:
         ind = cls()
@@ -216,7 +223,15 @@ def fit_indicator(
             else None,
         }
         return ind, params, []
-    params, log = _calibrate(cls, rate_train, ctx_train, eval_start=eval_start)
+    params, log = _calibrate(
+        cls,
+        rate_train,
+        ctx_train,
+        h=calibration_h,
+        eval_start=eval_start,
+        grid_scale=grid_scale,
+        bounds=bounds,
+    )
     ctor = {k: v for k, v in params.items() if not k.startswith("_")}
     return cls(**ctor), params, log
 
@@ -259,16 +274,22 @@ def run_backtest(
     splits: list[Split] | None = None,
     tolerances: tuple[float, ...] = TOLERANCES_BPS,
     fixed_params: bool = False,
+    calibration_h: int = CALIBRATION_H,
+    grid_scale: int = 1,
+    bounds: tuple[float, float, int] | None = None,
+    context: tuple[str, ...] = CONTEXT,
 ) -> BacktestResult:
+    """`calibration_h`, `grid_scale`, `bounds` и `context` задаются профилем ряда (ADR-0010):
+    по умолчанию — дневная ось ЦБ, на часовой оси Мосбиржи всё это в барах."""
     ana = panel.loc[pd.Timestamp(analysis_start) :]
     splits = splits or make_splits(ana.index)
-    ctx_all = panel[[c for c in CONTEXT if c in panel.columns]]
+    ctx_all = panel[[c for c in context if c in panel.columns]]
     sig_rows: list[dict] = []
     mat_rows: list[dict] = []
     cal_rows: list[dict] = []
     for corridor in corridors:
         rate = panel[corridor].dropna()
-        ctx = enrich_context(rate, ctx_all)
+        ctx = enrich_context(rate, ctx_all, scale=grid_scale)
         for split in splits:
             rate_train = rate.loc[: split.train_end]
             ctx_train = ctx.loc[: split.train_end]
@@ -277,7 +298,14 @@ def run_backtest(
             win = (split.test_start, split.test_end)
             for cls in indicators:
                 ind, params, log = fit_indicator(
-                    cls, rate_train, ctx_train, eval_start=analysis_start, fixed_params=fixed_params
+                    cls,
+                    rate_train,
+                    ctx_train,
+                    eval_start=analysis_start,
+                    fixed_params=fixed_params,
+                    calibration_h=calibration_h,
+                    grid_scale=grid_scale,
+                    bounds=bounds,
                 )
                 cal_rows.append(
                     {
@@ -305,7 +333,7 @@ def run_backtest(
                             "speed": ind.speed,
                             **m,
                         }
-                        if h == CALIBRATION_H and tol == PRIMARY_TOL_BPS:
+                        if h == calibration_h and tol == PRIMARY_TOL_BPS:
                             mt = metrics.evaluate_events(
                                 rate_upto, out["signal"], ind.scenario, h, win, tol, with_ci=False
                             )

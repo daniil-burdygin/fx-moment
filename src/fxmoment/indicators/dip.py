@@ -16,6 +16,7 @@ from fxmoment.indicators.base import Indicator, rearm_events
 class Dip(Indicator):
     name = "dip_vs_trend"
     speed = "medium"
+    STEP_PARAMS = ("span", "window", "rearm")
     scenario = BUY_NOW
     direction = "down"
 

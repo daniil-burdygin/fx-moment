@@ -9,15 +9,21 @@ from fxmoment.indicators.base import down_streak, rolling_pct_rank, up_streak
 RANK_WINDOWS = (20, 60, 120, 250)
 
 
-def enrich_context(rate: pd.Series, context: pd.DataFrame | None) -> pd.DataFrame:
+CACHED_WINDOWS = (60, 120, 250)  # окна сеток `level` и `reversal`, в шагах дневного ряда
+
+
+def enrich_context(rate: pd.Series, context: pd.DataFrame | None, scale: int = 1) -> pd.DataFrame:
     """Добавляет в контекст предвычисленные каузальные ряды (`_rank_w`, `_dsm_w`) для скорости.
 
-    Значения не зависят от будущего, поэтому предвычисление на полном ряду и на срезе совпадают."""
-    from fxmoment.indicators.base import rolling_days_since_min
+    Значения не зависят от будущего, поэтому предвычисление на полном ряду и на срезе совпадают.
+    `scale` — масштаб шага ряда (ADR-0010): кэш обязан совпасть с окнами масштабированной сетки,
+    иначе индикатор молча пересчитает их заново и прогон замедлится в разы."""
+    from fxmoment.indicators.base import _scale_step, rolling_days_since_min
 
     ctx = context.copy() if context is not None else pd.DataFrame(index=rate.index)
     ctx = ctx.reindex(rate.index)
-    for w in (60, 120, 250):
+    for w0 in CACHED_WINDOWS:
+        w = _scale_step(w0, scale)
         ctx[f"_rank_{w}"] = rolling_pct_rank(rate, w)
         ctx[f"_dsm_{w}"] = rolling_days_since_min(rate, w)
     return ctx

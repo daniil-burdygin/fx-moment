@@ -12,6 +12,10 @@ from fxmoment.indicators.base import Indicator, down_streak, rearm_events
 class Momentum(Indicator):
     name = "momentum"
     speed = "fast"
+    # `n` НЕ масштабируется: это определение индикатора — серия из n шагов вниз подряд.
+    # На часовом ряду серия из 36 падающих баров не встречается, и масштабирование не перевело
+    # бы индикатор на другую ось, а удалило его. `rearm` — гигиена канала, она в шагах ряда.
+    STEP_PARAMS = ("rearm",)
     scenario = BUY_NOW
     direction = "down"
 

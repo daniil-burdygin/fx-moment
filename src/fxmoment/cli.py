@@ -1,5 +1,5 @@
-"""CLI: fetch / fetch-moex / compare-sources / backtest / analyze / signals --as-of [--decide] /
-check-texts."""
+"""CLI: fetch / fetch-moex / compare-sources / backtest / intraday / analyze /
+signals --as-of [--decide] / check-texts."""
 
 from __future__ import annotations
 
@@ -57,6 +57,37 @@ def cmd_compare_sources(args: argparse.Namespace) -> int:
             print(f"\n=== {title} ===")
             print(pd.read_csv(path).round(4).to_string(index=False))
     print(f"\nсверка → {out}")
+    return 0
+
+
+def cmd_intraday(args: argparse.Namespace) -> int:
+    from fxmoment.data.store import load_bar_panel, load_panel, repo_root
+    from fxmoment.intraday import run_profile, skipped_corridors, write_intraday_report
+    from fxmoment.profiles import INTRADAY
+
+    bars = load_bar_panel()
+    for corridor, why in skipped_corridors(bars, INTRADAY):
+        print(f"пропущен {corridor}: {why}")
+    results = run_profile(bars, INTRADAY)
+    if not results:
+        print("ни один коридор профиля не прогнался — смотрите причины выше")
+        return 2
+    daily_path = repo_root() / "reports" / "latest" / "matrix.csv"
+    daily = pd.read_csv(daily_path) if daily_path.exists() else None
+    if daily is None:
+        print("нет reports/latest/matrix.csv — сравнение осей пропущено, сделайте `fxmoment backtest`")
+    out = write_intraday_report(results, bars, repo_root() / "reports" / "intraday", INTRADAY, daily)
+    pd.set_option("display.width", 250)
+    for name, title in (
+        ("summary_bars_h180_tol25.csv", "точность по индикаторам, горизонт 180 баров"),
+        ("daily_vs_intraday.csv", "дневная ось против часовой на общем периоде"),
+    ):
+        path = out / name
+        if path.exists() and path.stat().st_size > 1:
+            print(f"\n=== {title} ===")
+            print(pd.read_csv(path).round(3).to_string(index=False))
+    print(f"\nвнутридневной отчёт → {out}")
+    _ = load_panel  # дневная панель здесь не нужна: сравнение идёт по матрице отчёта
     return 0
 
 
@@ -245,6 +276,11 @@ def main(argv: list[str] | None = None) -> int:
         "compare-sources", help="сверка биржевого закрытия с фиксингом ЦБ → reports/intraday/"
     )
     cs.set_defaults(func=cmd_compare_sources)
+
+    it = sub.add_parser(
+        "intraday", help="walk-forward на часовых свечах Мосбиржи → reports/intraday/ (ADR-0010)"
+    )
+    it.set_defaults(func=cmd_intraday)
 
     b = sub.add_parser("backtest", help="walk-forward бэктест → reports/latest/")
     b.add_argument("--start", default=ANALYSIS_START, help="начало окна анализа")
