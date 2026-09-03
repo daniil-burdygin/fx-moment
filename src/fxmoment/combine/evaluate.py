@@ -13,7 +13,9 @@ from fxmoment.backtest.walkforward import Split
 from fxmoment.combine.policy import PolicyParams, apply_policy, storm_flag
 from fxmoment.config import CALIBRATION_H, FREQUENCY_BAND, HORIZONS, PRIMARY_TOL_BPS, TOLERANCES_BPS
 
-DEFAULT_ORDER = ("level", "dip_vs_trend", "ml_localmin", "seasonality", "reversal", "momentum")
+# `level_drift` — вариантный индикатор (пункт 2); стоит последним, чтобы номера остальных без
+# истории не сдвинулись и поток прогона по умолчанию остался прежним
+DEFAULT_ORDER = ("level", "dip_vs_trend", "ml_localmin", "seasonality", "reversal", "momentum", "level_drift")
 # Столбцы, по которым считается ранг, по базе: (hit, база, события, выгода) — усечённые концом
 # окна, из единых списков движка (metrics.TRUNC_SOURCE, MONTH_TRUNC_SOURCE); lift пересчитывается
 # из pooled hit и базы, а не усредняется по окнам.

@@ -102,18 +102,29 @@ def cmd_backtest(args: argparse.Namespace) -> int:
     from fxmoment.backtest import run_backtest
     from fxmoment.combine import PolicyParams
     from fxmoment.data.store import load_panel, repo_root
-    from fxmoment.indicators import ALL_INDICATORS, BASE_INDICATORS
+    from fxmoment.indicators import BASE_INDICATORS, LearnedMinimum, LearnedMinimumPooled, LevelDrift
     from fxmoment.report import write_report
 
-    variant = args.first_test != FIRST_TEST or args.rank_base != "window"
+    variant = (
+        args.first_test != FIRST_TEST
+        or args.rank_base != "window"
+        or args.ml != "local"
+        or args.with_level_drift
+    )
     if variant and not args.out:
-        print("вариантный прогон (--first-test, --rank-base) пишется только в свой каталог: укажите --out")
+        print(
+            "вариантный прогон (--first-test, --rank-base, --ml pooled, --with-level-drift) "
+            "пишется только в свой каталог: укажите --out"
+        )
         return 2
     if args.out and (args.out in PROTECTED_RUNS or "/" in args.out or args.out.startswith(".")):
         print(f"--out {args.out!r}: имя каталога варианта не может совпадать с основными отчётами")
         return 2
     panel = load_panel()
-    inds = BASE_INDICATORS if args.no_ml else ALL_INDICATORS
+    ml = LearnedMinimumPooled if args.ml == "pooled" else LearnedMinimum
+    inds = tuple(BASE_INDICATORS) if args.no_ml else (*BASE_INDICATORS, ml)
+    if args.with_level_drift:
+        inds = (*inds, LevelDrift)
     corridors = tuple(args.corridors.split(",")) if args.corridors else None
     kwargs = {"corridors": corridors} if corridors else {}
     result = run_backtest(
@@ -126,7 +137,8 @@ def cmd_backtest(args: argparse.Namespace) -> int:
     )
     name = args.out or ("fixed" if args.fixed_params else "latest")
     out_dir = repo_root() / "reports" / name
-    out = write_report(result, panel, out_dir, policy=PolicyParams(rank_base=args.rank_base))
+    notes = {"ml": args.ml, "extra_indicators": ["level_drift"] if args.with_level_drift else []}
+    out = write_report(result, panel, out_dir, policy=PolicyParams(rank_base=args.rank_base), notes=notes)
     pd.set_option("display.width", 250)
     for h in (20, 5):
         print(f"\n=== h = {h}, допуск {args.tol:g} бп ===")
@@ -155,10 +167,19 @@ def cmd_compare_runs(args: argparse.Namespace) -> int:
             f"сначала `fxmoment backtest --out {args.variant}`"
         )
         return 2
-    out = compare_runs(root / "latest", variant, load_panel())
+    pairs: dict[str, str] = {}
+    for item in args.pair:
+        if "=" not in item:
+            print(f"--pair {item!r}: ожидается `индикатор_варианта=индикатор_latest`, как level_drift=level")
+            return 2
+        v_name, l_name = item.split("=", 1)
+        pairs[v_name.strip()] = l_name.strip()
+    out = compare_runs(root / "latest", variant, load_panel(), pairs=pairs)
     pd.set_option("display.width", 250)
     for name, title in (
         ("matrix_overlap.csv", "общие окна: расхождения строк матрицы"),
+        ("pairs_compare.csv", "пары индикаторов: индикатор варианта против индикатора latest"),
+        ("extra_indicators.csv", "индикаторы только у варианта"),
         ("stream_compare.csv", "итоговый поток: вариант против latest"),
         ("stream_raw.csv", "итоговый поток без базы: доля попаданий и выгода вперёд"),
         ("stream_shape.csv", "форма потока: вариант против latest"),
@@ -366,6 +387,17 @@ def main(argv: list[str] | None = None) -> int:
         default="window",
         help="база lift для ранга и отключений индикаторов: окно (ADR-0006) или месяц (ADR-0011)",
     )
+    b.add_argument(
+        "--ml",
+        choices=("local", "pooled"),
+        default="local",
+        help="обучаемый индикатор: на своём коридоре или один на все коридоры прогона с признаком коридора",
+    )
+    b.add_argument(
+        "--with-level-drift",
+        action="store_true",
+        help="добавить `level_drift`: уровень на ряде с вычтенным дрейфом локальной ноги rate / usd",
+    )
     b.add_argument("--out", default="", help="каталог варианта внутри reports/ (обязателен для вариантов)")
     b.set_defaults(func=cmd_backtest)
 
@@ -373,6 +405,12 @@ def main(argv: list[str] | None = None) -> int:
         "compare-runs", help="вариантный прогон против reports/latest → reports/<вариант>/vs_latest/"
     )
     cr.add_argument("--variant", required=True, help="имя каталога варианта внутри reports/")
+    cr.add_argument(
+        "--pair",
+        action="append",
+        default=[],
+        help="индикатор варианта против индикатора latest, `level_drift=level`; можно несколько раз",
+    )
     cr.set_defaults(func=cmd_compare_runs)
 
     a = sub.add_parser("analyze", help="анализы поверх reports/latest → reports/latest/analysis/")

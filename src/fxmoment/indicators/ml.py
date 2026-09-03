@@ -3,11 +3,13 @@
 
 from __future__ import annotations
 
+from typing import Any
+
 import numpy as np
 import pandas as pd
 from sklearn.ensemble import HistGradientBoostingClassifier
 
-from fxmoment.config import BUY_NOW
+from fxmoment.config import BUY_NOW, CORRIDORS
 from fxmoment.indicators.base import Indicator, rearm_events, rolling_pct_rank
 from fxmoment.indicators.features import build_features
 from fxmoment.labels import benefit_fwd_bps, local_min_label
@@ -54,9 +56,19 @@ class LearnedMinimum(Indicator):
         self.fitted_: bool = False
         self.pos_rate_val_: float = float("nan")  # доля гейтовых дней валидации выше порога
         self.feature_names_: list[str] = []
+        self.train_rows_: int = 0  # строк в обучении модели (без валидации)
+        self.train_corridors_: int = 0  # коридоров в обучении: 1 у своего, больше у объединённого
 
     def fact_fields(self) -> tuple[str, ...]:
         return ("proba", "pct_rank", "window")
+
+    def fit_info(self) -> dict[str, Any]:
+        """Что дописать в параметры калибровки после обучения; у своего коридора ничего — иначе
+        сдвинулись бы байты `calibration.csv` и `signals.csv` прогона по умолчанию."""
+        return {}
+
+    def _features(self, rate: pd.Series, context: pd.DataFrame | None = None) -> pd.DataFrame:
+        return build_features(rate, context)
 
     def _new_model(self) -> HistGradientBoostingClassifier:
         return HistGradientBoostingClassifier(
@@ -80,7 +92,7 @@ class LearnedMinimum(Indicator):
         распределение вероятностей, и порог переставал что-либо значить (аудит 03.09).
         `train_start` — с какой даты брать строки в обучение; история раньше служит только разогревом
         признаков."""
-        x = build_features(rate, context)
+        x = self._features(rate, context)
         y = local_min_label(rate, self.h, self.tol_bps)
         ok = x.notna().all(axis=1) & y.notna()
         if train_start is not None:
@@ -88,6 +100,8 @@ class LearnedMinimum(Indicator):
         x, y = x[ok], y[ok].astype(int)
         self.fitted_ = False
         self.pos_rate_val_ = float("nan")
+        self.train_rows_ = 0
+        self.train_corridors_ = 0
         if len(x) < 200 or y.nunique() < 2:
             self.model_ = None
             self.threshold_ = 1.0
@@ -95,6 +109,8 @@ class LearnedMinimum(Indicator):
         w = np.where(y.to_numpy() == 1, 1.0, self.fp_cost)
         cut = int(len(x) * 0.8)
         model = self._new_model().fit(x.iloc[:cut], y.iloc[:cut], sample_weight=w[:cut])
+        self.train_rows_ = cut
+        self.train_corridors_ = 1
         p_val = model.predict_proba(x.iloc[cut:])[:, 1]
         val_idx = x.index[cut:]
         b_val = benefit_fwd_bps(rate, self.h).reindex(val_idx).to_numpy()
@@ -109,7 +125,7 @@ class LearnedMinimum(Indicator):
         return self
 
     def compute(self, rate: pd.Series, context: pd.DataFrame | None = None) -> pd.DataFrame:
-        x = build_features(rate, context)
+        x = self._features(rate, context)
         proba = pd.Series(np.nan, index=rate.index)
         if self.model_ is not None:
             ok = x.notna().all(axis=1)
@@ -128,6 +144,98 @@ class LearnedMinimum(Indicator):
         out["pct_rank"] = rank
         out["window"] = float(self.gate_window)
         return out
+
+
+class LearnedMinimumPooled(LearnedMinimum):
+    """Тот же бустинг, обученный на строках всех коридоров прогона до даты среза с признаком коридора
+    (💬 03.09 вечер, пункт 5). Порог — по-прежнему на коридор, среди гейтовых дней его валидации.
+    Ряды других коридоров берутся из контекста: движок кладёт их туда, когда в прогоне есть
+    объединённый индикатор (`context_columns`); без них обучение сводится к своему коридору, и это
+    видно по `_train_corridors` в `calibration.csv`. Имя в матрице то же, `ml_localmin`: вариант
+    заменяет обучаемый слот стека, а не добавляет второй, поэтому `compare-runs` сравнивает его с
+    базовым напрямую; отличие видно по `pooled=True` в метке и по провенансу отчёта."""
+
+    pooled = True
+
+    def __init__(self, **params: Any) -> None:
+        super().__init__(**params)
+        self.params["pooled"] = True
+
+    def fit_info(self) -> dict[str, Any]:
+        return {"_train_corridors": self.train_corridors_, "_train_rows": self.train_rows_}
+
+    def _features(self, rate: pd.Series, context: pd.DataFrame | None = None) -> pd.DataFrame:
+        f = build_features(rate, context)
+        own = _corridor_of(rate)
+        for c in CORRIDORS:  # набор фиксирован конфигом: имена признаков не зависят от состава прогона
+            f[f"corr_{c}"] = 1.0 if c == own else 0.0
+        return f
+
+    def fit(
+        self,
+        rate: pd.Series,
+        context: pd.DataFrame | None = None,
+        train_start: str | pd.Timestamp | None = None,
+    ) -> LearnedMinimumPooled:
+        """Обучение на объединённых строках коридоров до даты среза; дата среза и дни валидации — те
+        же, что у `LearnedMinimum` на своём коридоре (последние 20 % его строк), так что отличается
+        только модель. Признаки чужих коридоров считаются на контексте без служебного кэша
+        `_rank_*` (он посчитан по своему ряду)."""
+        own = _corridor_of(rate)
+        others = [c for c in CORRIDORS if c != own and context is not None and c in context.columns]
+        plain = _currency_context(context)
+        xs: dict[str, pd.DataFrame] = {}
+        ys: dict[str, pd.Series] = {}
+        for c in (own, *others):
+            r = rate if c == own else context[c].dropna()  # type: ignore[index]
+            x = self._features(r, context if c == own else plain)
+            y = local_min_label(r, self.h, self.tol_bps)
+            ok = x.notna().all(axis=1) & y.notna()
+            if train_start is not None:
+                ok &= x.index >= pd.Timestamp(train_start)
+            xs[c], ys[c] = x[ok], y[ok].astype(int)
+        self.fitted_ = False
+        self.pos_rate_val_ = float("nan")
+        self.train_rows_ = 0
+        self.train_corridors_ = 0
+        self.model_ = None
+        self.threshold_ = 1.0
+        x_own, y_own = xs[own], ys[own]
+        if len(x_own) < 200 or y_own.nunique() < 2:
+            return self
+        cut = int(len(x_own) * 0.8)
+        cut_date = x_own.index[cut]  # первая дата валидации своего коридора
+        x_tr = pd.concat([xs[c][xs[c].index < cut_date] for c in xs])
+        y_tr = pd.concat([ys[c][ys[c].index < cut_date] for c in ys])
+        if y_tr.nunique() < 2:
+            return self
+        w = np.where(y_tr.to_numpy() == 1, 1.0, self.fp_cost)
+        model = self._new_model().fit(x_tr, y_tr, sample_weight=w)
+        x_val = x_own.iloc[cut:]
+        p_val = model.predict_proba(x_val)[:, 1]
+        b_val = benefit_fwd_bps(rate, self.h).reindex(x_val.index).to_numpy()
+        gate_val = (x_val[f"rank{self.gate_window}"] <= self.gate_pct).to_numpy()
+        self.threshold_ = _choose_threshold(p_val[gate_val], b_val[gate_val], self.fp_cost, self.min_pos_rate)
+        gated = p_val[gate_val]
+        self.pos_rate_val_ = float((gated >= self.threshold_).mean()) if len(gated) else float("nan")
+        self.model_ = model
+        self.feature_names_ = list(x_own.columns)
+        self.train_rows_ = int(len(x_tr))
+        self.train_corridors_ = 1 + sum(1 for c in others if bool((xs[c].index < cut_date).any()))
+        self.fitted_ = True
+        return self
+
+
+def _corridor_of(rate: pd.Series) -> str:
+    """Коридор — имя ряда: движок берёт столбец панели, и имя столбца приходит вместе с ним."""
+    return "" if rate.name is None else str(rate.name)
+
+
+def _currency_context(context: pd.DataFrame | None) -> pd.DataFrame | None:
+    """Контекст без служебных столбцов `_rank_*`, `_dsm_*`: они посчитаны по своему ряду."""
+    if context is None:
+        return None
+    return context[[c for c in context.columns if not str(c).startswith("_")]]
 
 
 def _choose_threshold(
