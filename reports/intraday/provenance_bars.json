@@ -1,14 +1,14 @@
 {
- "code": "b7b3441",
+ "code": "ec21b10",
  "fetched_at_utc": "2026-09-03T02:30:05+00:00",
  "interval_length": null,
  "profile": "intraday",
  "bars_per_day": 9,
  "daily_report": {
-  "code": "b7b3441",
+  "code": "ec21b10",
   "fetched_at_utc": "2026-09-03T00:04:48+00:00",
   "last_eff_date": "2026-09-03",
-  "built_at_utc": "2026-09-03T05:01:31Z",
+  "built_at_utc": "2026-09-03T05:16:06Z",
   "windows": [
    "2021-01…2021-06",
    "2021-07…2021-12",
@@ -23,7 +23,7 @@
    "2026-01…2026-06"
   ]
  },
- "built_at_utc": "2026-09-03T05:05:22Z",
+ "built_at_utc": "2026-09-03T05:19:49Z",
  "windows": {
   "KZT": [
    "2022-12…2023-05",
