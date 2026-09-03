@@ -28,6 +28,7 @@ TOLERANCES_BPS: tuple[float, ...] = (0.0, 10.0, 25.0, 50.0)  # допуски в
 PRIMARY_TOL_BPS = 25.0  # рабочий допуск (ADR-0003)
 
 RAW_START = "2015-01-01"
+MOEX_RAW_START = "2018-01-01"  # снимок Мосбиржи (ADR-0010): год разогрева до первого окна теста
 ANALYSIS_START = "2018-01-01"
 FIRST_TEST = "2021-01-01"
 TEST_MONTHS = 6

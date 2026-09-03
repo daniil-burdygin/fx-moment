@@ -1,4 +1,5 @@
-"""CLI: fetch / backtest / analyze / signals --as-of [--decide] / check-texts."""
+"""CLI: fetch / fetch-moex / compare-sources / backtest / analyze / signals --as-of [--decide] /
+check-texts."""
 
 from __future__ import annotations
 
@@ -10,7 +11,7 @@ from typing import Any
 
 import pandas as pd
 
-from fxmoment.config import ALL_CURRENCIES, ANALYSIS_START, RAW_START
+from fxmoment.config import ALL_CURRENCIES, ANALYSIS_START, MOEX_RAW_START, RAW_START
 
 
 def cmd_fetch(args: argparse.Namespace) -> int:
@@ -22,6 +23,40 @@ def cmd_fetch(args: argparse.Namespace) -> int:
     df = fetch_all(start, end, ALL_CURRENCIES)
     save_raw(df, DYNAMIC_URL, args.start, end.isoformat())
     print(f"{len(df)} строк, {df['currency'].nunique()} валют → {RAW_CSV}")
+    return 0
+
+
+def cmd_fetch_moex(args: argparse.Namespace) -> int:
+    from fxmoment.data.moex import BOARD_URL, MOEX_SECURITIES, fetch_all
+    from fxmoment.data.store import MOEX_CSV, save_moex_raw
+
+    start = date.fromisoformat(args.start)
+    end = date.today()
+    currencies = tuple(args.currencies.split(",")) if args.currencies else tuple(MOEX_SECURITIES)
+    df = fetch_all(start, end, currencies, interval=args.interval)
+    save_moex_raw(df, BOARD_URL, args.start, end.isoformat(), args.interval)
+    per = df.groupby("currency").size().to_dict()
+    print(f"{len(df)} свечей → {MOEX_CSV}")
+    for cur, n in sorted(per.items()):
+        print(f"  {cur}: {n}")
+    return 0
+
+
+def cmd_compare_sources(args: argparse.Namespace) -> int:
+    from fxmoment.data.compare import write_comparison
+    from fxmoment.data.store import load_bar_panel, load_panel, repo_root
+
+    out = write_comparison(load_panel(), load_bar_panel(), repo_root() / "reports" / "intraday")
+    pd.set_option("display.width", 250)
+    for name, title in (
+        ("cbr_vs_moex.csv", "биржевое закрытие против фиксинга ЦБ"),
+        ("cbr_vs_moex_by_hour.csv", "к какому часу биржа определяет завтрашний фиксинг"),
+    ):
+        path = out / name
+        if path.exists() and path.stat().st_size > 1:
+            print(f"\n=== {title} ===")
+            print(pd.read_csv(path).round(4).to_string(index=False))
+    print(f"\nсверка → {out}")
     return 0
 
 
@@ -199,6 +234,17 @@ def main(argv: list[str] | None = None) -> int:
     f = sub.add_parser("fetch", help="выгрузить курсы ЦБ в data/raw/")
     f.add_argument("--start", default=RAW_START)
     f.set_defaults(func=cmd_fetch)
+
+    fm = sub.add_parser("fetch-moex", help="выгрузить часовые свечи Мосбиржи в data/raw/ (ADR-0010)")
+    fm.add_argument("--start", default=MOEX_RAW_START)
+    fm.add_argument("--currencies", default="", help="через запятую, по умолчанию все пары CETS")
+    fm.add_argument("--interval", type=int, default=60, help="минут в свече: 1, 10, 60, 24 (день)")
+    fm.set_defaults(func=cmd_fetch_moex)
+
+    cs = sub.add_parser(
+        "compare-sources", help="сверка биржевого закрытия с фиксингом ЦБ → reports/intraday/"
+    )
+    cs.set_defaults(func=cmd_compare_sources)
 
     b = sub.add_parser("backtest", help="walk-forward бэктест → reports/latest/")
     b.add_argument("--start", default=ANALYSIS_START, help="начало окна анализа")

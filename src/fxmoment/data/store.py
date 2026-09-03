@@ -1,4 +1,8 @@
-"""Снимок сырых данных ЦБ с датой выгрузки: воспроизводимость без сети."""
+"""Снимки сырых данных с датой выгрузки: воспроизводимость без сети.
+
+Два источника, две пары «csv + meta»: дневной фиксинг ЦБ (`cbr_daily`) и часовые свечи
+Мосбиржи (`moex_hourly`, ADR-0010). Метаданные пишутся всегда: без даты выгрузки отчёт
+невоспроизводим."""
 
 from __future__ import annotations
 
@@ -18,6 +22,8 @@ def repo_root() -> Path:
 RAW_DIR = repo_root() / "data" / "raw"
 RAW_CSV = RAW_DIR / "cbr_daily.csv"
 RAW_META = RAW_DIR / "cbr_daily.meta.json"
+MOEX_CSV = RAW_DIR / "moex_hourly.csv"
+MOEX_META = RAW_DIR / "moex_hourly.meta.json"
 
 
 def save_raw(long_df: pd.DataFrame, source: str, start: str, end: str) -> None:
@@ -48,3 +54,43 @@ def load_meta() -> dict:
 
 def load_panel() -> pd.DataFrame:
     return to_publication_panel(load_raw())
+
+
+def save_moex_raw(long_df: pd.DataFrame, source: str, start: str, end: str, interval: int) -> None:
+    """Снимок часовых свечей Мосбиржи (ADR-0010) рядом со снимком ЦБ."""
+    RAW_DIR.mkdir(parents=True, exist_ok=True)
+    long_df.to_csv(MOEX_CSV, index=False, date_format="%Y-%m-%d %H:%M:%S")
+    per_currency = {
+        str(cur): {
+            "bars": int(len(g)),
+            "first_bar": str(g["begin"].min()),
+            "last_bar": str(g["begin"].max()),
+        }
+        for cur, g in long_df.groupby("currency")
+    }
+    meta = {
+        "fetched_at_utc": datetime.now(UTC).isoformat(timespec="seconds"),
+        "source": source,
+        "interval_minutes": interval,
+        "requested_start": start,
+        "requested_end": end,
+        "rows": int(len(long_df)),
+        "currencies": per_currency,
+    }
+    MOEX_META.write_text(json.dumps(meta, ensure_ascii=False, indent=2), encoding="utf-8")
+
+
+def load_moex_raw() -> pd.DataFrame:
+    if not MOEX_CSV.exists():
+        raise FileNotFoundError(f"нет снимка {MOEX_CSV}: выполните `fxmoment fetch-moex`")
+    return pd.read_csv(MOEX_CSV, parse_dates=["begin", "known_at", "end"])
+
+
+def load_moex_meta() -> dict:
+    return json.loads(MOEX_META.read_text(encoding="utf-8")) if MOEX_META.exists() else {}
+
+
+def load_bar_panel() -> pd.DataFrame:
+    from fxmoment.data.moex import to_bar_panel
+
+    return to_bar_panel(load_moex_raw())
