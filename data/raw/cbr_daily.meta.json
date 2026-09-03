@@ -1,0 +1,19 @@
+{
+  "fetched_at_utc": "2026-09-03T00:04:48+00:00",
+  "source": "https://www.cbr.ru/scripts/XML_dynamic.asp",
+  "requested_start": "2015-01-01",
+  "requested_end": "2026-09-03",
+  "currencies": [
+    "AMD",
+    "CNY",
+    "EUR",
+    "KGS",
+    "KZT",
+    "TJS",
+    "USD",
+    "UZS"
+  ],
+  "rows": 23024,
+  "first_eff_date": "2015-01-01",
+  "last_eff_date": "2026-09-03"
+}
