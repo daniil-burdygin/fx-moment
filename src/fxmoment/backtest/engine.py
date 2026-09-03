@@ -205,8 +205,9 @@ def fit_indicator(
     """Индикатор с параметрами, выбранными только по данным до конца обучения.
     fixed_params — правила берут априорные параметры по умолчанию (заданы до первого прогона)
     без сетки: контрольный прогон «стоит ли калибровка своих денег»; ML обучается как обычно.
-    `calibration_h`, `grid_scale` и `bounds` задаются профилем ряда (ADR-0010): на часовой оси
-    горизонт калибровки, окна сетки и допустимая частота другие."""
+    `calibration_h` и `grid_scale` задаются профилем ряда (ADR-0010): на часовой оси горизонт
+    калибровки и окна сетки другие. `bounds` профилем НЕ задаётся — полоса частоты про канал, а
+    не про шаг ряда (см. `profiles.py`); это отдельный вход для замеров вроде фронтира."""
     if fixed_params and not cls.trainable:
         ind = cls(**cls.scaled_defaults(grid_scale))
         return ind, {**ind.params, "_feasible": None, "_n_feasible": 0, "_fixed": True}, []
@@ -279,8 +280,9 @@ def run_backtest(
     bounds: tuple[float, float, int] | None = None,
     context: tuple[str, ...] = CONTEXT,
 ) -> BacktestResult:
-    """`calibration_h`, `grid_scale`, `bounds` и `context` задаются профилем ряда (ADR-0010):
-    по умолчанию — дневная ось ЦБ, на часовой оси Мосбиржи всё это в барах."""
+    """`calibration_h`, `grid_scale` и `context` задаются профилем ряда (ADR-0010): по умолчанию —
+    дневная ось ЦБ, на часовой оси Мосбиржи горизонт и окна сеток в барах. `bounds` профилем не
+    задаётся: полоса частоты — свойство канала, а не шага ряда."""
     ana = panel.loc[pd.Timestamp(analysis_start) :]
     splits = splits or make_splits(ana.index)
     ctx_all = panel[[c for c in context if c in panel.columns]]
@@ -358,7 +360,11 @@ def signals_as_of(
     """Состояние всех индикаторов на дату среза — по данным с pub_date ≤ cutoff и параметрам,
     откалиброванным на окне, которое действует в эту дату; после последнего тестового окна — на
     живом окне (обучение до его начала минус зазор, `split_for_date`). `lookback` — сколько
-    предыдущих дней публикации вернуть вместе с датой среза."""
+    предыдущих дней публикации вернуть вместе с датой среза.
+
+    Функция ДНЕВНАЯ: профиль ряда она не принимает и берёт `CONTEXT` и умолчания `fit_indicator`.
+    Живое решение живёт на оси ЦБ (ADR-0010: часовая ось — второй источник, не замена), и
+    параметризовать её «на будущее» значило бы завести вход, за которым не стоит вызывающего."""
     cutoff = pd.Timestamp(cutoff)
     ana = panel.loc[pd.Timestamp(analysis_start) :]
     splits = splits or make_splits(ana.index)

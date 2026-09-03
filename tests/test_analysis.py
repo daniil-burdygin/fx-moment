@@ -1,5 +1,6 @@
 import numpy as np
 import pandas as pd
+import pytest
 
 from fxmoment import analysis
 from fxmoment.backtest import make_splits, run_backtest
@@ -132,6 +133,7 @@ def test_tax_window_requires_detrended_effect_too():
             "corridor": ["TJS", "TJS"],
             "day_of_month": [24, 5],
             "n_days": [10, 10],
+            "n_days_detrended": [10, 10],
             "dev_from_month_mean_bps": [-50.0, 50.0],
             "dev_detrended_bps": [5.0, -5.0],  # после снятия тренда знак обратный
             "in_tax_window": [True, False],
@@ -140,3 +142,70 @@ def test_tax_window_requires_detrended_effect_too():
     out = analysis.tax_window_summary(table)
     assert out.loc[0, "difference_bps"] < 0
     assert not bool(out.loc[0, "supports_hypothesis"])
+
+
+def test_weighted_drops_weight_together_with_missing_value():
+    """Строка без остатка выпадает вместе со своим весом: иначе числитель и знаменатель считались
+    бы по разным наборам чисел месяца и среднее уезжало бы к нулю (аудит 03.09)."""
+    from fxmoment import analysis
+
+    g = pd.DataFrame(
+        {
+            "dev_detrended_bps": [-30.0, float("nan")],
+            "n_days_detrended": [10, 0],
+            "n_days": [10, 40],
+        }
+    )
+    got = analysis._weighted(g, "dev_detrended_bps", "n_days_detrended")
+    assert got == pytest.approx(-30.0)
+
+
+def test_monthly_baseline_labels_each_indicator_by_its_own_scenario(panel):
+    """Разворот объявлен WINDOW_CLOSING, и попадание у него своё (ADR-0003). Раньше вся таблица
+    размечалась одной функцией BUY_NOW, и строка разворота в ADR-0011 была посчитана чужой
+    меткой (аудит 03.09). На ОДНИХ И ТЕХ ЖЕ датах два сценария обязаны разойтись."""
+    from fxmoment import analysis
+    from fxmoment.backtest.walkforward import make_splits
+
+    splits = make_splits(panel.index)
+    rate = panel["TJS"].dropna()
+    days = analysis._test_days(rate, splits)
+    dates = pd.Series(days[days.day <= 3])
+    signals = pd.concat(
+        [
+            pd.DataFrame({"corridor": "TJS", "indicator": "level", "date": dates, "split": 0,
+                          "scenario": "BUY_NOW"}),
+            pd.DataFrame({"corridor": "TJS", "indicator": "reversal", "date": dates, "split": 0,
+                          "scenario": "WINDOW_CLOSING"}),
+        ],
+        ignore_index=True,
+    )
+    result = BacktestResult(signals, pd.DataFrame(), pd.DataFrame(), splits)
+    table = analysis.monthly_baseline_table(result, panel).set_index("indicator")
+    assert table.loc["level", "events"] == table.loc["reversal", "events"]
+    assert table.loc["level", "hit_mean_pooled"] != table.loc["reversal", "hit_mean_pooled"]
+    assert table.loc["level", "base_window"] != table.loc["reversal", "base_window"]
+
+
+def test_monthly_baseline_separates_the_two_bases(panel):
+    """То, ради чего написана вся таблица: две базы обязаны различаться, когда события кучкуются
+    в месяцах определённого вида. Совпадение баз означало бы, что месячная считается по окну."""
+    from fxmoment import analysis
+    from fxmoment.backtest.walkforward import make_splits
+
+    splits = make_splits(panel.index)
+    rate = panel["TJS"].dropna()
+    days = analysis._test_days(rate, splits)
+    month_mean = rate.reindex(days).groupby(days.to_period("M")).transform("mean")
+    cheap = days[rate.reindex(days).to_numpy() < month_mean.to_numpy()]  # дни ниже среднего за месяц
+    signals = pd.DataFrame(
+        {"corridor": "TJS", "indicator": "level", "date": pd.Series(cheap), "split": 0,
+         "scenario": "BUY_NOW"}
+    )
+    result = BacktestResult(signals, pd.DataFrame(), pd.DataFrame(), splits)
+    row = analysis.monthly_baseline_table(result, panel).iloc[0]
+    assert row["base_window"] != row["base_month"]
+    assert row["lift_window"] != row["lift_month"]
+    assert row["excess_diff_bps"] == pytest.approx(
+        row["excess_month_bps"] - row["excess_window_bps"], abs=1e-9
+    )

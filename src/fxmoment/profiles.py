@@ -57,6 +57,8 @@ class Profile:
     # шагов обучения, которые обязаны предшествовать первому тесту: разогрев самого длинного окна
     # сетки плюс зазор. Нужен там, где ряд начинается позже общего `first_test` (AMD с 2022-06).
     min_train_steps: int
+    # «серия» в кучности: шагов ряда между соседними пушами, ближе которых поток считается серией
+    series_gap: int = 3
     note: str = ""
     tolerances: tuple[float, ...] = field(default_factory=tuple)
 
@@ -76,6 +78,7 @@ DAILY = Profile(
     indicators=ALL_INDICATORS,
     policy=PolicyParams(),
     min_train_steps=250 + PURGE_DAYS,
+    series_gap=3,
     note="дневной фиксинг ЦБ — база отчёта и защиты",
 )
 
@@ -95,9 +98,10 @@ INTRADAY = Profile(
     # у TJS 17 баров за два года). CNY — не коридор, а эталон ликвидной пары.
     corridors=("KZT", "AMD", "CNY"),
     context=("CNY",),
-    # сезонность выключена (ADR-0010 п. 2); ML выключен отдельно: окна его признаков заданы
-    # в днях внутри build_features и профилем не масштабируются — прогон на них был бы
-    # молчаливой методической ошибкой, а не переносом на другую ось
+    # сезонность выключена (ADR-0010 п. 2); ML выключен отдельно и по двум причинам: окна его
+    # признаков заданы в днях внутри build_features, а его собственные шаговые параметры
+    # (h = 10 у разметки локального минимума, gate_window = 120, rearm = 5) не объявлены
+    # в STEP_PARAMS. Прогон на них был бы молчаливой методической ошибкой, а не переносом оси
     indicators=(Momentum, Level, Reversal, Dip),
     policy=PolicyParams(
         cooldown_days=3 * BARS_PER_DAY,
@@ -109,6 +113,7 @@ INTRADAY = Profile(
         storm_rank=0.95,
     ),
     min_train_steps=250 * BARS_PER_DAY + 180,
+    series_gap=3 * BARS_PER_DAY,
     note="часовые свечи Мосбиржи — второй источник, не замена (ADR-0010)",
 )
 

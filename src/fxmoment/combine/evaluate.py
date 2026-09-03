@@ -20,15 +20,19 @@ TRUNC = tuple(c for c in metrics.TRUNC_COLUMNS if c != "lift_mean_trunc")
 _KEY_COLUMNS = ("corridor", "indicator", "split", "h", "tol_bps")
 
 
-def history_status(matrix: pd.DataFrame | None) -> str | None:
+def history_status(matrix: pd.DataFrame | None, h: int | None = None) -> str | None:
     """Почему матрица бэктеста непригодна для ранга по истории; None — пригодна. Откат к порядку
     по умолчанию раньше был молчаливым: старый matrix.csv без нового столбца выключал весь слой
-    ранга и отключений без единого слова (аудит 03.09)."""
+    ранга и отключений без единого слова (аудит 03.09). Второй такой же откат нашёл аудит 03.09
+    вечером: матрица другой оси (профиль ряда, ADR-0010) горизонта `h` не содержит вовсе, срез
+    выходил пустым, и слой выключался — поэтому горизонт проверяется здесь, а не в тишине."""
     if matrix is None or matrix.empty:
         return "матрица бэктеста пуста или отсутствует — нужен `fxmoment backtest`"
     missing = [c for c in (*_KEY_COLUMNS, *TRUNC) if c not in matrix.columns]
     if missing:
         return "в матрице нет столбцов " + ", ".join(missing) + " — она собрана старым кодом"
+    if h is not None and not (matrix["h"] == h).any():
+        return f"в матрице нет горизонта h={h} — она собрана на другой оси ряда"
     return None
 
 
@@ -50,7 +54,7 @@ def rank_from_history(
     (`history_status`) — порядок по умолчанию, при strict=True — ValueError; вызывающий обязан
     сказать об откате пользователю."""
     default = {name: i for i, name in enumerate(DEFAULT_ORDER)}
-    problem = history_status(matrix)
+    problem = history_status(matrix, h)
     if problem:
         if strict:
             raise ValueError(problem)
@@ -90,10 +94,11 @@ def _shape_row(
     split: Split,
     storm: pd.Series,
     dec: pd.DataFrame,
+    series_gap: int = 3,
 ) -> dict:
     days = rate.loc[split.test_start : split.test_end].index
     ev_idx = pd.DatetimeIndex(sent_dates)
-    cl = metrics.clumpiness(ev_idx, days)
+    cl = metrics.clumpiness(ev_idx, days, series_gap)
     end = min(split.test_end, rate.index[-1])
     return {
         "split": split.id,
@@ -115,6 +120,8 @@ def evaluate_stream(
     params: PolicyParams | None = None,
     horizons: tuple[int, ...] = HORIZONS,
     tolerances: tuple[float, ...] = TOLERANCES_BPS,
+    calibration_h: int = CALIBRATION_H,
+    series_gap: int = 3,
 ) -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
     """Возвращает (события с решениями политики, матрица метрик потока по коридорам, окнам и
     сценариям, форма потока по коридорам и окнам — частота и кучность всех пушей вместе).
@@ -132,7 +139,9 @@ def evaluate_stream(
             ev = result.signals[
                 (result.signals["corridor"] == corridor) & (result.signals["split"] == split.id)
             ]
-            rank, muted = rank_from_history(result.matrix, corridor, split.id, strict=True)
+            rank, muted = rank_from_history(
+                result.matrix, corridor, split.id, h=calibration_h, strict=True
+            )
             dec = ev.iloc[0:0]
             if ev.empty:
                 sent = ev.iloc[0:0]
@@ -145,7 +154,9 @@ def evaluate_stream(
             shape.append(
                 {
                     "corridor": corridor,
-                    **_shape_row(rate, sent["date"] if len(sent) else [], split, storm, dec),
+                    **_shape_row(
+                        rate, sent["date"] if len(sent) else [], split, storm, dec, series_gap
+                    ),
                 }
             )
             for scenario in sent["push_scenario"].unique() if len(sent) else []:

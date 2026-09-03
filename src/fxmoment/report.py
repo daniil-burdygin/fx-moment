@@ -32,14 +32,20 @@ def git_hash() -> str:
 
     Каталог отчётов из проверки исключён: это выход прогона, а не его вход. Пока он входил
     в проверку, флаг был взведён у любого отчёта, который что-то изменил, — то есть всегда,
-    и по нему нельзя было отличить прогон на закоммиченном коде от прогона на правках."""
+    и по нему нельзя было отличить прогон на закоммиченном коде от прогона на правках.
+    По той же причине исключены метаданные снимков: `fetched_at_utc` меняется при каждой
+    выгрузке, даже когда данные побайтово те же. Сами CSV снимков в проверке остаются —
+    правка данных руками обязана взводить флаг."""
     try:
         run = lambda *a: subprocess.run(  # noqa: E731
             ["git", *a], cwd=repo_root(), capture_output=True, text=True, check=True
         ).stdout.strip()
         head = run("rev-parse", "--short", "HEAD")
         # неотслеженные файлы тоже грязь: новый модуль меняет поведение, оставаясь вне индекса
-        dirty = "-dirty" if run("status", "--porcelain", "--", ".", ":(exclude)reports") else ""
+        changed = run(
+            "status", "--porcelain", "--", ".", ":(exclude)reports", ":(exclude)data/raw/*.meta.json"
+        )
+        dirty = "-dirty" if changed else ""
         return head + dirty
     except (subprocess.CalledProcessError, FileNotFoundError):
         return "nogit"
@@ -66,8 +72,12 @@ def write_report(result: BacktestResult, panel: pd.DataFrame, out_dir: Path | No
     result.summary(h=5).to_csv(out / "summary_h5_tol25.csv", index=False)
     result.summary(h=20, tol_bps=0.0).to_csv(out / "summary_h20_tol0.csv", index=False)
     from fxmoment.combine import evaluate_stream, stream_shape_summary, stream_summary
+    from fxmoment.profiles import DAILY
 
-    decided, stream_matrix, shape = evaluate_stream(result, panel)
+    # горизонт и порог серии берутся у профиля, а не совпадают с умолчанием случайно
+    decided, stream_matrix, shape = evaluate_stream(
+        result, panel, calibration_h=DAILY.calibration_h, series_gap=DAILY.series_gap
+    )
     decided.to_csv(out / "stream_decisions.csv", index=False)
     stream_matrix.to_csv(out / "stream_matrix.csv", index=False)
     shape.to_csv(out / "stream_shape.csv", index=False)

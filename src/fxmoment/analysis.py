@@ -408,20 +408,26 @@ def monthly_baseline_table(
         if not len(days):
             continue
         sod = _split_of_day(rate, result.splits)
-        hit_all = labels.hit_for_scenario(rate, BUY_NOW, h, tol_bps, mode="mean")
         bf_all = labels.benefit_fwd_bps(rate, h)
-        base_hit_split = _base_by_split(hit_all, days, sod, result.splits)
         base_bf_split = _base_by_split(bf_all, days, sod, result.splits)
         month_of = pd.Series(days.to_period("M"), index=days)
-        base_hit_month: dict[pd.Period, float] = {}
-        base_bf_month: dict[pd.Period, float] = {}
-        for m, idx in month_of.groupby(month_of):
-            d = idx.index
-            if len(d) < MIN_MONTH_DAYS:
-                continue
-            base_hit_month[m] = float(hit_all.reindex(d).dropna().mean())
-            base_bf_month[m] = float(bf_all.reindex(d).dropna().mean())
+        long_months = {
+            m: idx.index for m, idx in month_of.groupby(month_of) if len(idx.index) >= MIN_MONTH_DAYS
+        }
+        base_bf_month = {m: float(bf_all.reindex(d).dropna().mean()) for m, d in long_months.items()}
+        # разметка попадания зависит от сценария: разворот — WINDOW_CLOSING, у него своё условие и
+        # свой нулевой допуск (ADR-0003). Считаем по сценарию и кэшируем в пределах коридора.
+        by_scenario: dict[str, tuple[pd.Series, dict[int, float], dict[pd.Period, float]]] = {}
         for indicator, ev in grp.groupby("indicator"):
+            scenario = str(ev["scenario"].iloc[0])
+            if scenario not in by_scenario:
+                ha = labels.hit_for_scenario(rate, scenario, h, tol_bps, mode="mean")
+                by_scenario[scenario] = (
+                    ha,
+                    _base_by_split(ha, days, sod, result.splits),
+                    {m: float(ha.reindex(d).dropna().mean()) for m, d in long_months.items()},
+                )
+            hit_all, base_hit_split, base_hit_month = by_scenario[scenario]
             dates = pd.DatetimeIndex(pd.to_datetime(ev["date"])).intersection(days)
             hv = hit_all.reindex(dates)
             ok = hv.notna()
@@ -505,7 +511,9 @@ def day_of_month_table(
         for day in sorted(set(r.index.day)):
             mask = r.index.day == day
             v = dev_bps[mask].to_numpy(dtype=float)
-            vd = detrended[mask].to_numpy(dtype=float)
+            # у коротких месяцев остатка нет (прямую по двум точкам снимать нечего), и без отсева
+            # один такой месяц обратил бы в NaN весь столбец этого числа
+            vd = detrended[mask].dropna().to_numpy(dtype=float)
             lo, hi = _ci(v) if len(v) >= 5 else (np.nan, np.nan)
             dlo, dhi = _ci(vd) if len(vd) >= 5 else (np.nan, np.nan)
             rows.append(
@@ -513,10 +521,11 @@ def day_of_month_table(
                     "corridor": corridor,
                     "day_of_month": int(day),
                     "n_days": int(len(v)),
+                    "n_days_detrended": int(len(vd)),
                     "dev_from_month_mean_bps": float(v.mean()),
                     "ci_lo": lo,
                     "ci_hi": hi,
-                    "dev_detrended_bps": float(vd.mean()),
+                    "dev_detrended_bps": float(vd.mean()) if len(vd) else np.nan,
                     "detrended_ci_lo": dlo,
                     "detrended_ci_hi": dhi,
                     "in_tax_window": TAX_WINDOW[0] <= int(day) <= TAX_WINDOW[1],
@@ -543,10 +552,16 @@ def _detrend_within_month(r: pd.Series, month: pd.PeriodIndex) -> pd.Series:
     return out
 
 
-def _weighted(g: pd.DataFrame, column: str = "dev_from_month_mean_bps") -> float:
-    """Среднее отклонение, взвешенное числом дней: у чисел 29–31 наблюдений меньше."""
-    n = float(g["n_days"].sum())
-    return float((g[column] * g["n_days"]).sum() / n) if n else float("nan")
+def _weighted(
+    g: pd.DataFrame, column: str = "dev_from_month_mean_bps", weight: str = "n_days"
+) -> float:
+    """Среднее отклонение, взвешенное числом дней: у чисел 29–31 наблюдений меньше.
+
+    Строки без значения выпадают вместе со своим весом: иначе числитель считался бы по одному
+    набору чисел месяца, а знаменатель — по другому, и среднее уезжало бы к нулю."""
+    ok = g[g[column].notna()]
+    n = float(ok[weight].sum())
+    return float((ok[column] * ok[weight]).sum() / n) if n else float("nan")
 
 
 def tax_window_summary(day_table: pd.DataFrame) -> pd.DataFrame:
@@ -559,8 +574,8 @@ def tax_window_summary(day_table: pd.DataFrame) -> pd.DataFrame:
         n_out = int(outside["n_days"].sum())
         mean_in = _weighted(inside) if n_in else np.nan
         mean_out = _weighted(outside) if n_out else np.nan
-        det_in = _weighted(inside, "dev_detrended_bps") if n_in else np.nan
-        det_out = _weighted(outside, "dev_detrended_bps") if n_out else np.nan
+        det_in = _weighted(inside, "dev_detrended_bps", "n_days_detrended") if n_in else np.nan
+        det_out = _weighted(outside, "dev_detrended_bps", "n_days_detrended") if n_out else np.nan
         rows.append(
             {
                 "corridor": corridor,

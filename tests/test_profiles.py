@@ -23,11 +23,15 @@ from fxmoment.profiles import DAILY, INTRADAY, first_test_for
 
 
 def test_daily_profile_repeats_config_constants():
+    """Числа названы прямо, а не через те же константы: сравнение `DAILY.purge == PURGE_DAYS`
+    тождественно по построению и не упадёт ни при какой поломке. Здесь падает и сдвиг профиля,
+    и незамеченная правка `config.py` — а её нельзя делать не заведя ADR."""
     assert DAILY.step_scale == 1
-    assert DAILY.horizons == HORIZONS
-    assert DAILY.calibration_h == CALIBRATION_H
-    assert DAILY.purge == PURGE_DAYS
-    assert DAILY.min_test_steps == MIN_TEST_DAYS
+    assert DAILY.horizons == (1, 3, 5, 10, 20) == HORIZONS
+    assert DAILY.calibration_h == 20 == CALIBRATION_H
+    assert DAILY.purge == 20 == PURGE_DAYS
+    assert DAILY.min_test_steps == 60 == MIN_TEST_DAYS
+    assert DAILY.series_gap == 3
 
 
 def test_scale_one_leaves_grid_identical():
@@ -52,8 +56,14 @@ def test_step_params_scale_and_others_do_not():
 
 
 def test_scaled_grid_drops_duplicates_after_rounding():
-    grid = Level.scaled_grid(9)
-    assert len(grid) == len({tuple(sorted(p.items())) for p in grid})
+    """Дубликатов нет ни при каком масштабе. При scale = 1 сетка возвращается как есть, при
+    scale ≥ 2 округление может слить соседние точки — например stall_days 0 и 0 у нуля."""
+    for scale in (1, 2, 9):
+        grid = Level.scaled_grid(scale)
+        assert len(grid) == len({tuple(sorted(p.items())) for p in grid})
+    # ноль и единица при масштабе 9 остаются разными: ноль — «условие выключено»
+    assert _scale_step(0, 9) == 0
+    assert _scale_step(1, 9) == 9
 
 
 def test_context_cache_matches_scaled_windows():
@@ -89,6 +99,17 @@ def test_first_test_waits_for_enough_training(panel):
     short = idx[:100]
     with pytest.raises(ValueError, match="короче обучения"):
         first_test_for(short, DAILY)
+
+
+def test_first_test_shifts_forward_for_a_late_series(panel):
+    """Ряд, начавшийся позже общего `first_test`, обязан получить своё первое окно позже — иначе
+    тест опирался бы на обучение короче самого длинного окна сетки (AMD с 2022-06 на часовой оси)."""
+    late = panel.loc["2020-01-01":]
+    start = first_test_for(late.index, DAILY)
+    assert start > pd.Timestamp(DAILY.first_test)
+    # первое окно начинается после того, как набралось обучение, и это начало месяца
+    assert start >= late.index[DAILY.min_train_steps]
+    assert start.day == 1
 
 
 def test_fit_indicator_defaults_do_not_scale(panel):

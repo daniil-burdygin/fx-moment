@@ -6,10 +6,17 @@
 1. **Насколько ряды вообще один и тот же курс.** Расхождение уровня в базисных пунктах и связь
    дневных изменений. Большое расхождение означает, что дневной бэктест на ряде ЦБ не переносится
    на биржевое исполнение без поправки.
-2. **К какому часу биржа определяет сегодняшний фиксинг.** ЦБ публикует курс дня T примерно в
-   15:30 МСК; бары с началом раньше 15:00 заведомо ему предшествуют. Если расхождение
-   «биржа в час H против фиксинга дня T» выходит на полку уже к 11–12 часам, то к этому часу
-   фиксинг фактически известен, и пуш можно слать до публикации.
+2. **К какому часу биржа определяет сегодняшний фиксинг.** По указанию Банка России от
+   02.12.2024 № 6956-У курс дня T считается по сделкам текущего дня до 15:30 МСК и публикуется
+   в тот же день; конкретный час публикации не установлен. Значит бары, начавшиеся до 15:00,
+   лежат внутри окна расчёта, а не «до публикации» — и если расхождение «биржа в час H против
+   фиксинга дня T» выходит на полку уже к 11–12 часам, к этому часу фиксинг определён рынком,
+   хотя ещё не объявлен.
+
+   Оговорка о причинности: биржевая пара входит в расчёт напрямую только там, где по валюте
+   идут организованные торги, а курсы прочих валют ЦБ считает кросс-курсом через доллар и курсы
+   их национальных банков (6956-У, п. 3.3). Для коридорных валют совпадение рядов — общий
+   драйвер (рубль к доллару), а не «биржа определяет фиксинг».
 
 Плотность торгов меряется здесь же: коридор, у которого нет внутридневного рынка, не может дать
 внутридневного сигнала ни при какой методике, и это отдельный отрицательный результат.
@@ -23,25 +30,42 @@ import numpy as np
 import pandas as pd
 
 HOURS = tuple(range(10, 19))  # часы, по которым строится «к какому часу биржа знает фиксинг»
-CBR_PUBLICATION_HOUR = 15  # ЦБ публикует курс дня примерно в 15:30 МСК
+CBR_WINDOW_END_HOUR = 15  # окно расчёта курса ЦБ закрывается в 15:30 МСК (6956-У)
+BAR_LENGTH = pd.Timedelta(hours=1)  # длительность свечи ряда: ось known_at = начало + она
+# Валюты, по которым идут организованные торги и биржевая цена входит в расчёт курса напрямую.
+# Для остальных ЦБ считает кросс-курс через доллар и курсы национальных банков (6956-У, п. 3.3).
+CBR_DIRECT_FROM_EXCHANGE = ("CNY",)
 
 
-def daily_close(bars: pd.Series, until_hour: int | None = None) -> pd.Series:
-    """Последний известный на день бар: индекс — календарный день, значение — курс закрытия.
+def daily_close(
+    bars: pd.Series, until_hour: int | None = None, bar_length: pd.Timedelta = BAR_LENGTH
+) -> pd.Series:
+    """Последний известный на день бар: индекс — торговый день, значение — курс закрытия.
 
     `until_hour` — брать только бары, НАЧАВШИЕСЯ до этого часа включительно (например 12 — бары
-    10:00, 11:00, 12:00). Ось ряда — `known_at` = начало бара + час, поэтому отбор идёт по
-    `known_at.hour - 1`; бар 12:00 известен в 13:00."""
+    10:00, 11:00, 12:00). Ряд индексирован осью `known_at` = начало бара + длительность, поэтому
+    и день, и час берутся у НАЧАЛА бара: иначе вечерний бар 23:00 получал бы `known_at` 00:00 и
+    приклеивался к следующему календарному дню (у CNY таких баров 604)."""
     s = bars.dropna()
-    if until_hour is not None:
-        s = s[(s.index.hour - 1) <= until_hour]
     if s.empty:
         return pd.Series(dtype=float)
-    return s.groupby(s.index.normalize()).last()
+    begin = s.index - bar_length
+    if until_hour is not None:
+        keep = begin.hour <= until_hour
+        s, begin = s[keep], begin[keep]
+    if s.empty:
+        return pd.Series(dtype=float)
+    return s.groupby(begin.normalize()).last()
 
 
 def liquidity(long_df: pd.DataFrame) -> pd.DataFrame:
     """Плотность внутридневного рынка по парам: сколько баров в день реально торгуется."""
+    columns = [
+        "currency", "bars", "trading_days", "first_bar", "last_bar", "span_years",
+        "share_days_traded", "bars_per_day_median", "share_days_single_bar",
+    ]
+    if long_df.empty:
+        return pd.DataFrame(columns=columns)
     df = long_df.copy()
     df["day"] = pd.to_datetime(df["begin"]).dt.normalize()
     rows = []
@@ -65,6 +89,19 @@ def liquidity(long_df: pd.DataFrame) -> pd.DataFrame:
             }
         )
     return pd.DataFrame(rows).sort_values("bars_per_day_median", ascending=False).reset_index(drop=True)
+
+
+def _paired_changes(both: pd.DataFrame, axis: pd.DatetimeIndex) -> pd.DataFrame:
+    """Изменения обоих рядов за ОДИН и тот же шаг — соседние дни публикации ЦБ.
+
+    Иначе интервалы разъезжаются: изменение фиксинга считалось на плотном календаре ЦБ, а
+    изменение биржи — на прорежённом индексе соединения, где предыдущего дня могло не быть, и
+    однодневное изменение одного ряда сравнивалось с двух-пятидневным изменением другого."""
+    if len(both) < 3:
+        return both.iloc[0:0]
+    pos = pd.Series(axis.get_indexer(both.index), index=both.index)
+    step = pos.diff() == 1  # предыдущая строка соединения — предыдущий день публикации
+    return both.pct_change()[step.fillna(False)].dropna()
 
 
 def _diff_bps(moex: pd.Series, cbr: pd.Series) -> pd.Series:
@@ -91,7 +128,7 @@ def compare_levels(cbr_panel: pd.DataFrame, bar_panel: pd.DataFrame) -> pd.DataF
             rows.append({"currency": cur, "n_days": int(len(d)), "note": "мало общих дней"})
             continue
         both = pd.concat({"moex": moex, "cbr": cbr}, axis=1).dropna()
-        ch = both.pct_change().dropna()
+        ch = _paired_changes(both, cbr.index)
         rows.append(
             {
                 "currency": cur,
@@ -124,22 +161,30 @@ def compare_by_hour(
             continue
         cbr = cbr_panel[cur].dropna()
         cbr.index = cbr.index.normalize()
-        cbr_ch = cbr.pct_change()
+        closes = {h: daily_close(bar_panel[cur], until_hour=h) for h in hours}
+        # общий срез дней: иначе у тонкой пары ранний час считался бы по другим дням, чем поздний,
+        # и кривая «по часам» сравнивала бы не часы, а наборы дней
+        common = cbr.index
+        for s in closes.values():
+            common = common.intersection(s.index)
+        if len(common) < 30:
+            continue
         for h in hours:
-            moex = daily_close(bar_panel[cur], until_hour=h)
+            moex = closes[h].reindex(common)
             d = _diff_bps(moex, cbr)
-            if len(d) < 30:
-                continue
-            both = pd.concat({"moex": moex, "cbr_ch": cbr_ch}, axis=1).dropna()
-            moex_ch = both["moex"].pct_change()
-            pair = pd.concat({"m": moex_ch, "c": both["cbr_ch"]}, axis=1).dropna()
-            r = float(pair["m"].corr(pair["c"])) if len(pair) > 2 else np.nan
+            both = pd.concat({"moex": moex, "cbr": cbr}, axis=1).dropna()
+            ch = _paired_changes(both, cbr.index)
+            r = float(ch["moex"].corr(ch["cbr"])) if len(ch) > 2 else np.nan
             rows.append(
                 {
                     "currency": cur,
                     "hour": h,
-                    "before_cbr_publication": h < CBR_PUBLICATION_HOUR,
+                    # бар, начавшийся до 15:00, лежит внутри окна расчёта курса (10:00–15:30 МСК)
+                    "inside_cbr_window": h < CBR_WINDOW_END_HOUR,
+                    # входит ли биржевая цена в расчёт курса напрямую (иначе — кросс-курс)
+                    "cbr_uses_exchange": cur in CBR_DIRECT_FROM_EXCHANGE,
                     "n_days": int(len(d)),
+                    "n_paired_changes": int(len(ch)),
                     "median_abs_diff_bps": float(d.abs().median()),
                     "p90_abs_diff_bps": float(d.abs().quantile(0.9)),
                     "r2_change": float(r**2) if not np.isnan(r) else np.nan,
@@ -166,14 +211,14 @@ def plot_by_hour(by_hour: pd.DataFrame, path: Path) -> None:
         (ax_diff, "Расхождение с фиксингом дня", "медиана |разницы|, бп"),
         (ax_r2, "Дневное изменение фиксинга,\nобъяснённое движением биржи", "R² изменений"),
     ):
-        ax.axvline(CBR_PUBLICATION_HOUR, color="grey", linestyle="--", linewidth=1)
+        ax.axvline(CBR_WINDOW_END_HOUR, color="grey", linestyle="--", linewidth=1)
         ax.set_title(title)
         ax.set_xlabel("час торгов (МСК), бары не позже него")
         ax.set_ylabel(ylabel)
         ax.grid(alpha=0.3)
     ax_diff.set_yscale("log")
     ax_diff.legend(fontsize=8)
-    fig.suptitle("К какому часу биржа определяет фиксинг ЦБ (пунктир — публикация ЦБ, ≈ 15:30)")
+    fig.suptitle("К какому часу биржа определяет фиксинг ЦБ (пунктир — конец окна расчёта, 15:30)")
     fig.tight_layout()
     fig.savefig(path, dpi=130)
     plt.close(fig)
@@ -185,7 +230,7 @@ def write_comparison(
     out_dir: Path,
     long_df: pd.DataFrame | None = None,
 ) -> Path:
-    from fxmoment.data.store import load_moex_meta, load_moex_raw
+    from fxmoment.data.store import load_meta, load_moex_meta, load_moex_raw
     from fxmoment.report import _md_table, git_hash
 
     out_dir.mkdir(parents=True, exist_ok=True)
@@ -199,11 +244,14 @@ def write_comparison(
     plot_by_hour(by_hour, out_dir / "cbr_vs_moex_by_hour.png")
 
     meta = load_moex_meta()
+    cbr_meta = load_meta()
     lines = [
         "# Биржа против фиксинга ЦБ — сверка источников (ADR-0010)",
         "",
-        f"Снимок Мосбиржи: {meta.get('fetched_at_utc', '?')}, "
-        f"часовые свечи режима CETS, {meta.get('rows', '?')} баров. Код: `{git_hash()}`.",
+        f"Снимок Мосбиржи: {meta.get('fetched_at_utc', '?')}, режим CETS, интервал "
+        f"{meta.get('interval_length', '?')}, {meta.get('rows', '?')} баров.",
+        f"Снимок ЦБ: {cbr_meta.get('fetched_at_utc', '?')}, последняя дата действия "
+        f"{cbr_meta.get('last_eff_date', '?')}. Код: `{git_hash()}`.",
         "",
         "## Плотность внутридневного рынка",
         "",
@@ -221,10 +269,17 @@ def write_comparison(
         "",
         "## К какому часу биржа определяет сегодняшний фиксинг",
         "",
-        f"ЦБ публикует курс дня около {CBR_PUBLICATION_HOUR}:30 МСК; строки с "
-        "`before_cbr_publication` = True относятся к барам, заведомо ему предшествующим.",
-        "`r2_change` — доля дисперсии дневного изменения фиксинга, объяснённая движением биржи к часу H.",
-        "График — `cbr_vs_moex_by_hour.png`.",
+        f"Курс дня ЦБ считает по сделкам текущего дня до {CBR_WINDOW_END_HOUR}:30 МСК и публикует "
+        "в тот же день, час публикации не установлен (указание Банка России от 02.12.2024 № 6956-У). "
+        "`inside_cbr_window` = True — бары, начавшиеся внутри окна расчёта.",
+        "`r2_change` — доля дисперсии дневного изменения фиксинга, объяснённая движением биржи к часу H;",
+        "изменения обоих рядов берутся за один шаг — между соседними днями публикации.",
+        "",
+        "Причинное прочтение «биржа определяет фиксинг» законно только там, где `cbr_uses_exchange` = "
+        "True: по прочим валютам ЦБ считает кросс-курс через доллар и курсы национальных банков "
+        "(6956-У, п. 3.3), и совпадение рядов там — общий драйвер, а не механизм.",
+        "Часы сравниваются на общем срезе дней: у тонкой пары ранний час иначе считался бы по другим "
+        "дням, чем поздний. График — `cbr_vs_moex_by_hour.png`.",
         "",
         _md_table(by_hour.round(3)),
     ]

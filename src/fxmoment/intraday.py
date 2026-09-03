@@ -81,8 +81,12 @@ def daily_vs_intraday(
 ) -> pd.DataFrame:
     """Сравнение осей на общем периоде: месяц в днях против месяца в барах.
 
-    Берутся только окна, начинающиеся не раньше первого внутридневного окна коридора, — иначе
-    дневной ряд получал бы премию за 2021–2022 годы, которых у биржевого ряда просто нет.
+    Период обрезается с ОБЕИХ сторон по пересечению окон: иначе дневной ряд получал бы премию за
+    2021–2022 годы, которых у биржевого ряда нет, а внутридневной — за хвост, который дневное
+    правило `MIN_TEST_DAYS` отбрасывает. Сетки окон двух осей сдвинуты (внутридневная начинается
+    от `first_test_for` своего ряда), поэтому граничные окна совпадают не день в день; обе
+    границы названы в столбце `period`.
+
     Сравнение честно по периоду и по горизонту, но НЕ по числу наблюдений: на часовой оси шагов
     в девять раз больше, поэтому события и база считаются по разным множествам."""
     rows = []
@@ -90,13 +94,21 @@ def daily_vs_intraday(
         intra = intra[(intra["h"] == intraday_h) & (intra["tol_bps"] == tol_bps)]
         if intra.empty:
             continue
-        first_window = str(intra["window"].min())
         day = daily_matrix[
             (daily_matrix["corridor"] == corridor)
             & (daily_matrix["h"] == daily_h)
             & (daily_matrix["tol_bps"] == tol_bps)
-            & (daily_matrix["window"] >= first_window)
         ]
+        # метка окна «2023-06…2023-11» одной ширины, поэтому лексикографический порядок = хронологический
+        if len(day):
+            lo = max(str(intra["window"].min()), str(day["window"].min()))
+            hi = min(str(intra["window"].max()), str(day["window"].max()))
+            day = day[(day["window"] >= lo) & (day["window"] <= hi)]
+            intra = intra[(intra["window"] >= lo) & (intra["window"] <= hi)]
+        else:
+            lo, hi = str(intra["window"].min()), str(intra["window"].max())
+        if intra.empty:
+            continue
         for indicator in sorted(set(intra["indicator"]) | set(day["indicator"])):
             i = intra[intra["indicator"] == indicator]
             d = day[day["indicator"] == indicator]
@@ -104,7 +116,7 @@ def daily_vs_intraday(
                 {
                     "corridor": corridor,
                     "indicator": indicator,
-                    "from_window": first_window,
+                    "period": f"{lo}…{hi}",
                     "daily_events": int(d["n_events"].sum()) if len(d) else 0,
                     "daily_lift_mean_pooled": _pooled_lift(d),
                     "daily_excess_median_bps": (
@@ -155,7 +167,9 @@ def write_intraday_report(
     out_dir: Path,
     profile: Profile = INTRADAY,
     daily_matrix: pd.DataFrame | None = None,
+    daily_dir: Path | None = None,
 ) -> Path:
+    from fxmoment.analysis import backtest_provenance
     from fxmoment.data.store import load_moex_meta
     from fxmoment.report import _md_table, git_hash
 
@@ -177,7 +191,9 @@ def write_intraday_report(
         if len(s):
             summaries.append(s.assign(corridor=corridor))
     summary = pd.concat(summaries, ignore_index=True) if summaries else pd.DataFrame()
-    summary.to_csv(out_dir / "summary_bars_h180_tol25.csv", index=False)
+    # имя файла — из профиля: горизонт в нём не константа, а параметр оси
+    summary_name = f"summary_bars_h{profile.calibration_h}_tol{int(PRIMARY_TOL_BPS)}.csv"
+    summary.to_csv(out_dir / summary_name, index=False)
 
     short = []
     for r in results.values():
@@ -191,7 +207,13 @@ def write_intraday_report(
     streams, shapes = [], []
     for r in results.values():
         _, sm, sh = evaluate_stream(
-            r, panel, params=profile.policy, horizons=profile.horizons, tolerances=TOLERANCES_BPS
+            r,
+            panel,
+            params=profile.policy,
+            horizons=profile.horizons,
+            tolerances=TOLERANCES_BPS,
+            calibration_h=profile.calibration_h,
+            series_gap=profile.series_gap,
         )
         if len(sm):
             streams.append(sm)
@@ -209,13 +231,18 @@ def write_intraday_report(
     compare.to_csv(out_dir / "daily_vs_intraday.csv", index=False)
 
     meta = load_moex_meta()
+    # чужие числа — чужой провенанс: сравнение осей считается по матрице ДНЕВНОГО отчёта, и без
+    # его штампа свежий хеш кода выдавался бы за происхождение этих строк (аудит 03.09)
+    daily_prov = backtest_provenance(daily_dir) if (has_daily and daily_dir is not None) else None
     (out_dir / "provenance_bars.json").write_text(
         json.dumps(
             {
                 "code": git_hash(),
                 "fetched_at_utc": meta.get("fetched_at_utc"),
+                "interval_length": meta.get("interval_length"),
                 "profile": profile.name,
                 "bars_per_day": profile.step_scale,
+                "daily_report": daily_prov or None,
                 "built_at_utc": f"{datetime.now(UTC):%Y-%m-%dT%H:%M:%SZ}",
                 "windows": {c: [s.label() for s in r.splits] for c, r in results.items()},
             },

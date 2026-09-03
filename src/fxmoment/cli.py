@@ -50,7 +50,7 @@ def cmd_compare_sources(args: argparse.Namespace) -> int:
     pd.set_option("display.width", 250)
     for name, title in (
         ("cbr_vs_moex.csv", "биржевое закрытие против фиксинга ЦБ"),
-        ("cbr_vs_moex_by_hour.csv", "к какому часу биржа определяет завтрашний фиксинг"),
+        ("cbr_vs_moex_by_hour.csv", "к какому часу биржа определяет сегодняшний фиксинг"),
     ):
         path = out / name
         if path.exists() and path.stat().st_size > 1:
@@ -61,6 +61,7 @@ def cmd_compare_sources(args: argparse.Namespace) -> int:
 
 
 def cmd_intraday(args: argparse.Namespace) -> int:
+    from fxmoment.config import PRIMARY_TOL_BPS
     from fxmoment.data.store import load_bar_panel, load_panel, repo_root
     from fxmoment.intraday import run_profile, skipped_corridors, write_intraday_report
     from fxmoment.profiles import INTRADAY
@@ -72,14 +73,18 @@ def cmd_intraday(args: argparse.Namespace) -> int:
     if not results:
         print("ни один коридор профиля не прогнался — смотрите причины выше")
         return 2
-    daily_path = repo_root() / "reports" / "latest" / "matrix.csv"
+    daily_dir = repo_root() / "reports" / "latest"
+    daily_path = daily_dir / "matrix.csv"
     daily = pd.read_csv(daily_path) if daily_path.exists() else None
     if daily is None:
         print("нет reports/latest/matrix.csv — сравнение осей пропущено, сделайте `fxmoment backtest`")
-    out = write_intraday_report(results, bars, repo_root() / "reports" / "intraday", INTRADAY, daily)
+    out = write_intraday_report(
+        results, bars, repo_root() / "reports" / "intraday", INTRADAY, daily, daily_dir
+    )
     pd.set_option("display.width", 250)
+    h = INTRADAY.calibration_h
     for name, title in (
-        ("summary_bars_h180_tol25.csv", "точность по индикаторам, горизонт 180 баров"),
+        (f"summary_bars_h{h}_tol{int(PRIMARY_TOL_BPS)}.csv", f"точность по индикаторам, горизонт {h} баров"),
         ("daily_vs_intraday.csv", "дневная ось против часовой на общем периоде"),
     ):
         path = out / name
@@ -269,7 +274,12 @@ def main(argv: list[str] | None = None) -> int:
     fm = sub.add_parser("fetch-moex", help="выгрузить часовые свечи Мосбиржи в data/raw/ (ADR-0010)")
     fm.add_argument("--start", default=MOEX_RAW_START)
     fm.add_argument("--currencies", default="", help="через запятую, по умолчанию все пары CETS")
-    fm.add_argument("--interval", type=int, default=60, help="минут в свече: 1, 10, 60, 24 (день)")
+    fm.add_argument(
+        "--interval",
+        type=int,
+        default=60,
+        help="код интервала ISS (не минуты): 1 — минута, 10, 60 — час, 24 — день, 7 — неделя",
+    )
     fm.set_defaults(func=cmd_fetch_moex)
 
     cs = sub.add_parser(

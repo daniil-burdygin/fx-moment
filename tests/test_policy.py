@@ -130,3 +130,39 @@ def test_history_status_names_the_problem():
     assert "benefit_excess_trunc" in history_status(broken)
     with pytest.raises(ValueError):
         rank_from_history(broken, "TJS", 1, strict=True)
+
+
+def test_matrix_of_another_axis_is_refused_not_silently_ignored():
+    """Матрица другой оси (профиль ряда, ADR-0010) горизонта 20 не содержит вовсе. Раньше срез
+    выходил пустым и весь слой ранга и отключений выключался молча — на часовой оси поток шёл
+    без единого отключения и давал вдвое больше пушей, чем должен (аудит 03.09)."""
+    import pytest
+
+    from fxmoment.combine import history_status
+
+    rows = _matrix_rows(0, {"level": 0.7, "momentum": 0.4}, 0.55, 40)
+    bars = pd.DataFrame(rows).assign(h=180)  # горизонт часовой оси: месяц в барах
+    assert history_status(bars) is None  # столбцы на месте — старая проверка молчит
+    assert "h=20" in history_status(bars, 20)
+    assert history_status(bars, 180) is None
+    with pytest.raises(ValueError, match="другой оси"):
+        rank_from_history(bars, "TJS", 1, strict=True)
+    # с правильным горизонтом ранг считается как обычно
+    rank, _muted = rank_from_history(bars, "TJS", 1, h=180)
+    assert rank["level"] < rank["momentum"]
+
+
+def test_evaluate_stream_passes_the_profile_horizon_down(panel):
+    """Сквозная проверка того же: поток на матрице чужой оси обязан упасть, а не промолчать."""
+    import pytest
+
+    from fxmoment.backtest import make_splits, run_backtest
+    from fxmoment.combine import evaluate_stream
+    from fxmoment.indicators import Level, Momentum
+
+    splits = make_splits(panel.loc["2018-01-01":].index, first_test="2020-01-01", test_months=6)
+    result = run_backtest(
+        panel, corridors=("TJS",), indicators=(Level, Momentum), splits=splits, analysis_start="2018-01-01"
+    )
+    with pytest.raises(ValueError, match="другой оси"):
+        evaluate_stream(result, panel, calibration_h=180)

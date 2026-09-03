@@ -35,7 +35,10 @@ def make_splits(
     test_start = pd.Timestamp(first_test)
     sid = 0
     while test_start <= index[-1]:
-        test_end = min(test_start + pd.DateOffset(months=test_months) - pd.Timedelta(days=1), index[-1])
+        # конец окна — конец последнего календарного дня, а не его полночь: на дневной оси метки
+        # и так полуночные, а на часовой полночь отрезала бы весь последний торговый день (ADR-0010)
+        last_day = test_start + pd.DateOffset(months=test_months) - pd.Timedelta(days=1)
+        test_end = min(last_day + pd.Timedelta(hours=23, minutes=59, seconds=59), index[-1])
         n_days = int(((index >= test_start) & (index <= test_end)).sum())
         if n_days < min_test_days:
             if not splits:

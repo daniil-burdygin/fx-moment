@@ -57,11 +57,19 @@ def load_panel() -> pd.DataFrame:
 
 
 def save_moex_raw(long_df: pd.DataFrame, source: str, start: str, end: str, interval: int) -> None:
-    """Снимок часовых свечей Мосбиржи (ADR-0010) рядом со снимком ЦБ."""
+    """Снимок часовых свечей Мосбиржи (ADR-0010) рядом со снимком ЦБ.
+
+    Путь снимка один, поэтому выгрузка с другим интервалом или по части валют затёрла бы полный
+    часовой снимок молча. Метаданные пишут и код интервала, и бумагу каждой валюты — чтобы
+    несовпадение было видно тому, кто снимок читает."""
     RAW_DIR.mkdir(parents=True, exist_ok=True)
     long_df.to_csv(MOEX_CSV, index=False, date_format="%Y-%m-%d %H:%M:%S")
+    from fxmoment.data.moex import ISS_INTERVAL_LENGTH, MOEX_FACEVALUE, MOEX_SECURITIES
+
     per_currency = {
         str(cur): {
+            "security": MOEX_SECURITIES.get(str(cur)),
+            "facevalue": MOEX_FACEVALUE.get(str(cur)),
             "bars": int(len(g)),
             "first_bar": str(g["begin"].min()),
             "last_bar": str(g["begin"].max()),
@@ -71,7 +79,8 @@ def save_moex_raw(long_df: pd.DataFrame, source: str, start: str, end: str, inte
     meta = {
         "fetched_at_utc": datetime.now(UTC).isoformat(timespec="seconds"),
         "source": source,
-        "interval_minutes": interval,
+        "interval_code": interval,  # код ISS, не минуты: 60 — час, 24 — день
+        "interval_length": str(ISS_INTERVAL_LENGTH[interval]),
         "requested_start": start,
         "requested_end": end,
         "rows": int(len(long_df)),

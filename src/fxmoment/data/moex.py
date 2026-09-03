@@ -19,6 +19,20 @@ ISS_ROOT = "https://iss.moex.com/iss"
 BOARD_URL = f"{ISS_ROOT}/engines/currency/markets/selt/boards/CETS/securities"
 DESCRIPTION_URL = f"{ISS_ROOT}/securities/{{sec}}.json"
 PAGE_SIZE = 500  # ISS отдаёт свечи страницами; смещение — параметр start
+
+# `interval` в ISS — КОД из перечисления, а не число минут: 60 — час, но 24 — день, 7 — неделя,
+# 31 — месяц, 4 — квартал (замер `candleborders` 03.09.2026). Длительность свечи берётся отсюда,
+# иначе для дневного кода ось `known_at` уехала бы на 24 минуты вперёд от начала свечи, то есть
+# внутрь неё самой, — и «известно к моменту T» перестало бы быть правдой.
+ISS_INTERVAL_LENGTH: dict[int, pd.Timedelta | pd.DateOffset] = {
+    1: pd.Timedelta(minutes=1),
+    10: pd.Timedelta(minutes=10),
+    60: pd.Timedelta(hours=1),
+    24: pd.Timedelta(days=1),
+    7: pd.Timedelta(weeks=1),
+    31: pd.DateOffset(months=1),
+    4: pd.DateOffset(months=3),
+}
 RAW_COLUMNS = ["currency", "begin", "known_at", "end", "open", "high", "low", "close", "unit_rate"]
 
 # Валюта → бумага режима CETS с расчётами «завтра» (TOM). USD и EUR на бирже не торгуются
@@ -102,10 +116,15 @@ def fetch_candles(
 
     `end` в ответе ISS — время ПОСЛЕДНЕЙ СДЕЛКИ внутри свечи (например 10:53:31), а не граница
     интервала, поэтому осью ряда он служить не может: шаг был бы неровным. `known_at` = begin +
-    интервал — момент, когда закрытие свечи заведомо известно; это и есть ось (см. to_bar_panel).
+    длительность интервала — момент, когда закрытие свечи заведомо известно; это и есть ось
+    (см. to_bar_panel). Длительность берётся из `ISS_INTERVAL_LENGTH`, потому что `interval` —
+    код, а не минуты.
 
     Страница короче `PAGE_SIZE` означает конец выборки; смещение растёт на число полученных строк,
     поэтому пропусков и дублей на границе страниц нет."""
+    if interval not in ISS_INTERVAL_LENGTH:
+        known = ", ".join(str(k) for k in sorted(ISS_INTERVAL_LENGTH))
+        raise ValueError(f"неизвестный код интервала ISS {interval}; известные: {known}")
     s = session or requests.Session()
     url = f"{BOARD_URL}/{MOEX_SECURITIES[currency]}/candles.json"
     params = {
@@ -133,7 +152,7 @@ def fetch_candles(
     df = df[["begin", "end", "open", "high", "low", "close"]].copy()
     df["begin"] = pd.to_datetime(df["begin"])
     df["end"] = pd.to_datetime(df["end"])
-    df.insert(1, "known_at", df["begin"] + pd.Timedelta(minutes=interval))
+    df.insert(1, "known_at", df["begin"] + ISS_INTERVAL_LENGTH[interval])
     df = df.drop_duplicates(subset="begin").sort_values("begin").reset_index(drop=True)
     return df
 
