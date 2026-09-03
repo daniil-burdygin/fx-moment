@@ -1,0 +1,68 @@
+{
+ "code": "43bddc7",
+ "built_at_utc": "2026-09-03T20:39:07Z",
+ "latest": {
+  "code": "83b0280",
+  "built_at_utc": "2026-09-03T09:31:50Z",
+  "first_test": null,
+  "rank_base": null,
+  "ml": null,
+  "extra_indicators": null
+ },
+ "variant": {
+  "code": "43bddc7",
+  "built_at_utc": "2026-09-03T20:38:29Z",
+  "first_test": "2021-01-01",
+  "rank_base": "window",
+  "ml": "pooled",
+  "extra_indicators": []
+ },
+ "common_windows": [
+  "2021-01…2021-06",
+  "2021-07…2021-12",
+  "2022-01…2022-06",
+  "2022-07…2022-12",
+  "2023-01…2023-06",
+  "2023-07…2023-12",
+  "2024-01…2024-06",
+  "2024-07…2024-12",
+  "2025-01…2025-06",
+  "2025-07…2025-12",
+  "2026-01…2026-06"
+ ],
+ "variant_only_windows": [],
+ "variant_only_indicators": [],
+ "pairs": {
+  "ml_localmin": "ml_localmin"
+ },
+ "matrix_rows_compared": 6600,
+ "matrix_columns_differ": [
+  "n_events",
+  "n_scored",
+  "hit_rate",
+  "lift",
+  "lift_ci_lo",
+  "lift_ci_hi",
+  "hit_mean",
+  "lift_mean",
+  "benefit_fwd_bps",
+  "benefit_excess_bps",
+  "benefit_excess_ci_lo",
+  "benefit_excess_ci_hi",
+  "benefit_fwd_ci_lo",
+  "benefit_fwd_ci_hi",
+  "benefit_fwd_block_ci_lo",
+  "benefit_fwd_block_ci_hi",
+  "benefit_sym_bps",
+  "vs_wait5_bps",
+  "freq_per_week",
+  "clump_share_series",
+  "clump_cv_gaps",
+  "longest_gap_days",
+  "empty_month_share",
+  "hit_mean_trunc",
+  "n_scored_trunc",
+  "lift_mean_trunc",
+  "benefit_excess_trunc"
+ ]
+}

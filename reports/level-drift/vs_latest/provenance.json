@@ -1,0 +1,44 @@
+{
+ "code": "43bddc7",
+ "built_at_utc": "2026-09-03T20:39:48Z",
+ "latest": {
+  "code": "83b0280",
+  "built_at_utc": "2026-09-03T09:31:50Z",
+  "first_test": null,
+  "rank_base": null,
+  "ml": null,
+  "extra_indicators": null
+ },
+ "variant": {
+  "code": "43bddc7",
+  "built_at_utc": "2026-09-03T20:38:45Z",
+  "first_test": "2021-01-01",
+  "rank_base": "window",
+  "ml": "local",
+  "extra_indicators": [
+   "level_drift"
+  ]
+ },
+ "common_windows": [
+  "2021-01…2021-06",
+  "2021-07…2021-12",
+  "2022-01…2022-06",
+  "2022-07…2022-12",
+  "2023-01…2023-06",
+  "2023-07…2023-12",
+  "2024-01…2024-06",
+  "2024-07…2024-12",
+  "2025-01…2025-06",
+  "2025-07…2025-12",
+  "2026-01…2026-06"
+ ],
+ "variant_only_windows": [],
+ "variant_only_indicators": [
+  "level_drift"
+ ],
+ "pairs": {
+  "level_drift": "level"
+ },
+ "matrix_rows_compared": 6600,
+ "matrix_columns_differ": []
+}
