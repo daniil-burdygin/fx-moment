@@ -7,6 +7,7 @@ import argparse
 import json
 import sys
 from datetime import date
+from pathlib import Path
 from typing import Any
 
 import pandas as pd
@@ -339,6 +340,22 @@ def cmd_check_texts(args: argparse.Namespace) -> int:
     return 2 if bad else 0
 
 
+def cmd_timemachine(args: argparse.Namespace) -> int:
+    """Страница «сигналы как на дату T» из готового прогона (строка Ш9 плана): офлайн, без пересчёта."""
+    from fxmoment.data.store import load_panel, repo_root
+    from fxmoment.demo import write_timemachine
+
+    root = repo_root()
+    out_dir = root / "reports" / args.run
+    path = Path(args.out) if args.out else root / "prototype" / "timemachine.html"
+    meta = write_timemachine(load_panel(), out_dir, path, run=args.run)
+    print(
+        f"машина времени → {path}: {meta['n_pushes']} пушей ({meta['first_push']} … {meta['last_push']}), "
+        f"{meta['n_held']} удержанных событий, код прогона {meta['code']}"
+    )
+    return 0
+
+
 def main(argv: list[str] | None = None) -> int:
     p = argparse.ArgumentParser(prog="fxmoment", description="Сигнальный слой «выгодный момент для перевода»")
     sub = p.add_subparsers(dest="cmd", required=True)
@@ -426,6 +443,11 @@ def main(argv: list[str] | None = None) -> int:
     s.add_argument("--decide", action="store_true", help="применить политику потока и показать решение")
     s.add_argument("--no-ml", action="store_true")
     s.set_defaults(func=cmd_signals)
+
+    tm = sub.add_parser("timemachine", help="страница «сигналы как на дату T» из reports/<прогон>")
+    tm.add_argument("--run", default="latest", help="каталог прогона в reports/ (по умолчанию latest)")
+    tm.add_argument("--out", default=None, help="куда писать HTML (по умолчанию prototype/timemachine.html)")
+    tm.set_defaults(func=cmd_timemachine)
 
     c = sub.add_parser("check-texts", help="прогнать библиотеку текстов и (опц.) свой текст через чекер")
     c.add_argument("--text", default="", help="проверить одну строку")
