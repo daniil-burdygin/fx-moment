@@ -104,7 +104,7 @@ def _paired_changes(both: pd.DataFrame, axis: pd.DatetimeIndex) -> pd.DataFrame:
     return both.pct_change()[step.fillna(False)].dropna()
 
 
-def _diff_bps(moex: pd.Series, cbr: pd.Series) -> pd.Series:
+def diff_bps(moex: pd.Series, cbr: pd.Series) -> pd.Series:
     joined = pd.concat({"moex": moex, "cbr": cbr}, axis=1).dropna()
     if joined.empty:
         return pd.Series(dtype=float)
@@ -123,7 +123,7 @@ def compare_levels(cbr_panel: pd.DataFrame, bar_panel: pd.DataFrame) -> pd.DataF
         moex = daily_close(bar_panel[cur])
         cbr = cbr_panel[cur].dropna()
         cbr.index = cbr.index.normalize()
-        d = _diff_bps(moex, cbr)
+        d = diff_bps(moex, cbr)
         if len(d) < 30:
             rows.append({"currency": cur, "n_days": int(len(d)), "note": "мало общих дней"})
             continue
@@ -171,7 +171,7 @@ def compare_by_hour(
             continue
         for h in hours:
             moex = closes[h].reindex(common)
-            d = _diff_bps(moex, cbr)
+            d = diff_bps(moex, cbr)
             both = pd.concat({"moex": moex, "cbr": cbr}, axis=1).dropna()
             ch = _paired_changes(both, cbr.index)
             r = float(ch["moex"].corr(ch["cbr"])) if len(ch) > 2 else np.nan

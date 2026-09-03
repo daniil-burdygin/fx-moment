@@ -246,3 +246,44 @@ def test_calibration_vs_fixed_is_paired_and_reads_the_interval():
     worse = analysis.calibration_vs_fixed(matrix(0.7), matrix(0.5)).set_index("indicator")
     assert worse.loc["level", "better"] == "калибровка"
     assert worse.loc["level", "diff_ci_hi"] < 0
+
+
+def test_paired_comparison_by_window_uses_fewer_blocks_and_wider_interval():
+    """Блок по окну — 11 наблюдений вместо 55: коридоры скоррелированы с USD/RUB, и блок по паре
+    «коридор × окно» считает пять почти одинаковых коридоров пятью наблюдениями. На двух одинаковых
+    коридорах интервал по окнам обязан быть шире, а точечная оценка — той же (03.09 вечер)."""
+    from fxmoment import analysis
+
+    def matrix(shift_per_split: float):
+        rows = []
+        for corridor in ("KZT", "TJS"):
+            for split in range(8):
+                rows.append(
+                    {
+                        "corridor": corridor,
+                        "indicator": "level",
+                        "split": split,
+                        "h": 20,
+                        "tol_bps": 25.0,
+                        "hit_mean": 0.45 + 0.01 * split + shift_per_split * split,
+                        "base_mean": 0.5,
+                        "n_scored": 40,
+                        "benefit_excess_bps": 10.0 * split + 300 * shift_per_split * split,
+                    }
+                )
+        return pd.DataFrame(rows)
+
+    both = analysis.paired_pooled_both(matrix(0.0), matrix(0.02)).set_index("indicator")
+    row = both.loc["level"]
+    assert row["blocks"] == 16 and row["blocks_by_window"] == 8
+    assert row["diff_lift"] > 0
+    width_pair = row["diff_lift_ci_hi"] - row["diff_lift_ci_lo"]
+    width_window = row["diff_lift_ci_hi_by_window"] - row["diff_lift_ci_lo_by_window"]
+    assert width_window > width_pair > 0
+    assert row["diff_benefit_ci_hi_by_window"] - row["diff_benefit_ci_lo_by_window"] > (
+        row["diff_benefit_ci_hi"] - row["diff_benefit_ci_lo"]
+    )
+    cmp_ = analysis.calibration_vs_fixed(matrix(0.0), matrix(0.02)).set_index("indicator")
+    assert {"better", "better_by_window", "diff_ci_lo_by_window"} <= set(cmp_.columns)
+    with pytest.raises(ValueError):
+        analysis.paired_pooled_comparison(matrix(0.0), matrix(0.0), block="corridor")
