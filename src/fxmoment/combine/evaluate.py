@@ -194,7 +194,11 @@ def stream_summary(
     stream_matrix: pd.DataFrame, h: int = CALIBRATION_H, tol_bps: float = PRIMARY_TOL_BPS
 ) -> pd.DataFrame:
     """Точность потока по коридорам и сценариям: pooled hit и база «по среднему» (взвешены по
-    событиям окна), медианы lift и выгоды по окнам."""
+    событиям окна), медианы lift и выгоды по окнам.
+
+    `windows` — окна, в которых сценарий СРАБАТЫВАЛ: строки матрицы потока для молчащих окон не
+    заводятся. Значит медианы считаются по активным окнам, и у редкого сценария медиана частоты
+    бывает выше частоты коридора из `stream_shape_summary`, где те же окна учтены нулями."""
     if stream_matrix.empty:
         return pd.DataFrame()
     m = stream_matrix[(stream_matrix["h"] == h) & (stream_matrix["tol_bps"] == tol_bps)]
