@@ -595,6 +595,72 @@ def tax_window_summary(day_table: pd.DataFrame) -> pd.DataFrame:
     return pd.DataFrame(rows)
 
 
+# ---------------------------------------------------------------- калибровка против априорных
+
+
+def calibration_vs_fixed(
+    matrix: pd.DataFrame,
+    fixed_matrix: pd.DataFrame,
+    h: int = CALIBRATION_H,
+    tol_bps: float = PRIMARY_TOL_BPS,
+    n_boot: int = 4000,
+    seed: int = 7,
+) -> pd.DataFrame:
+    """Стоит ли калибровка по сетке своих денег: pooled lift калиброванных правил против априорных.
+
+    Сравнение парное и блочное: блок — пара «коридор × окно», и на каждой итерации бутстрепа оба
+    прогона пересобираются по ОДНИМ И ТЕМ ЖЕ блокам. Иначе интервал мерил бы ещё и разницу в том,
+    какие полугодия попали в выборку, а не разницу правил.
+
+    Раньше эти интервалы считались вручную и жили только в тексте `docs/STATUS.md` — то есть числа
+    отчёта не было, а утверждение было (аудит 03.09). Теперь оно есть здесь и в `README.md`.
+
+    Строка `all` — суммарно по всем правилам. У обучаемого индикатора разницы нет по построению:
+    `--fixed-params` трогает только правила, модель обучается одинаково."""
+    rows: list[dict] = []
+    rng = np.random.default_rng(seed)
+
+    def blocks(m: pd.DataFrame, indicator: str | None) -> pd.DataFrame:
+        s = m[(m["h"] == h) & (m["tol_bps"] == tol_bps)]
+        if indicator:
+            s = s[s["indicator"] == indicator]
+        s = s.dropna(subset=["hit_mean", "base_mean", "n_scored"])
+        s = s.assign(num=s["hit_mean"] * s["n_scored"], den=s["base_mean"] * s["n_scored"])
+        return s.groupby(["corridor", "split"])[["num", "den", "n_scored"]].sum()
+
+    names = sorted(set(matrix["indicator"]) | set(fixed_matrix["indicator"]))
+    for indicator in [*names, None]:
+        ga, gb = blocks(matrix, indicator), blocks(fixed_matrix, indicator)
+        keys = sorted(set(ga.index) | set(gb.index))
+        if not keys:
+            continue
+        a = ga.reindex(keys).fillna(0.0).to_numpy(dtype=float)
+        b = gb.reindex(keys).fillna(0.0).to_numpy(dtype=float)
+        lift_a = a[:, 0].sum() / a[:, 1].sum() if a[:, 1].sum() else np.nan
+        lift_b = b[:, 0].sum() / b[:, 1].sum() if b[:, 1].sum() else np.nan
+        idx = rng.integers(0, len(keys), (n_boot, len(keys)))
+        sa, sb = a[idx].sum(axis=1), b[idx].sum(axis=1)
+        ok = (sa[:, 1] > 0) & (sb[:, 1] > 0)
+        diff = sb[ok, 0] / sb[ok, 1] - sa[ok, 0] / sa[ok, 1]
+        lo, hi = (np.percentile(diff, [2.5, 97.5]) if ok.sum() > 1 else (np.nan, np.nan))
+        better = "априорные" if lo > 0 else ("калибровка" if hi < 0 else "разницы нет")
+        rows.append(
+            {
+                "indicator": indicator or "all",
+                "blocks": len(keys),
+                "events_calibrated": int(a[:, 2].sum()),
+                "events_fixed": int(b[:, 2].sum()),
+                "lift_calibrated": lift_a,
+                "lift_fixed": lift_b,
+                "diff_fixed_minus_calibrated": lift_b - lift_a,
+                "diff_ci_lo": float(lo),
+                "diff_ci_hi": float(hi),
+                "better": better,
+            }
+        )
+    return pd.DataFrame(rows)
+
+
 # ---------------------------------------------------------------- достижимость уровней вероятности
 
 
@@ -876,6 +942,13 @@ def write_analysis(
     dom.to_csv(out / "day_of_month.csv", index=False)
     tax = tax_window_summary(dom) if len(dom) else pd.DataFrame()
     tax.to_csv(out / "tax_window.csv", index=False)
+    # контрольный прогон — отдельная команда; без него сравнение пропускается, а не выдумывается
+    fixed_path = repo_root() / "reports" / "fixed" / "matrix.csv"
+    fixed_cmp = pd.DataFrame()
+    if fixed_path.exists():
+        fixed_cmp = calibration_vs_fixed(result.matrix, pd.read_csv(fixed_path))
+    if len(fixed_cmp):
+        fixed_cmp.to_csv(out / "calibration_vs_fixed.csv", index=False)
     if len(dom):
         plot_day_of_month(dom, out / "day_of_month.png")
     stream_path = out.parent / "stream_matrix.csv"
@@ -900,7 +973,19 @@ def write_analysis(
         plot_frontier(tables_ns, {}, out / "frontier_no_shock.png", subtitle="без окон шокового режима 2022")
     (out / "README.md").write_text(
         _analysis_readme(
-            pw, pw_ns, cmp_, no_shock, stream_ns, conf, tol_needed, tables, tables_ns, points, monthly, tax
+            pw,
+            pw_ns,
+            cmp_,
+            no_shock,
+            stream_ns,
+            conf,
+            tol_needed,
+            tables,
+            tables_ns,
+            points,
+            monthly,
+            tax,
+            fixed_cmp,
         ),
         encoding="utf-8",
     )
@@ -992,6 +1077,7 @@ def _analysis_readme(
     points: dict[str, dict[str, tuple]],
     monthly: pd.DataFrame,
     tax: pd.DataFrame,
+    fixed_cmp: pd.DataFrame | None = None,
 ) -> str:
     band = _band_table(tables, points)
     band_ns = _band_table(tables_ns, {})
@@ -1153,6 +1239,26 @@ def _analysis_readme(
         "",
         "Это диагностика, а не индикатор: среднее за месяц включает будущие дни этого месяца. "
         "Причинная проверка той же гипотезы — индикатор сезонности, он смотрит только на прошлые годы.",
+        "",
+        "## Калибровка против априорных параметров",
+        "",
+        "Стоит ли сетка своих денег. `lift_calibrated` — pooled lift «по среднему» правил, "
+        "откалиброванных walk-forward (`reports/latest`); `lift_fixed` — тех же правил на априорных "
+        "точках без сетки (`reports/fixed`, команда `backtest --fixed-params`). Интервал разницы — "
+        "парный блочный бутстреп по парам «коридор × окно»: на каждой итерации оба прогона "
+        "пересобираются по одним и тем же блокам, иначе интервал мерил бы ещё и разницу в том, какие "
+        "полугодия попали в выборку. Столбец `better` читает интервал: «разницы нет» значит, что он "
+        "содержит ноль.",
+        "",
+        "У обучаемого индикатора разницы нет по построению: `--fixed-params` трогает только правила, "
+        "модель обучается одинаково. Контроль смещён в пользу априорных точек — они заданы до сетки, "
+        "но не до данных.",
+        "",
+        (
+            _md(fixed_cmp.round(3))
+            if fixed_cmp is not None and len(fixed_cmp)
+            else "контрольного прогона нет — сделайте `fxmoment backtest --fixed-params`"
+        ),
         "",
         "`dev_outside_bps` самостоятельной информации не несёт: отклонения от среднего за свой месяц "
         "в сумме по всем числам дают ноль, поэтому оно равно `dev_in_window_bps`, взятому с обратным "

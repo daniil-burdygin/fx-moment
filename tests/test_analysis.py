@@ -209,3 +209,40 @@ def test_monthly_baseline_separates_the_two_bases(panel):
     assert row["excess_diff_bps"] == pytest.approx(
         row["excess_month_bps"] - row["excess_window_bps"], abs=1e-9
     )
+
+
+def test_calibration_vs_fixed_is_paired_and_reads_the_interval():
+    """Сравнение калибровки с априорными точками парное по блокам «коридор × окно» и само читает
+    интервал. Раньше эти интервалы считались вручную и жили только в тексте — числа отчёта не было,
+    а утверждение было (аудит 03.09)."""
+    from fxmoment import analysis
+
+    def matrix(hit):
+        rows = []
+        for corridor in ("KZT", "TJS"):
+            for split in range(6):
+                rows.append(
+                    {
+                        "corridor": corridor,
+                        "indicator": "level",
+                        "split": split,
+                        "h": 20,
+                        "tol_bps": 25.0,
+                        "hit_mean": hit,
+                        "base_mean": 0.5,
+                        "n_scored": 40,
+                    }
+                )
+        return pd.DataFrame(rows)
+
+    same = analysis.calibration_vs_fixed(matrix(0.6), matrix(0.6)).set_index("indicator")
+    assert same.loc["level", "better"] == "разницы нет"
+    assert same.loc["level", "diff_fixed_minus_calibrated"] == pytest.approx(0.0)
+    assert same.loc["level", "blocks"] == 12  # два коридора × шесть окон, не 24 строки
+
+    better = analysis.calibration_vs_fixed(matrix(0.5), matrix(0.7)).set_index("indicator")
+    assert better.loc["level", "better"] == "априорные"
+    assert better.loc["level", "diff_ci_lo"] > 0
+    worse = analysis.calibration_vs_fixed(matrix(0.7), matrix(0.5)).set_index("indicator")
+    assert worse.loc["level", "better"] == "калибровка"
+    assert worse.loc["level", "diff_ci_hi"] < 0
