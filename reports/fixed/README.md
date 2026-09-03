@@ -1,6 +1,6 @@
 # Бэктест — сводка (h = 20, допуск 25 бп, медианы по окнам walk-forward)
 
-Снимок данных: 2026-09-03T00:04:48+00:00 (последняя дата действия 2026-09-03). Код: `3b0db35-dirty`. Сформировано 2026-09-03 01:25 UTC.
+Снимок данных: 2026-09-03T00:04:48+00:00 (последняя дата действия 2026-09-03). Код: `4b32588`. Сформировано 2026-09-03 02:13 UTC.
 
 Окна: 2021-01…2021-06, 2021-07…2021-12, 2022-01…2022-06, 2022-07…2022-12, 2023-01…2023-06, 2023-07…2023-12, 2024-01…2024-06, 2024-07…2024-12, 2025-01…2025-06, 2025-07…2025-12, 2026-01…2026-06
 
@@ -53,7 +53,9 @@
 
 ## Точность итогового потока по сценариям, h = 20, допуск 25 бп
 
-| corridor | scenario | windows | pushes | hit_mean_pooled | base_mean_pooled | lift_mean_median | lift_min_median | benefit_excess_median_bps | benefit_fwd_median_bps | freq_per_week_median | lift_mean_pooled |
+`freq_per_week_scenario_median` — частота одного сценария; частота коридора — в форме потока выше. Для `WINDOW_CLOSING` допуск не действует (tol_up = 0, ADR-0003), поэтому в `matrix.csv` и `summary_h20_tol0.csv` строки разворота при всех допусках совпадают — это не устойчивость к допуску, а его отсутствие.
+
+| corridor | scenario | windows | pushes | hit_mean_pooled | base_mean_pooled | lift_mean_median | lift_min_median | benefit_excess_median_bps | benefit_fwd_median_bps | freq_per_week_scenario_median | lift_mean_pooled |
 |---|---|---|---|---|---|---|---|---|---|---|---|
 | AMD | BUY_NOW | 11 | 100 | 0.51 | 0.497 | 1.135 | 0.935 | 12.016 | 80.938 | 0.304 | 1.026 |
 | AMD | WINDOW_CLOSING | 5 | 15 | 0.733 | 0.399 | 1.903 | 1.903 | 132.367 | 175.775 | 0.114 | 1.839 |
