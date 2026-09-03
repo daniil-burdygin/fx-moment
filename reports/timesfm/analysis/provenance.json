@@ -1,0 +1,17 @@
+{
+ "code": "0935d5c",
+ "built_at_utc": "2026-09-03T16:16:06Z",
+ "forecast_snapshot": {
+  "model": "google/timesfm-3.0-pytorch",
+  "revision": "43046b85ec22d584a13f8098c2ed39c889e129c2",
+  "generated_at_utc": "2026-09-03T16:12:30+00:00",
+  "rows": 14298,
+  "device": "mps",
+  "context_cap": 1024,
+  "horizon": 20,
+  "self_check_max_diff_bps": 0.0
+ },
+ "pushes_latest": 735,
+ "pushes_timesfm": 741,
+ "window_from": "2024-01"
+}
