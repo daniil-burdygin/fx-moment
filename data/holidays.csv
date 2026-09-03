@@ -1,0 +1,756 @@
+country,date,name,kind,movable,source,verified
+AM,2018-01-01,Новый год,newyear,no,https://www.arlis.am/hy/acts/228539,primary
+AM,2018-01-02,Новый год,newyear,no,https://www.arlis.am/hy/acts/228539,primary
+AM,2018-01-03,Предрождественские праздники,religious,no,https://www.arlis.am/hy/acts/55446,primary
+AM,2018-01-04,Предрождественские праздники,religious,no,https://www.arlis.am/hy/acts/55446,primary
+AM,2018-01-05,Предрождественские праздники,religious,no,https://www.arlis.am/hy/acts/55446,primary
+AM,2018-01-06,Святое Рождество и Богоявление,religious,no,https://www.arlis.am/hy/acts/228539,primary
+AM,2018-01-07,День поминовения усопших,religious,no,https://www.arlis.am/hy/acts/55446,primary
+AM,2018-01-28,День армии,national,no,https://www.arlis.am/hy/acts/228539,primary
+AM,2018-03-08,Международный женский день,womens,no,https://www.arlis.am/hy/acts/228539,primary
+AM,2018-04-24,День памяти жертв геноцида армян,other,no,https://www.arlis.am/hy/acts/228539,primary
+AM,2018-05-01,День труда,labour,no,https://www.arlis.am/hy/acts/228539,primary
+AM,2018-05-09,День победы и мира,victory,no,https://www.arlis.am/hy/acts/228539,primary
+AM,2018-05-28,День Первой Республики,national,no,https://www.arlis.am/hy/acts/228539,primary
+AM,2018-07-05,День Конституции,national,no,https://www.arlis.am/hy/acts/228539,primary
+AM,2018-09-21,День независимости,national,no,https://www.arlis.am/hy/acts/228539,primary
+AM,2018-12-31,Новый год,newyear,no,https://www.arlis.am/hy/acts/228539,primary
+AM,2019-01-01,Новый год,newyear,no,https://www.arlis.am/hy/acts/228539,primary
+AM,2019-01-02,Новый год,newyear,no,https://www.arlis.am/hy/acts/228539,primary
+AM,2019-01-03,Предрождественские праздники,religious,no,https://www.arlis.am/hy/acts/55446,primary
+AM,2019-01-04,Предрождественские праздники,religious,no,https://www.arlis.am/hy/acts/55446,primary
+AM,2019-01-05,Предрождественские праздники,religious,no,https://www.arlis.am/hy/acts/55446,primary
+AM,2019-01-06,Святое Рождество и Богоявление,religious,no,https://www.arlis.am/hy/acts/228539,primary
+AM,2019-01-07,День поминовения усопших,religious,no,https://www.arlis.am/hy/acts/55446,primary
+AM,2019-01-28,День армии,national,no,https://www.arlis.am/hy/acts/228539,primary
+AM,2019-03-08,Международный женский день,womens,no,https://www.arlis.am/hy/acts/228539,primary
+AM,2019-04-24,День памяти жертв геноцида армян,other,no,https://www.arlis.am/hy/acts/228539,primary
+AM,2019-05-01,День труда,labour,no,https://www.arlis.am/hy/acts/228539,primary
+AM,2019-05-09,День победы и мира,victory,no,https://www.arlis.am/hy/acts/228539,primary
+AM,2019-05-28,День Первой Республики,national,no,https://www.arlis.am/hy/acts/228539,primary
+AM,2019-07-05,День Конституции,national,no,https://www.arlis.am/hy/acts/228539,primary
+AM,2019-09-21,День независимости,national,no,https://www.arlis.am/hy/acts/228539,primary
+AM,2019-12-31,Новый год,newyear,no,https://www.arlis.am/hy/acts/228539,primary
+AM,2020-01-01,Новый год,newyear,no,https://www.arlis.am/hy/acts/228539,primary
+AM,2020-01-02,Новый год,newyear,no,https://www.arlis.am/hy/acts/228539,primary
+AM,2020-01-03,Предрождественские праздники,religious,no,https://www.arlis.am/hy/acts/55446,primary
+AM,2020-01-04,Предрождественские праздники,religious,no,https://www.arlis.am/hy/acts/55446,primary
+AM,2020-01-05,Предрождественские праздники,religious,no,https://www.arlis.am/hy/acts/55446,primary
+AM,2020-01-06,Святое Рождество и Богоявление,religious,no,https://www.arlis.am/hy/acts/228539,primary
+AM,2020-01-07,День поминовения усопших,religious,no,https://www.arlis.am/hy/acts/55446,primary
+AM,2020-01-28,День армии,national,no,https://www.arlis.am/hy/acts/228539,primary
+AM,2020-03-08,Международный женский день,womens,no,https://www.arlis.am/hy/acts/228539,primary
+AM,2020-04-24,День памяти жертв геноцида армян,other,no,https://www.arlis.am/hy/acts/228539,primary
+AM,2020-05-01,День труда,labour,no,https://www.arlis.am/hy/acts/228539,primary
+AM,2020-05-09,День победы и мира,victory,no,https://www.arlis.am/hy/acts/228539,primary
+AM,2020-05-28,День Первой Республики,national,no,https://www.arlis.am/hy/acts/228539,primary
+AM,2020-07-05,День Конституции,national,no,https://www.arlis.am/hy/acts/228539,primary
+AM,2020-09-21,День независимости,national,no,https://www.arlis.am/hy/acts/228539,primary
+AM,2020-12-31,Новый год,newyear,no,https://www.arlis.am/hy/acts/228539,primary
+AM,2021-01-01,Новый год,newyear,no,https://www.arlis.am/hy/acts/228539,primary
+AM,2021-01-02,Новый год,newyear,no,https://www.arlis.am/hy/acts/228539,primary
+AM,2021-01-03,Предрождественские праздники,religious,no,https://www.arlis.am/hy/acts/55446,primary
+AM,2021-01-04,Предрождественские праздники,religious,no,https://www.arlis.am/hy/acts/55446,primary
+AM,2021-01-05,Предрождественские праздники,religious,no,https://www.arlis.am/hy/acts/55446,primary
+AM,2021-01-06,Святое Рождество и Богоявление,religious,no,https://www.arlis.am/hy/acts/228539,primary
+AM,2021-01-07,День поминовения усопших,religious,no,https://www.arlis.am/hy/acts/55446,primary
+AM,2021-01-28,День армии,national,no,https://www.arlis.am/hy/acts/228539,primary
+AM,2021-03-08,Международный женский день,womens,no,https://www.arlis.am/hy/acts/228539,primary
+AM,2021-04-24,День памяти жертв геноцида армян,other,no,https://www.arlis.am/hy/acts/228539,primary
+AM,2021-05-01,День труда,labour,no,https://www.arlis.am/hy/acts/228539,primary
+AM,2021-05-09,День победы и мира,victory,no,https://www.arlis.am/hy/acts/228539,primary
+AM,2021-05-28,День Первой Республики,national,no,https://www.arlis.am/hy/acts/228539,primary
+AM,2021-07-05,День Конституции,national,no,https://www.arlis.am/hy/acts/228539,primary
+AM,2021-09-21,День независимости,national,no,https://www.arlis.am/hy/acts/228539,primary
+AM,2021-12-31,Новый год,newyear,no,https://www.arlis.am/hy/acts/228539,primary
+AM,2022-01-01,Новый год,newyear,no,https://www.arlis.am/hy/acts/228539,primary
+AM,2022-01-02,Новый год,newyear,no,https://www.arlis.am/hy/acts/228539,primary
+AM,2022-01-06,Святое Рождество и Богоявление,religious,no,https://www.arlis.am/hy/acts/228539,primary
+AM,2022-01-28,День армии,national,no,https://www.arlis.am/hy/acts/228539,primary
+AM,2022-03-08,Международный женский день,womens,no,https://www.arlis.am/hy/acts/228539,primary
+AM,2022-04-24,День памяти жертв геноцида армян,other,no,https://www.arlis.am/hy/acts/228539,primary
+AM,2022-05-01,День труда,labour,no,https://www.arlis.am/hy/acts/228539,primary
+AM,2022-05-09,День победы и мира,victory,no,https://www.arlis.am/hy/acts/228539,primary
+AM,2022-05-28,День Первой Республики,national,no,https://www.arlis.am/hy/acts/228539,primary
+AM,2022-07-05,День Конституции,national,no,https://www.arlis.am/hy/acts/228539,primary
+AM,2022-09-21,День независимости,national,no,https://www.arlis.am/hy/acts/228539,primary
+AM,2022-12-31,Новый год,newyear,no,https://www.arlis.am/hy/acts/228539,primary
+AM,2023-01-01,Новый год,newyear,no,https://www.arlis.am/hy/acts/228539,primary
+AM,2023-01-02,Новый год,newyear,no,https://www.arlis.am/hy/acts/228539,primary
+AM,2023-01-06,Святое Рождество и Богоявление,religious,no,https://www.arlis.am/hy/acts/228539,primary
+AM,2023-01-28,День армии,national,no,https://www.arlis.am/hy/acts/228539,primary
+AM,2023-03-08,Международный женский день,womens,no,https://www.arlis.am/hy/acts/228539,primary
+AM,2023-04-24,День памяти жертв геноцида армян,other,no,https://www.arlis.am/hy/acts/228539,primary
+AM,2023-05-01,День труда,labour,no,https://www.arlis.am/hy/acts/228539,primary
+AM,2023-05-09,День победы и мира,victory,no,https://www.arlis.am/hy/acts/228539,primary
+AM,2023-05-28,День Первой Республики,national,no,https://www.arlis.am/hy/acts/228539,primary
+AM,2023-07-05,День Конституции,national,no,https://www.arlis.am/hy/acts/228539,primary
+AM,2023-09-21,День независимости,national,no,https://www.arlis.am/hy/acts/228539,primary
+AM,2023-12-31,Новый год,newyear,no,https://www.arlis.am/hy/acts/228539,primary
+AM,2024-01-01,Новый год,newyear,no,https://www.arlis.am/hy/acts/228539,primary
+AM,2024-01-02,Новый год,newyear,no,https://www.arlis.am/hy/acts/228539,primary
+AM,2024-01-06,Святое Рождество и Богоявление,religious,no,https://www.arlis.am/hy/acts/228539,primary
+AM,2024-01-28,День армии,national,no,https://www.arlis.am/hy/acts/228539,primary
+AM,2024-03-08,Международный женский день,womens,no,https://www.arlis.am/hy/acts/228539,primary
+AM,2024-04-24,День памяти жертв геноцида армян,other,no,https://www.arlis.am/hy/acts/228539,primary
+AM,2024-05-01,День труда,labour,no,https://www.arlis.am/hy/acts/228539,primary
+AM,2024-05-09,День победы и мира,victory,no,https://www.arlis.am/hy/acts/228539,primary
+AM,2024-05-28,День Первой Республики,national,no,https://www.arlis.am/hy/acts/228539,primary
+AM,2024-07-05,День Конституции,national,no,https://www.arlis.am/hy/acts/228539,primary
+AM,2024-09-21,День независимости,national,no,https://www.arlis.am/hy/acts/228539,primary
+AM,2024-12-31,Новый год,newyear,no,https://www.arlis.am/hy/acts/228539,primary
+AM,2025-01-01,Новый год,newyear,no,https://www.arlis.am/hy/acts/228539,primary
+AM,2025-01-02,Новый год,newyear,no,https://www.arlis.am/hy/acts/228539,primary
+AM,2025-01-06,Святое Рождество и Богоявление,religious,no,https://www.arlis.am/hy/acts/228539,primary
+AM,2025-01-28,День армии,national,no,https://www.arlis.am/hy/acts/228539,primary
+AM,2025-03-08,Международный женский день,womens,no,https://www.arlis.am/hy/acts/228539,primary
+AM,2025-04-24,День памяти жертв геноцида армян,other,no,https://www.arlis.am/hy/acts/228539,primary
+AM,2025-05-01,День труда,labour,no,https://www.arlis.am/hy/acts/228539,primary
+AM,2025-05-09,День победы и мира,victory,no,https://www.arlis.am/hy/acts/228539,primary
+AM,2025-05-28,День Первой Республики,national,no,https://www.arlis.am/hy/acts/228539,primary
+AM,2025-07-05,День Конституции,national,no,https://www.arlis.am/hy/acts/228539,primary
+AM,2025-09-21,День независимости,national,no,https://www.arlis.am/hy/acts/228539,primary
+AM,2025-12-31,Новый год,newyear,no,https://www.arlis.am/hy/acts/228539,primary
+AM,2026-01-01,Новый год,newyear,no,https://www.arlis.am/hy/acts/228539,primary
+AM,2026-01-02,Новый год,newyear,no,https://www.arlis.am/hy/acts/228539,primary
+AM,2026-01-06,Святое Рождество и Богоявление,religious,no,https://www.arlis.am/hy/acts/228539,primary
+AM,2026-01-27,День памяти погибших за защиту Отечества,other,no,https://www.arlis.am/hy/acts/219769,primary
+AM,2026-01-28,День армии,national,no,https://www.arlis.am/hy/acts/228539,primary
+AM,2026-03-08,Международный женский день,womens,no,https://www.arlis.am/hy/acts/228539,primary
+AM,2026-04-24,День памяти жертв геноцида армян,other,no,https://www.arlis.am/hy/acts/228539,primary
+AM,2026-05-01,День труда,labour,no,https://www.arlis.am/hy/acts/228539,primary
+AM,2026-05-09,День победы и мира,victory,no,https://www.arlis.am/hy/acts/228539,primary
+AM,2026-05-28,День Первой Республики,national,no,https://www.arlis.am/hy/acts/228539,primary
+AM,2026-07-05,День Конституции,national,no,https://www.arlis.am/hy/acts/228539,primary
+AM,2026-09-21,День независимости,national,no,https://www.arlis.am/hy/acts/228539,primary
+AM,2026-12-31,Новый год,newyear,no,https://www.arlis.am/hy/acts/228539,primary
+KG,2018-01-01,Новый год,newyear,no,https://cbd.minjust.gov.kg/3-45/edition/25298/ru,primary
+KG,2018-01-07,Рождество Христово,religious,no,https://cbd.minjust.gov.kg/3-45/edition/25298/ru,primary
+KG,2018-02-23,День защитника Отечества,national,no,https://cbd.minjust.gov.kg/3-22/edition/13763/ru,primary
+KG,2018-03-08,Международный женский день,womens,no,https://cbd.minjust.gov.kg/3-45/edition/25298/ru,primary
+KG,2018-03-21,Народный праздник Нооруз,national,no,https://cbd.minjust.gov.kg/3-45/edition/25298/ru,primary
+KG,2018-04-07,День народной Апрельской революции,national,no,https://cbd.minjust.gov.kg/3-22/edition/13763/ru,primary
+KG,2018-05-01,Праздник труда,labour,no,https://cbd.minjust.gov.kg/3-45/edition/25298/ru,primary
+KG,2018-05-05,День Конституции,national,no,https://cbd.minjust.gov.kg/3-45/edition/25298/ru,primary
+KG,2018-05-09,День Победы,victory,no,https://cbd.minjust.gov.kg/3-45/edition/25298/ru,primary
+KG,2018-06-15,Орозо айт,religious,yes,https://24.kg/obschestvo/87359_15nbspiyunya_vnbspkyirgyizstanenbspmdash_orozo_ayt/,secondary
+KG,2018-08-21,Курман айт,religious,yes,https://24.kg/obschestvo/93355_kurman_ayt_vnbspkyirgyizstane_otmetyat_21nbspavgusta/,secondary
+KG,2018-08-31,День независимости,national,no,https://cbd.minjust.gov.kg/3-45/edition/25298/ru,primary
+KG,2018-11-07,Дни истории и памяти предков,national,no,https://cbd.minjust.gov.kg/3-22/edition/13763/ru,primary
+KG,2018-11-08,Дни истории и памяти предков,national,no,https://cbd.minjust.gov.kg/3-22/edition/13763/ru,primary
+KG,2019-01-01,Новый год,newyear,no,https://cbd.minjust.gov.kg/3-45/edition/25298/ru,primary
+KG,2019-01-07,Рождество Христово,religious,no,https://cbd.minjust.gov.kg/3-45/edition/25298/ru,primary
+KG,2019-02-23,День защитника Отечества,national,no,https://cbd.minjust.gov.kg/3-22/edition/13763/ru,primary
+KG,2019-03-08,Международный женский день,womens,no,https://cbd.minjust.gov.kg/3-45/edition/25298/ru,primary
+KG,2019-03-21,Народный праздник Нооруз,national,no,https://cbd.minjust.gov.kg/3-45/edition/25298/ru,primary
+KG,2019-04-07,День народной Апрельской революции,national,no,https://cbd.minjust.gov.kg/3-22/edition/13763/ru,primary
+KG,2019-05-01,Праздник труда,labour,no,https://cbd.minjust.gov.kg/3-45/edition/25298/ru,primary
+KG,2019-05-05,День Конституции,national,no,https://cbd.minjust.gov.kg/3-45/edition/25298/ru,primary
+KG,2019-05-09,День Победы,victory,no,https://cbd.minjust.gov.kg/3-45/edition/25298/ru,primary
+KG,2019-06-05,Орозо айт,religious,yes,https://mlsp.gov.kg/ru/2019/05/30/prazdnik-orozo-ajt/,primary
+KG,2019-08-11,Курман айт,religious,yes,https://mlsp.gov.kg/ru/2019/08/09/soglasno-informaczii-predstavitelej-duhovnogo-upravleniya-musulman-kyrgyzstana-11-avgusta-tekushhego-goda-opredeleno-dnyom-prazdnovaniya-kurman-ajt/,primary
+KG,2019-08-31,День независимости,national,no,https://cbd.minjust.gov.kg/3-45/edition/25298/ru,primary
+KG,2019-11-07,Дни истории и памяти предков,national,no,https://cbd.minjust.gov.kg/3-22/edition/13763/ru,primary
+KG,2019-11-08,Дни истории и памяти предков,national,no,https://cbd.minjust.gov.kg/3-22/edition/13763/ru,primary
+KG,2020-01-01,Новый год,newyear,no,https://cbd.minjust.gov.kg/3-45/edition/25298/ru,primary
+KG,2020-01-07,Рождество Христово,religious,no,https://cbd.minjust.gov.kg/3-45/edition/25298/ru,primary
+KG,2020-02-23,День защитника Отечества,national,no,https://cbd.minjust.gov.kg/3-22/edition/13763/ru,primary
+KG,2020-03-08,Международный женский день,womens,no,https://cbd.minjust.gov.kg/3-45/edition/25298/ru,primary
+KG,2020-03-21,Народный праздник Нооруз,national,no,https://cbd.minjust.gov.kg/3-45/edition/25298/ru,primary
+KG,2020-04-07,День народной Апрельской революции,national,no,https://cbd.minjust.gov.kg/3-22/edition/13763/ru,primary
+KG,2020-05-01,Праздник труда,labour,no,https://cbd.minjust.gov.kg/3-45/edition/25298/ru,primary
+KG,2020-05-05,День Конституции,national,no,https://cbd.minjust.gov.kg/3-45/edition/25298/ru,primary
+KG,2020-05-09,День Победы,victory,no,https://cbd.minjust.gov.kg/3-45/edition/25298/ru,primary
+KG,2020-05-24,Орозо айт,religious,yes,https://24.kg/obschestvo/153192_ponedelnik_vnbspkyirgyizstane_obyyavlen_nerabochim_vnbspsvyazi_snbspprazdnikom_orozo_ayt/,secondary
+KG,2020-07-31,Курман айт,religious,yes,https://mlsp.gov.kg/ru/2020/07/24/prazdnik-kurman-ajt-otmechaemyj-31-iyulya-yavlyaetsya-nerabochim-prazdnichnym-dnem/,primary
+KG,2020-08-31,День независимости,national,no,https://cbd.minjust.gov.kg/3-45/edition/25298/ru,primary
+KG,2020-11-07,Дни истории и памяти предков,national,no,https://cbd.minjust.gov.kg/3-22/edition/13763/ru,primary
+KG,2020-11-08,Дни истории и памяти предков,national,no,https://cbd.minjust.gov.kg/3-22/edition/13763/ru,primary
+KG,2021-01-01,Новый год,newyear,no,https://cbd.minjust.gov.kg/3-45/edition/25298/ru,primary
+KG,2021-01-07,Рождество Христово,religious,no,https://cbd.minjust.gov.kg/3-45/edition/25298/ru,primary
+KG,2021-02-23,День защитника Отечества,national,no,https://cbd.minjust.gov.kg/3-22/edition/13763/ru,primary
+KG,2021-03-08,Международный женский день,womens,no,https://cbd.minjust.gov.kg/3-45/edition/25298/ru,primary
+KG,2021-03-21,Народный праздник Нооруз,national,no,https://cbd.minjust.gov.kg/3-45/edition/25298/ru,primary
+KG,2021-04-07,День народной Апрельской революции,national,no,https://cbd.minjust.gov.kg/3-22/edition/13763/ru,primary
+KG,2021-05-01,Праздник труда,labour,no,https://cbd.minjust.gov.kg/3-45/edition/25298/ru,primary
+KG,2021-05-05,День Конституции,national,no,https://cbd.minjust.gov.kg/3-45/edition/25298/ru,primary
+KG,2021-05-09,День Победы,victory,no,https://cbd.minjust.gov.kg/3-45/edition/25298/ru,primary
+KG,2021-05-13,Орозо айт,religious,yes,https://24.kg/obschestvo/193253_13nbspmaya_vnbspkyirgyizstane_orozo_ayt_nonbspeto_nenbsptochno/,secondary
+KG,2021-07-20,Курман айт,religious,yes,https://24.kg/obschestvo/200812_prazdnovanie_kurman_ayta_budutnbspli_perenosit_vyihodnoy_rasskazali_vnbspkabmine/,secondary
+KG,2021-08-31,День независимости,national,no,https://cbd.minjust.gov.kg/3-45/edition/25298/ru,primary
+KG,2021-11-07,Дни истории и памяти предков,national,no,https://cbd.minjust.gov.kg/3-22/edition/13763/ru,primary
+KG,2021-11-08,Дни истории и памяти предков,national,no,https://cbd.minjust.gov.kg/3-22/edition/13763/ru,primary
+KG,2022-01-01,Новый год,newyear,no,https://cbd.minjust.gov.kg/3-45/edition/25298/ru,primary
+KG,2022-01-07,Рождество Христово,religious,no,https://cbd.minjust.gov.kg/3-45/edition/25298/ru,primary
+KG,2022-02-23,День защитника Отечества,national,no,https://cbd.minjust.gov.kg/3-22/edition/13763/ru,primary
+KG,2022-03-08,Международный женский день,womens,no,https://cbd.minjust.gov.kg/3-45/edition/25298/ru,primary
+KG,2022-03-21,Народный праздник Нооруз,national,no,https://cbd.minjust.gov.kg/3-45/edition/25298/ru,primary
+KG,2022-04-07,День народной Апрельской революции,national,no,https://cbd.minjust.gov.kg/3-22/edition/13763/ru,primary
+KG,2022-05-01,Праздник труда,labour,no,https://cbd.minjust.gov.kg/3-45/edition/25298/ru,primary
+KG,2022-05-02,Орозо айт,religious,yes,https://24.kg/obschestvo/232706_vnbspbishkeke_vnbspayt_namaze_prinyali_uchastie_okolo_35nbsptyisyach_chelovek/,secondary
+KG,2022-05-05,День Конституции,national,no,https://cbd.minjust.gov.kg/3-45/edition/25298/ru,primary
+KG,2022-05-09,День Победы,victory,no,https://cbd.minjust.gov.kg/3-45/edition/25298/ru,primary
+KG,2022-07-09,Курман айт,religious,yes,https://mlsp.gov.kg/ru/2022/07/07/v-kyrgyzstane-11-iyulya-ponedelnik-obyavlen-nerabochim-dnyom/,primary
+KG,2022-08-31,День независимости,national,no,https://cbd.minjust.gov.kg/3-45/edition/25298/ru,primary
+KG,2022-11-07,Дни истории и памяти предков,national,no,https://cbd.minjust.gov.kg/3-22/edition/13763/ru,primary
+KG,2022-11-08,Дни истории и памяти предков,national,no,https://cbd.minjust.gov.kg/3-22/edition/13763/ru,primary
+KG,2023-01-01,Новый год,newyear,no,https://cbd.minjust.gov.kg/3-45/edition/25298/ru,primary
+KG,2023-01-07,Рождество Христово,religious,no,https://cbd.minjust.gov.kg/3-45/edition/25298/ru,primary
+KG,2023-02-23,День защитника Отечества,national,no,https://cbd.minjust.gov.kg/3-22/edition/13763/ru,primary
+KG,2023-03-08,Международный женский день,womens,no,https://cbd.minjust.gov.kg/3-45/edition/25298/ru,primary
+KG,2023-03-21,Народный праздник Нооруз,national,no,https://cbd.minjust.gov.kg/3-45/edition/25298/ru,primary
+KG,2023-04-07,День народной Апрельской революции,national,no,https://cbd.minjust.gov.kg/3-22/edition/13763/ru,primary
+KG,2023-04-21,Орозо айт,religious,yes,https://24.kg/obschestvo/263464_orozo_ayt_vnbspkyirgyizstane_otprazdnuyut_21nbspaprelya/,secondary
+KG,2023-05-01,Праздник труда,labour,no,https://cbd.minjust.gov.kg/3-45/edition/25298/ru,primary
+KG,2023-05-05,День Конституции,national,no,https://cbd.minjust.gov.kg/3-45/edition/25298/ru,primary
+KG,2023-05-09,День Победы,victory,no,https://cbd.minjust.gov.kg/3-45/edition/25298/ru,primary
+KG,2023-06-28,Курман айт,religious,yes,https://24.kg/obschestvo/268397_kurman_ayt_vnbspkyirgyizstane_otprazdnuyut_28nbspiyunya/,secondary
+KG,2023-08-31,День независимости,national,no,https://cbd.minjust.gov.kg/3-45/edition/25298/ru,primary
+KG,2023-11-07,Дни истории и памяти предков,national,no,https://cbd.minjust.gov.kg/3-22/edition/13763/ru,primary
+KG,2023-11-08,Дни истории и памяти предков,national,no,https://cbd.minjust.gov.kg/3-22/edition/13763/ru,primary
+KG,2024-01-01,Новый год,newyear,no,https://cbd.minjust.gov.kg/3-45/edition/25298/ru,primary
+KG,2024-01-07,Рождество Христово,religious,no,https://cbd.minjust.gov.kg/3-45/edition/25298/ru,primary
+KG,2024-02-23,День защитника Отечества,national,no,https://cbd.minjust.gov.kg/3-22/edition/13763/ru,primary
+KG,2024-03-08,Международный женский день,womens,no,https://cbd.minjust.gov.kg/3-45/edition/25298/ru,primary
+KG,2024-03-21,Народный праздник Нооруз,national,no,https://cbd.minjust.gov.kg/3-45/edition/25298/ru,primary
+KG,2024-04-07,День народной Апрельской революции,national,no,https://cbd.minjust.gov.kg/3-22/edition/13763/ru,primary
+KG,2024-04-10,Орозо айт,religious,yes,https://24.kg/obschestvo/290402_orozo_ayt_vnbspkyirgyizstane_otprazdnuyut_10nbspaprelya_/,secondary
+KG,2024-05-01,Праздник труда,labour,no,https://cbd.minjust.gov.kg/3-45/edition/25298/ru,primary
+KG,2024-05-05,День Конституции,national,no,https://cbd.minjust.gov.kg/3-45/edition/25298/ru,primary
+KG,2024-05-09,День Победы,victory,no,https://cbd.minjust.gov.kg/3-45/edition/25298/ru,primary
+KG,2024-06-16,Курман айт,religious,yes,https://24.kg/obschestvo/296067_teper_ofitsialno_muftiyat_kyirgyizstana_opredelil_datu_kurman_ayta/,conflict
+KG,2024-08-31,День независимости,national,no,https://cbd.minjust.gov.kg/3-45/edition/25298/ru,primary
+KG,2024-11-07,Дни истории и памяти предков,national,no,https://cbd.minjust.gov.kg/3-22/edition/13763/ru,primary
+KG,2024-11-08,Дни истории и памяти предков,national,no,https://cbd.minjust.gov.kg/3-22/edition/13763/ru,primary
+KG,2025-01-01,Новый год,newyear,no,https://cbd.minjust.gov.kg/3-45/edition/25298/ru,primary
+KG,2025-01-07,Рождество Христово,religious,no,https://cbd.minjust.gov.kg/3-45/edition/25298/ru,primary
+KG,2025-03-08,Международный женский день,womens,no,https://cbd.minjust.gov.kg/3-45/edition/25298/ru,primary
+KG,2025-03-21,Народный праздник Нооруз,national,no,https://cbd.minjust.gov.kg/3-45/edition/25298/ru,primary
+KG,2025-03-30,Орозо айт,religious,yes,https://mlsp.gov.kg/ru/2025/03/27/orozo-ajt-budet-otmechatsya-v-voskresene-30-marta-perenosov-prazdnichnyh-dnej-ne-budet/,primary
+KG,2025-05-01,Праздник труда,labour,no,https://cbd.minjust.gov.kg/3-45/edition/25298/ru,primary
+KG,2025-05-02,Майские каникулы,national,no,https://cbd.minjust.gov.kg/3-45/edition/25298/ru,primary
+KG,2025-05-03,Майские каникулы,national,no,https://cbd.minjust.gov.kg/3-45/edition/25298/ru,primary
+KG,2025-05-04,Майские каникулы,national,no,https://cbd.minjust.gov.kg/3-45/edition/25298/ru,primary
+KG,2025-05-05,День Конституции,national,no,https://cbd.minjust.gov.kg/3-45/edition/25298/ru,primary
+KG,2025-05-06,Майские каникулы,national,no,https://cbd.minjust.gov.kg/3-45/edition/25298/ru,primary
+KG,2025-05-07,Майские каникулы,national,no,https://cbd.minjust.gov.kg/3-45/edition/25298/ru,primary
+KG,2025-05-08,Майские каникулы,national,no,https://cbd.minjust.gov.kg/3-45/edition/25298/ru,primary
+KG,2025-05-09,День Победы,victory,no,https://cbd.minjust.gov.kg/3-45/edition/25298/ru,primary
+KG,2025-06-06,Курман айт,religious,yes,https://24.kg/obschestvo/330586_vnbspkyirgyizstane_kurman_ayt_budet_otmechatsya_6nbspiyunya/,secondary
+KG,2025-08-31,День независимости,national,no,https://cbd.minjust.gov.kg/3-45/edition/25298/ru,primary
+KG,2026-01-01,Новый год,newyear,no,https://cbd.minjust.gov.kg/3-45/edition/25298/ru,primary
+KG,2026-01-02,Новогодние каникулы,newyear,no,https://cbd.minjust.gov.kg/3-45/edition/25298/ru,primary
+KG,2026-01-03,Новогодние каникулы,newyear,no,https://cbd.minjust.gov.kg/3-45/edition/25298/ru,primary
+KG,2026-01-04,Новогодние каникулы,newyear,no,https://cbd.minjust.gov.kg/3-45/edition/25298/ru,primary
+KG,2026-01-05,Новогодние каникулы,newyear,no,https://cbd.minjust.gov.kg/3-45/edition/25298/ru,primary
+KG,2026-01-06,Новогодние каникулы,newyear,no,https://cbd.minjust.gov.kg/3-45/edition/25298/ru,primary
+KG,2026-01-07,Рождество Христово,religious,no,https://cbd.minjust.gov.kg/3-45/edition/25298/ru,primary
+KG,2026-03-08,Международный женский день,womens,no,https://cbd.minjust.gov.kg/3-45/edition/25298/ru,primary
+KG,2026-03-20,Орозо айт,religious,yes,https://mlsp.gov.kg/ru/2026/03/11/v-mintruda-napomnili-o-vyhodnyh-dnyah-v-svyazi-s-prazdnikami-orozo-ajt-i-nooruz/,primary
+KG,2026-03-21,Народный праздник Нооруз,national,no,https://cbd.minjust.gov.kg/3-45/edition/25298/ru,primary
+KG,2026-05-01,Праздник труда,labour,no,https://cbd.minjust.gov.kg/3-45/edition/25298/ru,primary
+KG,2026-05-02,Майские каникулы,national,no,https://cbd.minjust.gov.kg/3-45/edition/25298/ru,primary
+KG,2026-05-03,Майские каникулы,national,no,https://cbd.minjust.gov.kg/3-45/edition/25298/ru,primary
+KG,2026-05-04,Майские каникулы,national,no,https://cbd.minjust.gov.kg/3-45/edition/25298/ru,primary
+KG,2026-05-05,День Конституции,national,no,https://cbd.minjust.gov.kg/3-45/edition/25298/ru,primary
+KG,2026-05-06,Майские каникулы,national,no,https://cbd.minjust.gov.kg/3-45/edition/25298/ru,primary
+KG,2026-05-07,Майские каникулы,national,no,https://cbd.minjust.gov.kg/3-45/edition/25298/ru,primary
+KG,2026-05-08,Майские каникулы,national,no,https://cbd.minjust.gov.kg/3-45/edition/25298/ru,primary
+KG,2026-05-09,День Победы,victory,no,https://cbd.minjust.gov.kg/3-45/edition/25298/ru,primary
+KG,2026-05-27,Курман айт,religious,yes,https://24.kg/obschestvo/374307_teper_ofitsialno_kurman_ayt_vnbspkyirgyizstane_otmetyat_27nbspmaya/,secondary
+KG,2026-08-31,День независимости,national,no,https://cbd.minjust.gov.kg/3-45/edition/25298/ru,primary
+KZ,2018-01-01,Новый год,newyear,no,https://adilet.zan.kz/rus/docs/Z010000267_,primary
+KZ,2018-01-02,Новый год,newyear,no,https://adilet.zan.kz/rus/docs/Z010000267_,primary
+KZ,2018-01-07,Православное Рождество,religious,no,https://adilet.zan.kz/rus/docs/K1500000414,primary
+KZ,2018-03-08,Международный женский день,womens,no,https://adilet.zan.kz/rus/docs/Z010000267_,primary
+KZ,2018-03-21,Наурыз мейрамы,national,no,https://adilet.zan.kz/rus/docs/Z010000267_,primary
+KZ,2018-03-22,Наурыз мейрамы,national,no,https://adilet.zan.kz/rus/docs/Z010000267_,primary
+KZ,2018-03-23,Наурыз мейрамы,national,no,https://adilet.zan.kz/rus/docs/Z010000267_,primary
+KZ,2018-05-01,Праздник единства народа Казахстана,labour,no,https://adilet.zan.kz/rus/docs/Z010000267_,primary
+KZ,2018-05-07,День защитника Отечества,national,no,https://adilet.zan.kz/rus/docs/Z010000267_,primary
+KZ,2018-05-09,День Победы,victory,no,https://adilet.zan.kz/rus/docs/Z010000267_,primary
+KZ,2018-07-06,День Столицы,national,no,https://adilet.zan.kz/rus/docs/Z010000267_,primary
+KZ,2018-08-21,Курбан айт,religious,yes,https://web.archive.org/web/20180528011215/http://egov.kz:80/cms/ru/articles/calendar_2018,primary
+KZ,2018-08-30,День Конституции,national,no,https://adilet.zan.kz/rus/docs/Z010000267_,primary
+KZ,2018-12-01,День Первого Президента,national,no,https://adilet.zan.kz/rus/docs/Z010000267_,primary
+KZ,2018-12-16,День Независимости,national,no,https://adilet.zan.kz/rus/docs/Z010000267_,primary
+KZ,2018-12-17,День Независимости,national,no,https://adilet.zan.kz/rus/docs/Z010000267_,primary
+KZ,2019-01-01,Новый год,newyear,no,https://adilet.zan.kz/rus/docs/Z010000267_,primary
+KZ,2019-01-02,Новый год,newyear,no,https://adilet.zan.kz/rus/docs/Z010000267_,primary
+KZ,2019-01-07,Православное Рождество,religious,no,https://adilet.zan.kz/rus/docs/K1500000414,primary
+KZ,2019-03-08,Международный женский день,womens,no,https://adilet.zan.kz/rus/docs/Z010000267_,primary
+KZ,2019-03-21,Наурыз мейрамы,national,no,https://adilet.zan.kz/rus/docs/Z010000267_,primary
+KZ,2019-03-22,Наурыз мейрамы,national,no,https://adilet.zan.kz/rus/docs/Z010000267_,primary
+KZ,2019-03-23,Наурыз мейрамы,national,no,https://adilet.zan.kz/rus/docs/Z010000267_,primary
+KZ,2019-05-01,Праздник единства народа Казахстана,labour,no,https://adilet.zan.kz/rus/docs/Z010000267_,primary
+KZ,2019-05-07,День защитника Отечества,national,no,https://adilet.zan.kz/rus/docs/Z010000267_,primary
+KZ,2019-05-09,День Победы,victory,no,https://adilet.zan.kz/rus/docs/Z010000267_,primary
+KZ,2019-07-06,День Столицы,national,no,https://adilet.zan.kz/rus/docs/Z010000267_,primary
+KZ,2019-08-11,Курбан айт,religious,yes,https://web.archive.org/web/20190625210026/http://egov.kz:80/cms/ru/articles/calendar_2019,primary
+KZ,2019-08-30,День Конституции,national,no,https://adilet.zan.kz/rus/docs/Z010000267_,primary
+KZ,2019-12-01,День Первого Президента,national,no,https://adilet.zan.kz/rus/docs/Z010000267_,primary
+KZ,2019-12-16,День Независимости,national,no,https://adilet.zan.kz/rus/docs/Z010000267_,primary
+KZ,2019-12-17,День Независимости,national,no,https://adilet.zan.kz/rus/docs/Z010000267_,primary
+KZ,2020-01-01,Новый год,newyear,no,https://adilet.zan.kz/rus/docs/Z010000267_,primary
+KZ,2020-01-02,Новый год,newyear,no,https://adilet.zan.kz/rus/docs/Z010000267_,primary
+KZ,2020-01-07,Православное Рождество,religious,no,https://adilet.zan.kz/rus/docs/K1500000414,primary
+KZ,2020-03-08,Международный женский день,womens,no,https://adilet.zan.kz/rus/docs/Z010000267_,primary
+KZ,2020-03-21,Наурыз мейрамы,national,no,https://adilet.zan.kz/rus/docs/Z010000267_,primary
+KZ,2020-03-22,Наурыз мейрамы,national,no,https://adilet.zan.kz/rus/docs/Z010000267_,primary
+KZ,2020-03-23,Наурыз мейрамы,national,no,https://adilet.zan.kz/rus/docs/Z010000267_,primary
+KZ,2020-05-01,Праздник единства народа Казахстана,labour,no,https://adilet.zan.kz/rus/docs/Z010000267_,primary
+KZ,2020-05-07,День защитника Отечества,national,no,https://adilet.zan.kz/rus/docs/Z010000267_,primary
+KZ,2020-05-09,День Победы,victory,no,https://adilet.zan.kz/rus/docs/Z010000267_,primary
+KZ,2020-07-06,День Столицы,national,no,https://adilet.zan.kz/rus/docs/Z010000267_,primary
+KZ,2020-07-31,Курбан айт,religious,yes,https://web.archive.org/web/20200701075913/http://egov.kz:80/cms/ru/articles/calendar_2020,primary
+KZ,2020-08-30,День Конституции,national,no,https://adilet.zan.kz/rus/docs/Z010000267_,primary
+KZ,2020-12-01,День Первого Президента,national,no,https://adilet.zan.kz/rus/docs/Z010000267_,primary
+KZ,2020-12-16,День Независимости,national,no,https://adilet.zan.kz/rus/docs/Z010000267_,primary
+KZ,2020-12-17,День Независимости,national,no,https://adilet.zan.kz/rus/docs/Z010000267_,primary
+KZ,2021-01-01,Новый год,newyear,no,https://adilet.zan.kz/rus/docs/Z010000267_,primary
+KZ,2021-01-02,Новый год,newyear,no,https://adilet.zan.kz/rus/docs/Z010000267_,primary
+KZ,2021-01-07,Православное Рождество,religious,no,https://adilet.zan.kz/rus/docs/K1500000414,primary
+KZ,2021-03-08,Международный женский день,womens,no,https://adilet.zan.kz/rus/docs/Z010000267_,primary
+KZ,2021-03-21,Наурыз мейрамы,national,no,https://adilet.zan.kz/rus/docs/Z010000267_,primary
+KZ,2021-03-22,Наурыз мейрамы,national,no,https://adilet.zan.kz/rus/docs/Z010000267_,primary
+KZ,2021-03-23,Наурыз мейрамы,national,no,https://adilet.zan.kz/rus/docs/Z010000267_,primary
+KZ,2021-05-01,Праздник единства народа Казахстана,labour,no,https://adilet.zan.kz/rus/docs/Z010000267_,primary
+KZ,2021-05-07,День защитника Отечества,national,no,https://adilet.zan.kz/rus/docs/Z010000267_,primary
+KZ,2021-05-09,День Победы,victory,no,https://adilet.zan.kz/rus/docs/Z010000267_,primary
+KZ,2021-07-06,День Столицы,national,no,https://adilet.zan.kz/rus/docs/Z010000267_,primary
+KZ,2021-07-20,Курбан айт,religious,yes,https://web.archive.org/web/20210508123935/https://egov.kz/cms/ru/articles/calendar_2021,primary
+KZ,2021-08-30,День Конституции,national,no,https://adilet.zan.kz/rus/docs/Z010000267_,primary
+KZ,2021-12-01,День Первого Президента,national,no,https://adilet.zan.kz/rus/docs/Z010000267_,primary
+KZ,2021-12-16,День Независимости,national,no,https://adilet.zan.kz/rus/docs/Z010000267_,primary
+KZ,2021-12-17,День Независимости,national,no,https://adilet.zan.kz/rus/docs/Z010000267_,primary
+KZ,2022-01-01,Новый год,newyear,no,https://adilet.zan.kz/rus/docs/Z010000267_,primary
+KZ,2022-01-02,Новый год,newyear,no,https://adilet.zan.kz/rus/docs/Z010000267_,primary
+KZ,2022-01-07,Православное Рождество,religious,no,https://adilet.zan.kz/rus/docs/K1500000414,primary
+KZ,2022-03-08,Международный женский день,womens,no,https://adilet.zan.kz/rus/docs/Z010000267_,primary
+KZ,2022-03-21,Наурыз мейрамы,national,no,https://adilet.zan.kz/rus/docs/Z010000267_,primary
+KZ,2022-03-22,Наурыз мейрамы,national,no,https://adilet.zan.kz/rus/docs/Z010000267_,primary
+KZ,2022-03-23,Наурыз мейрамы,national,no,https://adilet.zan.kz/rus/docs/Z010000267_,primary
+KZ,2022-05-01,Праздник единства народа Казахстана,labour,no,https://adilet.zan.kz/rus/docs/Z010000267_,primary
+KZ,2022-05-07,День защитника Отечества,national,no,https://adilet.zan.kz/rus/docs/Z010000267_,primary
+KZ,2022-05-09,День Победы,victory,no,https://adilet.zan.kz/rus/docs/Z010000267_,primary
+KZ,2022-07-06,День Столицы,national,no,https://adilet.zan.kz/rus/docs/Z010000267_,primary
+KZ,2022-07-09,Курбан айт,religious,yes,https://web.archive.org/web/20220817002237/https://egov.kz/cms/ru/articles/calendar_2021,primary
+KZ,2022-08-30,День Конституции,national,no,https://adilet.zan.kz/rus/docs/Z010000267_,primary
+KZ,2022-10-25,День Республики,national,no,https://adilet.zan.kz/rus/docs/Z010000267_,primary
+KZ,2022-12-16,День Независимости,national,no,https://adilet.zan.kz/rus/docs/Z010000267_,primary
+KZ,2023-01-01,Новый год,newyear,no,https://adilet.zan.kz/rus/docs/Z010000267_,primary
+KZ,2023-01-02,Новый год,newyear,no,https://adilet.zan.kz/rus/docs/Z010000267_,primary
+KZ,2023-01-07,Православное Рождество,religious,no,https://adilet.zan.kz/rus/docs/K1500000414,primary
+KZ,2023-03-08,Международный женский день,womens,no,https://adilet.zan.kz/rus/docs/Z010000267_,primary
+KZ,2023-03-21,Наурыз мейрамы,national,no,https://adilet.zan.kz/rus/docs/Z010000267_,primary
+KZ,2023-03-22,Наурыз мейрамы,national,no,https://adilet.zan.kz/rus/docs/Z010000267_,primary
+KZ,2023-03-23,Наурыз мейрамы,national,no,https://adilet.zan.kz/rus/docs/Z010000267_,primary
+KZ,2023-05-01,Праздник единства народа Казахстана,labour,no,https://adilet.zan.kz/rus/docs/Z010000267_,primary
+KZ,2023-05-07,День защитника Отечества,national,no,https://adilet.zan.kz/rus/docs/Z010000267_,primary
+KZ,2023-05-09,День Победы,victory,no,https://adilet.zan.kz/rus/docs/Z010000267_,primary
+KZ,2023-06-28,Курбан айт,religious,yes,https://www.muftyat.kz/kk/news/qmdb/2023-06-19/42360-28-mausym-kurban-ait-merekesinin-birinshi-kuni/,primary
+KZ,2023-07-06,День Столицы,national,no,https://adilet.zan.kz/rus/docs/Z010000267_,primary
+KZ,2023-08-30,День Конституции,national,no,https://adilet.zan.kz/rus/docs/Z010000267_,primary
+KZ,2023-10-25,День Республики,national,no,https://adilet.zan.kz/rus/docs/Z010000267_,primary
+KZ,2023-12-16,День Независимости,national,no,https://adilet.zan.kz/rus/docs/Z010000267_,primary
+KZ,2024-01-01,Новый год,newyear,no,https://adilet.zan.kz/rus/docs/Z010000267_,primary
+KZ,2024-01-02,Новый год,newyear,no,https://adilet.zan.kz/rus/docs/Z010000267_,primary
+KZ,2024-01-07,Православное Рождество,religious,no,https://adilet.zan.kz/rus/docs/K1500000414,primary
+KZ,2024-03-08,Международный женский день,womens,no,https://adilet.zan.kz/rus/docs/Z010000267_,primary
+KZ,2024-03-21,Наурыз мейрамы,national,no,https://adilet.zan.kz/rus/docs/Z010000267_,primary
+KZ,2024-03-22,Наурыз мейрамы,national,no,https://adilet.zan.kz/rus/docs/Z010000267_,primary
+KZ,2024-03-23,Наурыз мейрамы,national,no,https://adilet.zan.kz/rus/docs/Z010000267_,primary
+KZ,2024-05-01,Праздник единства народа Казахстана,labour,no,https://adilet.zan.kz/rus/docs/Z010000267_,primary
+KZ,2024-05-07,День защитника Отечества,national,no,https://adilet.zan.kz/rus/docs/Z010000267_,primary
+KZ,2024-05-09,День Победы,victory,no,https://adilet.zan.kz/rus/docs/Z010000267_,primary
+KZ,2024-06-16,Курбан айт,religious,yes,https://kgd.gov.kz/ru/news/otmena-vyhodnogo-dnya-17-iyunya-2024-goda-1-147000,primary
+KZ,2024-07-06,День Столицы,national,no,https://adilet.zan.kz/rus/docs/Z010000267_,primary
+KZ,2024-08-30,День Конституции,national,no,https://adilet.zan.kz/rus/docs/Z010000267_,primary
+KZ,2024-10-25,День Республики,national,no,https://adilet.zan.kz/rus/docs/Z010000267_,primary
+KZ,2024-12-16,День Независимости,national,no,https://adilet.zan.kz/rus/docs/Z010000267_,primary
+KZ,2025-01-01,Новый год,newyear,no,https://adilet.zan.kz/rus/docs/Z010000267_,primary
+KZ,2025-01-02,Новый год,newyear,no,https://adilet.zan.kz/rus/docs/Z010000267_,primary
+KZ,2025-01-07,Православное Рождество,religious,no,https://adilet.zan.kz/rus/docs/K1500000414,primary
+KZ,2025-03-08,Международный женский день,womens,no,https://adilet.zan.kz/rus/docs/Z010000267_,primary
+KZ,2025-03-21,Наурыз мейрамы,national,no,https://adilet.zan.kz/rus/docs/Z010000267_,primary
+KZ,2025-03-22,Наурыз мейрамы,national,no,https://adilet.zan.kz/rus/docs/Z010000267_,primary
+KZ,2025-03-23,Наурыз мейрамы,national,no,https://adilet.zan.kz/rus/docs/Z010000267_,primary
+KZ,2025-05-01,Праздник единства народа Казахстана,labour,no,https://adilet.zan.kz/rus/docs/Z010000267_,primary
+KZ,2025-05-07,День защитника Отечества,national,no,https://adilet.zan.kz/rus/docs/Z010000267_,primary
+KZ,2025-05-09,День Победы,victory,no,https://adilet.zan.kz/rus/docs/Z010000267_,primary
+KZ,2025-06-06,Курбан айт,religious,yes,https://www.muftyat.kz/kk/news/qmdb/2025-05-28/46583-6-mausyim---rban-ajt-merekesn-brnsh-kn/,primary
+KZ,2025-07-06,День Столицы,national,no,https://adilet.zan.kz/rus/docs/Z010000267_,primary
+KZ,2025-08-30,День Конституции,national,no,https://adilet.zan.kz/rus/docs/Z010000267_,primary
+KZ,2025-10-25,День Республики,national,no,https://adilet.zan.kz/rus/docs/Z010000267_,primary
+KZ,2025-12-16,День Независимости,national,no,https://adilet.zan.kz/rus/docs/Z010000267_,primary
+KZ,2026-01-01,Новый год,newyear,no,https://adilet.zan.kz/rus/docs/Z010000267_,primary
+KZ,2026-01-02,Новый год,newyear,no,https://adilet.zan.kz/rus/docs/Z010000267_,primary
+KZ,2026-01-07,Православное Рождество,religious,no,https://adilet.zan.kz/rus/docs/K1500000414,primary
+KZ,2026-03-08,Международный женский день,womens,no,https://adilet.zan.kz/rus/docs/Z010000267_,primary
+KZ,2026-03-21,Наурыз мейрамы,national,no,https://adilet.zan.kz/rus/docs/Z010000267_,primary
+KZ,2026-03-22,Наурыз мейрамы,national,no,https://adilet.zan.kz/rus/docs/Z010000267_,primary
+KZ,2026-03-23,Наурыз мейрамы,national,no,https://adilet.zan.kz/rus/docs/Z010000267_,primary
+KZ,2026-05-01,Праздник единства народа Казахстана,labour,no,https://adilet.zan.kz/rus/docs/Z010000267_,primary
+KZ,2026-05-07,День защитника Отечества,national,no,https://adilet.zan.kz/rus/docs/Z010000267_,primary
+KZ,2026-05-09,День Победы,victory,no,https://adilet.zan.kz/rus/docs/Z010000267_,primary
+KZ,2026-05-27,Курбан айт,religious,yes,https://www.muftyat.kz/kk/news/qmdb/2026-05-18/48345-27-mamyir---rban-ajt-merekesn-brnsh-kn/,primary
+KZ,2026-07-06,День Столицы,national,no,https://adilet.zan.kz/rus/docs/Z010000267_,primary
+KZ,2026-10-25,День Республики,national,no,https://adilet.zan.kz/rus/docs/Z010000267_,primary
+KZ,2026-12-16,День Независимости,national,no,https://adilet.zan.kz/rus/docs/Z010000267_,primary
+RU,2018-01-01,Новогодние каникулы,newyear,no,http://pravo.gov.ru/proxy/ips/?docbody=&nd=102074279,primary
+RU,2018-01-02,Новогодние каникулы,newyear,no,http://pravo.gov.ru/proxy/ips/?docbody=&nd=102074279,primary
+RU,2018-01-03,Новогодние каникулы,newyear,no,http://pravo.gov.ru/proxy/ips/?docbody=&nd=102074279,primary
+RU,2018-01-04,Новогодние каникулы,newyear,no,http://pravo.gov.ru/proxy/ips/?docbody=&nd=102074279,primary
+RU,2018-01-05,Новогодние каникулы,newyear,no,http://pravo.gov.ru/proxy/ips/?docbody=&nd=102074279,primary
+RU,2018-01-06,Новогодние каникулы,newyear,no,http://pravo.gov.ru/proxy/ips/?docbody=&nd=102074279,primary
+RU,2018-01-07,Рождество Христово,religious,no,http://pravo.gov.ru/proxy/ips/?docbody=&nd=102074279,primary
+RU,2018-01-08,Новогодние каникулы,newyear,no,http://pravo.gov.ru/proxy/ips/?docbody=&nd=102074279,primary
+RU,2018-02-23,День защитника Отечества,national,no,http://pravo.gov.ru/proxy/ips/?docbody=&nd=102074279,primary
+RU,2018-03-08,Международный женский день,womens,no,http://pravo.gov.ru/proxy/ips/?docbody=&nd=102074279,primary
+RU,2018-05-01,Праздник Весны и Труда,labour,no,http://pravo.gov.ru/proxy/ips/?docbody=&nd=102074279,primary
+RU,2018-05-09,День Победы,victory,no,http://pravo.gov.ru/proxy/ips/?docbody=&nd=102074279,primary
+RU,2018-06-12,День России,national,no,http://pravo.gov.ru/proxy/ips/?docbody=&nd=102074279,primary
+RU,2018-11-04,День народного единства,national,no,http://pravo.gov.ru/proxy/ips/?docbody=&nd=102074279,primary
+RU,2019-01-01,Новогодние каникулы,newyear,no,http://pravo.gov.ru/proxy/ips/?docbody=&nd=102074279,primary
+RU,2019-01-02,Новогодние каникулы,newyear,no,http://pravo.gov.ru/proxy/ips/?docbody=&nd=102074279,primary
+RU,2019-01-03,Новогодние каникулы,newyear,no,http://pravo.gov.ru/proxy/ips/?docbody=&nd=102074279,primary
+RU,2019-01-04,Новогодние каникулы,newyear,no,http://pravo.gov.ru/proxy/ips/?docbody=&nd=102074279,primary
+RU,2019-01-05,Новогодние каникулы,newyear,no,http://pravo.gov.ru/proxy/ips/?docbody=&nd=102074279,primary
+RU,2019-01-06,Новогодние каникулы,newyear,no,http://pravo.gov.ru/proxy/ips/?docbody=&nd=102074279,primary
+RU,2019-01-07,Рождество Христово,religious,no,http://pravo.gov.ru/proxy/ips/?docbody=&nd=102074279,primary
+RU,2019-01-08,Новогодние каникулы,newyear,no,http://pravo.gov.ru/proxy/ips/?docbody=&nd=102074279,primary
+RU,2019-02-23,День защитника Отечества,national,no,http://pravo.gov.ru/proxy/ips/?docbody=&nd=102074279,primary
+RU,2019-03-08,Международный женский день,womens,no,http://pravo.gov.ru/proxy/ips/?docbody=&nd=102074279,primary
+RU,2019-05-01,Праздник Весны и Труда,labour,no,http://pravo.gov.ru/proxy/ips/?docbody=&nd=102074279,primary
+RU,2019-05-09,День Победы,victory,no,http://pravo.gov.ru/proxy/ips/?docbody=&nd=102074279,primary
+RU,2019-06-12,День России,national,no,http://pravo.gov.ru/proxy/ips/?docbody=&nd=102074279,primary
+RU,2019-11-04,День народного единства,national,no,http://pravo.gov.ru/proxy/ips/?docbody=&nd=102074279,primary
+RU,2020-01-01,Новогодние каникулы,newyear,no,http://pravo.gov.ru/proxy/ips/?docbody=&nd=102074279,primary
+RU,2020-01-02,Новогодние каникулы,newyear,no,http://pravo.gov.ru/proxy/ips/?docbody=&nd=102074279,primary
+RU,2020-01-03,Новогодние каникулы,newyear,no,http://pravo.gov.ru/proxy/ips/?docbody=&nd=102074279,primary
+RU,2020-01-04,Новогодние каникулы,newyear,no,http://pravo.gov.ru/proxy/ips/?docbody=&nd=102074279,primary
+RU,2020-01-05,Новогодние каникулы,newyear,no,http://pravo.gov.ru/proxy/ips/?docbody=&nd=102074279,primary
+RU,2020-01-06,Новогодние каникулы,newyear,no,http://pravo.gov.ru/proxy/ips/?docbody=&nd=102074279,primary
+RU,2020-01-07,Рождество Христово,religious,no,http://pravo.gov.ru/proxy/ips/?docbody=&nd=102074279,primary
+RU,2020-01-08,Новогодние каникулы,newyear,no,http://pravo.gov.ru/proxy/ips/?docbody=&nd=102074279,primary
+RU,2020-02-23,День защитника Отечества,national,no,http://pravo.gov.ru/proxy/ips/?docbody=&nd=102074279,primary
+RU,2020-03-08,Международный женский день,womens,no,http://pravo.gov.ru/proxy/ips/?docbody=&nd=102074279,primary
+RU,2020-05-01,Праздник Весны и Труда,labour,no,http://pravo.gov.ru/proxy/ips/?docbody=&nd=102074279,primary
+RU,2020-05-09,День Победы,victory,no,http://pravo.gov.ru/proxy/ips/?docbody=&nd=102074279,primary
+RU,2020-06-12,День России,national,no,http://pravo.gov.ru/proxy/ips/?docbody=&nd=102074279,primary
+RU,2020-11-04,День народного единства,national,no,http://pravo.gov.ru/proxy/ips/?docbody=&nd=102074279,primary
+RU,2021-01-01,Новогодние каникулы,newyear,no,http://pravo.gov.ru/proxy/ips/?docbody=&nd=102074279,primary
+RU,2021-01-02,Новогодние каникулы,newyear,no,http://pravo.gov.ru/proxy/ips/?docbody=&nd=102074279,primary
+RU,2021-01-03,Новогодние каникулы,newyear,no,http://pravo.gov.ru/proxy/ips/?docbody=&nd=102074279,primary
+RU,2021-01-04,Новогодние каникулы,newyear,no,http://pravo.gov.ru/proxy/ips/?docbody=&nd=102074279,primary
+RU,2021-01-05,Новогодние каникулы,newyear,no,http://pravo.gov.ru/proxy/ips/?docbody=&nd=102074279,primary
+RU,2021-01-06,Новогодние каникулы,newyear,no,http://pravo.gov.ru/proxy/ips/?docbody=&nd=102074279,primary
+RU,2021-01-07,Рождество Христово,religious,no,http://pravo.gov.ru/proxy/ips/?docbody=&nd=102074279,primary
+RU,2021-01-08,Новогодние каникулы,newyear,no,http://pravo.gov.ru/proxy/ips/?docbody=&nd=102074279,primary
+RU,2021-02-23,День защитника Отечества,national,no,http://pravo.gov.ru/proxy/ips/?docbody=&nd=102074279,primary
+RU,2021-03-08,Международный женский день,womens,no,http://pravo.gov.ru/proxy/ips/?docbody=&nd=102074279,primary
+RU,2021-05-01,Праздник Весны и Труда,labour,no,http://pravo.gov.ru/proxy/ips/?docbody=&nd=102074279,primary
+RU,2021-05-09,День Победы,victory,no,http://pravo.gov.ru/proxy/ips/?docbody=&nd=102074279,primary
+RU,2021-06-12,День России,national,no,http://pravo.gov.ru/proxy/ips/?docbody=&nd=102074279,primary
+RU,2021-11-04,День народного единства,national,no,http://pravo.gov.ru/proxy/ips/?docbody=&nd=102074279,primary
+RU,2022-01-01,Новогодние каникулы,newyear,no,http://pravo.gov.ru/proxy/ips/?docbody=&nd=102074279,primary
+RU,2022-01-02,Новогодние каникулы,newyear,no,http://pravo.gov.ru/proxy/ips/?docbody=&nd=102074279,primary
+RU,2022-01-03,Новогодние каникулы,newyear,no,http://pravo.gov.ru/proxy/ips/?docbody=&nd=102074279,primary
+RU,2022-01-04,Новогодние каникулы,newyear,no,http://pravo.gov.ru/proxy/ips/?docbody=&nd=102074279,primary
+RU,2022-01-05,Новогодние каникулы,newyear,no,http://pravo.gov.ru/proxy/ips/?docbody=&nd=102074279,primary
+RU,2022-01-06,Новогодние каникулы,newyear,no,http://pravo.gov.ru/proxy/ips/?docbody=&nd=102074279,primary
+RU,2022-01-07,Рождество Христово,religious,no,http://pravo.gov.ru/proxy/ips/?docbody=&nd=102074279,primary
+RU,2022-01-08,Новогодние каникулы,newyear,no,http://pravo.gov.ru/proxy/ips/?docbody=&nd=102074279,primary
+RU,2022-02-23,День защитника Отечества,national,no,http://pravo.gov.ru/proxy/ips/?docbody=&nd=102074279,primary
+RU,2022-03-08,Международный женский день,womens,no,http://pravo.gov.ru/proxy/ips/?docbody=&nd=102074279,primary
+RU,2022-05-01,Праздник Весны и Труда,labour,no,http://pravo.gov.ru/proxy/ips/?docbody=&nd=102074279,primary
+RU,2022-05-09,День Победы,victory,no,http://pravo.gov.ru/proxy/ips/?docbody=&nd=102074279,primary
+RU,2022-06-12,День России,national,no,http://pravo.gov.ru/proxy/ips/?docbody=&nd=102074279,primary
+RU,2022-11-04,День народного единства,national,no,http://pravo.gov.ru/proxy/ips/?docbody=&nd=102074279,primary
+RU,2023-01-01,Новогодние каникулы,newyear,no,http://pravo.gov.ru/proxy/ips/?docbody=&nd=102074279,primary
+RU,2023-01-02,Новогодние каникулы,newyear,no,http://pravo.gov.ru/proxy/ips/?docbody=&nd=102074279,primary
+RU,2023-01-03,Новогодние каникулы,newyear,no,http://pravo.gov.ru/proxy/ips/?docbody=&nd=102074279,primary
+RU,2023-01-04,Новогодние каникулы,newyear,no,http://pravo.gov.ru/proxy/ips/?docbody=&nd=102074279,primary
+RU,2023-01-05,Новогодние каникулы,newyear,no,http://pravo.gov.ru/proxy/ips/?docbody=&nd=102074279,primary
+RU,2023-01-06,Новогодние каникулы,newyear,no,http://pravo.gov.ru/proxy/ips/?docbody=&nd=102074279,primary
+RU,2023-01-07,Рождество Христово,religious,no,http://pravo.gov.ru/proxy/ips/?docbody=&nd=102074279,primary
+RU,2023-01-08,Новогодние каникулы,newyear,no,http://pravo.gov.ru/proxy/ips/?docbody=&nd=102074279,primary
+RU,2023-02-23,День защитника Отечества,national,no,http://pravo.gov.ru/proxy/ips/?docbody=&nd=102074279,primary
+RU,2023-03-08,Международный женский день,womens,no,http://pravo.gov.ru/proxy/ips/?docbody=&nd=102074279,primary
+RU,2023-05-01,Праздник Весны и Труда,labour,no,http://pravo.gov.ru/proxy/ips/?docbody=&nd=102074279,primary
+RU,2023-05-09,День Победы,victory,no,http://pravo.gov.ru/proxy/ips/?docbody=&nd=102074279,primary
+RU,2023-06-12,День России,national,no,http://pravo.gov.ru/proxy/ips/?docbody=&nd=102074279,primary
+RU,2023-11-04,День народного единства,national,no,http://pravo.gov.ru/proxy/ips/?docbody=&nd=102074279,primary
+RU,2024-01-01,Новогодние каникулы,newyear,no,http://pravo.gov.ru/proxy/ips/?docbody=&nd=102074279,primary
+RU,2024-01-02,Новогодние каникулы,newyear,no,http://pravo.gov.ru/proxy/ips/?docbody=&nd=102074279,primary
+RU,2024-01-03,Новогодние каникулы,newyear,no,http://pravo.gov.ru/proxy/ips/?docbody=&nd=102074279,primary
+RU,2024-01-04,Новогодние каникулы,newyear,no,http://pravo.gov.ru/proxy/ips/?docbody=&nd=102074279,primary
+RU,2024-01-05,Новогодние каникулы,newyear,no,http://pravo.gov.ru/proxy/ips/?docbody=&nd=102074279,primary
+RU,2024-01-06,Новогодние каникулы,newyear,no,http://pravo.gov.ru/proxy/ips/?docbody=&nd=102074279,primary
+RU,2024-01-07,Рождество Христово,religious,no,http://pravo.gov.ru/proxy/ips/?docbody=&nd=102074279,primary
+RU,2024-01-08,Новогодние каникулы,newyear,no,http://pravo.gov.ru/proxy/ips/?docbody=&nd=102074279,primary
+RU,2024-02-23,День защитника Отечества,national,no,http://pravo.gov.ru/proxy/ips/?docbody=&nd=102074279,primary
+RU,2024-03-08,Международный женский день,womens,no,http://pravo.gov.ru/proxy/ips/?docbody=&nd=102074279,primary
+RU,2024-05-01,Праздник Весны и Труда,labour,no,http://pravo.gov.ru/proxy/ips/?docbody=&nd=102074279,primary
+RU,2024-05-09,День Победы,victory,no,http://pravo.gov.ru/proxy/ips/?docbody=&nd=102074279,primary
+RU,2024-06-12,День России,national,no,http://pravo.gov.ru/proxy/ips/?docbody=&nd=102074279,primary
+RU,2024-11-04,День народного единства,national,no,http://pravo.gov.ru/proxy/ips/?docbody=&nd=102074279,primary
+RU,2025-01-01,Новогодние каникулы,newyear,no,http://pravo.gov.ru/proxy/ips/?docbody=&nd=102074279,primary
+RU,2025-01-02,Новогодние каникулы,newyear,no,http://pravo.gov.ru/proxy/ips/?docbody=&nd=102074279,primary
+RU,2025-01-03,Новогодние каникулы,newyear,no,http://pravo.gov.ru/proxy/ips/?docbody=&nd=102074279,primary
+RU,2025-01-04,Новогодние каникулы,newyear,no,http://pravo.gov.ru/proxy/ips/?docbody=&nd=102074279,primary
+RU,2025-01-05,Новогодние каникулы,newyear,no,http://pravo.gov.ru/proxy/ips/?docbody=&nd=102074279,primary
+RU,2025-01-06,Новогодние каникулы,newyear,no,http://pravo.gov.ru/proxy/ips/?docbody=&nd=102074279,primary
+RU,2025-01-07,Рождество Христово,religious,no,http://pravo.gov.ru/proxy/ips/?docbody=&nd=102074279,primary
+RU,2025-01-08,Новогодние каникулы,newyear,no,http://pravo.gov.ru/proxy/ips/?docbody=&nd=102074279,primary
+RU,2025-02-23,День защитника Отечества,national,no,http://pravo.gov.ru/proxy/ips/?docbody=&nd=102074279,primary
+RU,2025-03-08,Международный женский день,womens,no,http://pravo.gov.ru/proxy/ips/?docbody=&nd=102074279,primary
+RU,2025-05-01,Праздник Весны и Труда,labour,no,http://pravo.gov.ru/proxy/ips/?docbody=&nd=102074279,primary
+RU,2025-05-09,День Победы,victory,no,http://pravo.gov.ru/proxy/ips/?docbody=&nd=102074279,primary
+RU,2025-06-12,День России,national,no,http://pravo.gov.ru/proxy/ips/?docbody=&nd=102074279,primary
+RU,2025-11-04,День народного единства,national,no,http://pravo.gov.ru/proxy/ips/?docbody=&nd=102074279,primary
+RU,2026-01-01,Новогодние каникулы,newyear,no,http://pravo.gov.ru/proxy/ips/?docbody=&nd=102074279,primary
+RU,2026-01-02,Новогодние каникулы,newyear,no,http://pravo.gov.ru/proxy/ips/?docbody=&nd=102074279,primary
+RU,2026-01-03,Новогодние каникулы,newyear,no,http://pravo.gov.ru/proxy/ips/?docbody=&nd=102074279,primary
+RU,2026-01-04,Новогодние каникулы,newyear,no,http://pravo.gov.ru/proxy/ips/?docbody=&nd=102074279,primary
+RU,2026-01-05,Новогодние каникулы,newyear,no,http://pravo.gov.ru/proxy/ips/?docbody=&nd=102074279,primary
+RU,2026-01-06,Новогодние каникулы,newyear,no,http://pravo.gov.ru/proxy/ips/?docbody=&nd=102074279,primary
+RU,2026-01-07,Рождество Христово,religious,no,http://pravo.gov.ru/proxy/ips/?docbody=&nd=102074279,primary
+RU,2026-01-08,Новогодние каникулы,newyear,no,http://pravo.gov.ru/proxy/ips/?docbody=&nd=102074279,primary
+RU,2026-02-23,День защитника Отечества,national,no,http://pravo.gov.ru/proxy/ips/?docbody=&nd=102074279,primary
+RU,2026-03-08,Международный женский день,womens,no,http://pravo.gov.ru/proxy/ips/?docbody=&nd=102074279,primary
+RU,2026-05-01,Праздник Весны и Труда,labour,no,http://pravo.gov.ru/proxy/ips/?docbody=&nd=102074279,primary
+RU,2026-05-09,День Победы,victory,no,http://pravo.gov.ru/proxy/ips/?docbody=&nd=102074279,primary
+RU,2026-06-12,День России,national,no,http://pravo.gov.ru/proxy/ips/?docbody=&nd=102074279,primary
+RU,2026-11-04,День народного единства,national,no,http://pravo.gov.ru/proxy/ips/?docbody=&nd=102074279,primary
+TJ,2018-01-01,Новый год,newyear,no,https://mehnat.tj/files/laws/7c84b7f9-e3f5-4efa-adf8-7d54058ae700.pdf,primary
+TJ,2018-03-08,День Матери,womens,no,https://mehnat.tj/files/laws/7c84b7f9-e3f5-4efa-adf8-7d54058ae700.pdf,primary
+TJ,2018-03-21,Международный праздник Навруз,national,no,https://mehnat.tj/files/laws/7c84b7f9-e3f5-4efa-adf8-7d54058ae700.pdf,primary
+TJ,2018-03-22,Международный праздник Навруз,national,no,https://mehnat.tj/files/laws/7c84b7f9-e3f5-4efa-adf8-7d54058ae700.pdf,primary
+TJ,2018-03-23,Международный праздник Навруз,national,no,https://mehnat.tj/files/laws/7c84b7f9-e3f5-4efa-adf8-7d54058ae700.pdf,primary
+TJ,2018-03-24,Международный праздник Навруз,national,no,https://mehnat.tj/files/laws/7c84b7f9-e3f5-4efa-adf8-7d54058ae700.pdf,primary
+TJ,2018-05-09,День Победы в Великой Отечественной войне,victory,no,https://mehnat.tj/files/laws/7c84b7f9-e3f5-4efa-adf8-7d54058ae700.pdf,primary
+TJ,2018-06-15,Иди Рамазон,religious,yes,https://khovar.tj/rus/2018/06/15-iyunya-v-tadzhikistane-otmetyat-idi-ramazon/,secondary
+TJ,2018-06-27,День Национального единства,national,no,https://mehnat.tj/files/laws/7c84b7f9-e3f5-4efa-adf8-7d54058ae700.pdf,primary
+TJ,2018-08-21,Иди Курбон,religious,yes,https://old.asiaplustj.info/ru/news/tajikistan/society/20180814/idi-kurbon-v-tadzhikistane-otprazdnuyut-21-avgusta,secondary
+TJ,2018-09-09,День Государственной независимости,national,no,https://mehnat.tj/files/laws/7c84b7f9-e3f5-4efa-adf8-7d54058ae700.pdf,primary
+TJ,2018-11-06,День Конституции,national,no,https://mehnat.tj/files/laws/7c84b7f9-e3f5-4efa-adf8-7d54058ae700.pdf,primary
+TJ,2019-01-01,Новый год,newyear,no,https://mehnat.tj/files/laws/7c84b7f9-e3f5-4efa-adf8-7d54058ae700.pdf,primary
+TJ,2019-03-08,День Матери,womens,no,https://mehnat.tj/files/laws/7c84b7f9-e3f5-4efa-adf8-7d54058ae700.pdf,primary
+TJ,2019-03-21,Международный праздник Навруз,national,no,https://mehnat.tj/files/laws/7c84b7f9-e3f5-4efa-adf8-7d54058ae700.pdf,primary
+TJ,2019-03-22,Международный праздник Навруз,national,no,https://mehnat.tj/files/laws/7c84b7f9-e3f5-4efa-adf8-7d54058ae700.pdf,primary
+TJ,2019-03-23,Международный праздник Навруз,national,no,https://mehnat.tj/files/laws/7c84b7f9-e3f5-4efa-adf8-7d54058ae700.pdf,primary
+TJ,2019-03-24,Международный праздник Навруз,national,no,https://mehnat.tj/files/laws/7c84b7f9-e3f5-4efa-adf8-7d54058ae700.pdf,primary
+TJ,2019-05-09,День Победы в Великой Отечественной войне,victory,no,https://mehnat.tj/files/laws/7c84b7f9-e3f5-4efa-adf8-7d54058ae700.pdf,primary
+TJ,2019-06-05,Иди Рамазон,religious,yes,https://khovar.tj/rus/2019/06/pozdravitelnoe-poslanie-prezidenta-respubliki-tadzhikistan-uvazhaemogo-emomali-rahmona-po-sluchayu-idi-fitr/,primary
+TJ,2019-06-27,День Национального единства,national,no,https://mehnat.tj/files/laws/7c84b7f9-e3f5-4efa-adf8-7d54058ae700.pdf,primary
+TJ,2019-08-11,Иди Курбон,religious,yes,https://avesta.tj/2019/08/05/prazdnik-idi-kurbon-v-tadzhikistane-otmetyat-11-avgusta/,secondary
+TJ,2019-09-09,День Государственной независимости,national,no,https://mehnat.tj/files/laws/7c84b7f9-e3f5-4efa-adf8-7d54058ae700.pdf,primary
+TJ,2019-11-06,День Конституции,national,no,https://mehnat.tj/files/laws/7c84b7f9-e3f5-4efa-adf8-7d54058ae700.pdf,primary
+TJ,2020-01-01,Новый год,newyear,no,https://mehnat.tj/files/laws/7c84b7f9-e3f5-4efa-adf8-7d54058ae700.pdf,primary
+TJ,2020-03-08,День Матери,womens,no,https://mehnat.tj/files/laws/7c84b7f9-e3f5-4efa-adf8-7d54058ae700.pdf,primary
+TJ,2020-03-21,Международный праздник Навруз,national,no,https://mehnat.tj/files/laws/7c84b7f9-e3f5-4efa-adf8-7d54058ae700.pdf,primary
+TJ,2020-03-22,Международный праздник Навруз,national,no,https://mehnat.tj/files/laws/7c84b7f9-e3f5-4efa-adf8-7d54058ae700.pdf,primary
+TJ,2020-03-23,Международный праздник Навруз,national,no,https://mehnat.tj/files/laws/7c84b7f9-e3f5-4efa-adf8-7d54058ae700.pdf,primary
+TJ,2020-03-24,Международный праздник Навруз,national,no,https://mehnat.tj/files/laws/7c84b7f9-e3f5-4efa-adf8-7d54058ae700.pdf,primary
+TJ,2020-05-09,День Победы в Великой Отечественной войне,victory,no,https://mehnat.tj/files/laws/7c84b7f9-e3f5-4efa-adf8-7d54058ae700.pdf,primary
+TJ,2020-05-24,Иди Рамазон,religious,yes,https://tj.sputniknews.ru/20200520/tajikistan-prazdnovanie-Idi-ramazon-24-maya-1031271938.html,secondary
+TJ,2020-06-27,День Национального единства,national,no,https://mehnat.tj/files/laws/7c84b7f9-e3f5-4efa-adf8-7d54058ae700.pdf,primary
+TJ,2020-07-31,Иди Курбон,religious,yes,https://khovar.tj/rus/2020/07/prazdnik-idi-kurbon-v-tadzhikistane-otmetyat-31-iyulya/,primary
+TJ,2020-09-09,День Государственной независимости,national,no,https://mehnat.tj/files/laws/7c84b7f9-e3f5-4efa-adf8-7d54058ae700.pdf,primary
+TJ,2020-11-06,День Конституции,national,no,https://mehnat.tj/files/laws/7c84b7f9-e3f5-4efa-adf8-7d54058ae700.pdf,primary
+TJ,2021-01-01,Новый год,newyear,no,https://mehnat.tj/files/laws/7c84b7f9-e3f5-4efa-adf8-7d54058ae700.pdf,primary
+TJ,2021-03-08,День Матери,womens,no,https://mehnat.tj/files/laws/7c84b7f9-e3f5-4efa-adf8-7d54058ae700.pdf,primary
+TJ,2021-03-21,Международный праздник Навруз,national,no,https://mehnat.tj/files/laws/7c84b7f9-e3f5-4efa-adf8-7d54058ae700.pdf,primary
+TJ,2021-03-22,Международный праздник Навруз,national,no,https://mehnat.tj/files/laws/7c84b7f9-e3f5-4efa-adf8-7d54058ae700.pdf,primary
+TJ,2021-03-23,Международный праздник Навруз,national,no,https://mehnat.tj/files/laws/7c84b7f9-e3f5-4efa-adf8-7d54058ae700.pdf,primary
+TJ,2021-03-24,Международный праздник Навруз,national,no,https://mehnat.tj/files/laws/7c84b7f9-e3f5-4efa-adf8-7d54058ae700.pdf,primary
+TJ,2021-05-09,День Победы в Великой Отечественной войне,victory,no,https://mehnat.tj/files/laws/7c84b7f9-e3f5-4efa-adf8-7d54058ae700.pdf,primary
+TJ,2021-05-13,Иди Рамазон,religious,yes,https://www.novosti.tj/novosti-tadzhikistana/soveta-ulemov-nazval-datu-idi-ramazon-v-tadzhikistane.html,secondary
+TJ,2021-06-27,День Национального единства,national,no,https://mehnat.tj/files/laws/7c84b7f9-e3f5-4efa-adf8-7d54058ae700.pdf,primary
+TJ,2021-07-20,Иди Курбон,religious,yes,https://khovar.tj/rus/2021/07/prazdnik-idi-kurbon-v-tadzhikistane-otmetyat-20-iyulya/,primary
+TJ,2021-09-09,День Государственной независимости,national,no,https://mehnat.tj/files/laws/7c84b7f9-e3f5-4efa-adf8-7d54058ae700.pdf,primary
+TJ,2021-11-06,День Конституции,national,no,https://mehnat.tj/files/laws/7c84b7f9-e3f5-4efa-adf8-7d54058ae700.pdf,primary
+TJ,2022-01-01,Новый год,newyear,no,https://mehnat.tj/files/laws/7c84b7f9-e3f5-4efa-adf8-7d54058ae700.pdf,primary
+TJ,2022-03-08,День Матери,womens,no,https://mehnat.tj/files/laws/7c84b7f9-e3f5-4efa-adf8-7d54058ae700.pdf,primary
+TJ,2022-03-21,Международный праздник Навруз,national,no,https://mehnat.tj/files/laws/7c84b7f9-e3f5-4efa-adf8-7d54058ae700.pdf,primary
+TJ,2022-03-22,Международный праздник Навруз,national,no,https://mehnat.tj/files/laws/7c84b7f9-e3f5-4efa-adf8-7d54058ae700.pdf,primary
+TJ,2022-03-23,Международный праздник Навруз,national,no,https://mehnat.tj/files/laws/7c84b7f9-e3f5-4efa-adf8-7d54058ae700.pdf,primary
+TJ,2022-03-24,Международный праздник Навруз,national,no,https://mehnat.tj/files/laws/7c84b7f9-e3f5-4efa-adf8-7d54058ae700.pdf,primary
+TJ,2022-05-02,Иди Рамазон,religious,yes,https://avesta.tj/2022/04/27/idi-ramazon-fitr-v-tadzhikistane-otmetyat-2-maya/,secondary
+TJ,2022-05-09,День Победы в Великой Отечественной войне,victory,no,https://mehnat.tj/files/laws/7c84b7f9-e3f5-4efa-adf8-7d54058ae700.pdf,primary
+TJ,2022-06-27,День Национального единства,national,no,https://mehnat.tj/files/laws/7c84b7f9-e3f5-4efa-adf8-7d54058ae700.pdf,primary
+TJ,2022-07-09,Иди Курбон,religious,yes,https://avesta.tj/2022/07/04/v-tadzhikistane-opredelena-data-prazdnovaniya-idi-kurbon/,secondary
+TJ,2022-09-09,День Государственной независимости,national,no,https://mehnat.tj/files/laws/7c84b7f9-e3f5-4efa-adf8-7d54058ae700.pdf,primary
+TJ,2022-11-06,День Конституции,national,no,https://mehnat.tj/files/laws/7c84b7f9-e3f5-4efa-adf8-7d54058ae700.pdf,primary
+TJ,2023-01-01,Новый год,newyear,no,https://mehnat.tj/files/laws/7c84b7f9-e3f5-4efa-adf8-7d54058ae700.pdf,primary
+TJ,2023-03-08,День Матери,womens,no,https://mehnat.tj/files/laws/7c84b7f9-e3f5-4efa-adf8-7d54058ae700.pdf,primary
+TJ,2023-03-21,Международный праздник Навруз,national,no,https://mehnat.tj/files/laws/7c84b7f9-e3f5-4efa-adf8-7d54058ae700.pdf,primary
+TJ,2023-03-22,Международный праздник Навруз,national,no,https://mehnat.tj/files/laws/7c84b7f9-e3f5-4efa-adf8-7d54058ae700.pdf,primary
+TJ,2023-03-23,Международный праздник Навруз,national,no,https://mehnat.tj/files/laws/7c84b7f9-e3f5-4efa-adf8-7d54058ae700.pdf,primary
+TJ,2023-03-24,Международный праздник Навруз,national,no,https://mehnat.tj/files/laws/7c84b7f9-e3f5-4efa-adf8-7d54058ae700.pdf,primary
+TJ,2023-04-21,Иди Рамазон,religious,yes,https://khovar.tj/rus/2023/04/pozdravitelnoe-poslanie-lidera-natsii-emomali-rahmona-po-sluchayu-nastupleniya-prazdnika-fitr/,primary
+TJ,2023-05-09,День Победы в Великой Отечественной войне,victory,no,https://mehnat.tj/files/laws/7c84b7f9-e3f5-4efa-adf8-7d54058ae700.pdf,primary
+TJ,2023-06-27,День Национального единства,national,no,https://mehnat.tj/files/laws/7c84b7f9-e3f5-4efa-adf8-7d54058ae700.pdf,primary
+TJ,2023-06-28,Иди Курбон,religious,yes,https://tj.sputniknews.ru/20230621/tajikistan-idi-kurbon-data-1057830712.html,secondary
+TJ,2023-09-09,День Государственной независимости,national,no,https://mehnat.tj/files/laws/7c84b7f9-e3f5-4efa-adf8-7d54058ae700.pdf,primary
+TJ,2023-11-06,День Конституции,national,no,https://mehnat.tj/files/laws/7c84b7f9-e3f5-4efa-adf8-7d54058ae700.pdf,primary
+TJ,2024-01-01,Новый год,newyear,no,https://mehnat.tj/files/laws/7c84b7f9-e3f5-4efa-adf8-7d54058ae700.pdf,primary
+TJ,2024-03-08,День Матери,womens,no,https://mehnat.tj/files/laws/7c84b7f9-e3f5-4efa-adf8-7d54058ae700.pdf,primary
+TJ,2024-03-21,Международный праздник Навруз,national,no,https://mehnat.tj/files/laws/7c84b7f9-e3f5-4efa-adf8-7d54058ae700.pdf,primary
+TJ,2024-03-22,Международный праздник Навруз,national,no,https://mehnat.tj/files/laws/7c84b7f9-e3f5-4efa-adf8-7d54058ae700.pdf,primary
+TJ,2024-03-23,Международный праздник Навруз,national,no,https://mehnat.tj/files/laws/7c84b7f9-e3f5-4efa-adf8-7d54058ae700.pdf,primary
+TJ,2024-03-24,Международный праздник Навруз,national,no,https://mehnat.tj/files/laws/7c84b7f9-e3f5-4efa-adf8-7d54058ae700.pdf,primary
+TJ,2024-04-10,Иди Рамазон,religious,yes,https://asiaplus.news/2024/04/04/nazvana-data-idi-ramazon-v-tadzhikistane/,secondary
+TJ,2024-05-09,День Победы в Великой Отечественной войне,victory,no,https://mehnat.tj/files/laws/7c84b7f9-e3f5-4efa-adf8-7d54058ae700.pdf,primary
+TJ,2024-06-16,Иди Курбон,religious,yes,https://avesta.tj/2024/06/11/v-tadzhikistena-opredelena-data-prazdnovaniya-idi-kurbon-2/,secondary
+TJ,2024-06-27,День Национального единства,national,no,https://mehnat.tj/files/laws/7c84b7f9-e3f5-4efa-adf8-7d54058ae700.pdf,primary
+TJ,2024-09-09,День Государственной независимости,national,no,https://mehnat.tj/files/laws/7c84b7f9-e3f5-4efa-adf8-7d54058ae700.pdf,primary
+TJ,2024-11-06,День Конституции,national,no,https://mehnat.tj/files/laws/7c84b7f9-e3f5-4efa-adf8-7d54058ae700.pdf,primary
+TJ,2025-01-01,Новый год,newyear,no,https://mehnat.tj/files/laws/7c84b7f9-e3f5-4efa-adf8-7d54058ae700.pdf,primary
+TJ,2025-03-08,День Матери,womens,no,https://mehnat.tj/files/laws/7c84b7f9-e3f5-4efa-adf8-7d54058ae700.pdf,primary
+TJ,2025-03-21,Международный праздник Навруз,national,no,https://mehnat.tj/files/laws/7c84b7f9-e3f5-4efa-adf8-7d54058ae700.pdf,primary
+TJ,2025-03-22,Международный праздник Навруз,national,no,https://mehnat.tj/files/laws/7c84b7f9-e3f5-4efa-adf8-7d54058ae700.pdf,primary
+TJ,2025-03-23,Международный праздник Навруз,national,no,https://mehnat.tj/files/laws/7c84b7f9-e3f5-4efa-adf8-7d54058ae700.pdf,primary
+TJ,2025-03-24,Международный праздник Навруз,national,no,https://mehnat.tj/files/laws/7c84b7f9-e3f5-4efa-adf8-7d54058ae700.pdf,primary
+TJ,2025-03-30,Иди Рамазон,religious,yes,https://avesta.tj/2025/03/25/29-dnej-ramazana-30-marta-v-tadzhikistane-otmetyat-idi-ramazon/,secondary
+TJ,2025-05-09,День Победы в Великой Отечественной войне,victory,no,https://mehnat.tj/files/laws/7c84b7f9-e3f5-4efa-adf8-7d54058ae700.pdf,primary
+TJ,2025-06-06,Иди Курбон,religious,yes,https://tj.sputniknews.ru/20250529/tajikistan-data-idi-kurbon-1067548083.html,secondary
+TJ,2025-06-27,День Национального единства,national,no,https://mehnat.tj/files/laws/7c84b7f9-e3f5-4efa-adf8-7d54058ae700.pdf,primary
+TJ,2025-09-09,День Государственной независимости,national,no,https://mehnat.tj/files/laws/7c84b7f9-e3f5-4efa-adf8-7d54058ae700.pdf,primary
+TJ,2025-11-06,День Конституции,national,no,https://mehnat.tj/files/laws/7c84b7f9-e3f5-4efa-adf8-7d54058ae700.pdf,primary
+TJ,2026-01-01,Новый год,newyear,no,https://mehnat.tj/files/laws/7c84b7f9-e3f5-4efa-adf8-7d54058ae700.pdf,primary
+TJ,2026-03-08,День Матери,womens,no,https://mehnat.tj/files/laws/7c84b7f9-e3f5-4efa-adf8-7d54058ae700.pdf,primary
+TJ,2026-03-20,Иди Рамазон,religious,yes,https://asiaplus.news/ru/news/tajikistan/society/20260317/prazdnik-ramazan-v-tadzhikistane-budet-otmechatsya-20-marta,secondary
+TJ,2026-03-21,Международный праздник Навруз,national,no,https://mehnat.tj/files/laws/7c84b7f9-e3f5-4efa-adf8-7d54058ae700.pdf,primary
+TJ,2026-03-22,Международный праздник Навруз,national,no,https://mehnat.tj/files/laws/7c84b7f9-e3f5-4efa-adf8-7d54058ae700.pdf,primary
+TJ,2026-03-23,Международный праздник Навруз,national,no,https://mehnat.tj/files/laws/7c84b7f9-e3f5-4efa-adf8-7d54058ae700.pdf,primary
+TJ,2026-03-24,Международный праздник Навруз,national,no,https://mehnat.tj/files/laws/7c84b7f9-e3f5-4efa-adf8-7d54058ae700.pdf,primary
+TJ,2026-05-09,День Победы в Великой Отечественной войне,victory,no,https://mehnat.tj/files/laws/7c84b7f9-e3f5-4efa-adf8-7d54058ae700.pdf,primary
+TJ,2026-05-27,Иди Курбон,religious,yes,https://tj.sputniknews.ru/20260520/tajikistan-datu-idi-kurbona-1077691093.html,secondary
+TJ,2026-06-27,День Национального единства,national,no,https://mehnat.tj/files/laws/7c84b7f9-e3f5-4efa-adf8-7d54058ae700.pdf,primary
+TJ,2026-09-09,День Государственной независимости,national,no,https://mehnat.tj/files/laws/7c84b7f9-e3f5-4efa-adf8-7d54058ae700.pdf,primary
+TJ,2026-11-06,День Конституции,national,no,https://mehnat.tj/files/laws/7c84b7f9-e3f5-4efa-adf8-7d54058ae700.pdf,primary
+UZ,2018-01-01,Новый год,newyear,no,https://lex.uz/ru/docs/6257291,primary
+UZ,2018-01-02,Новый год (дополнительный день),newyear,no,https://lex.uz/ru/docs/3479237,primary
+UZ,2018-03-08,День женщин,womens,no,https://lex.uz/ru/docs/6257291,primary
+UZ,2018-03-20,Праздник Навруз (дополнительный день),national,no,https://lex.uz/ru/docs/3479237,primary
+UZ,2018-03-21,Праздник Навруз,national,no,https://lex.uz/ru/docs/6257291,primary
+UZ,2018-05-09,День памяти и почестей,victory,no,https://lex.uz/ru/docs/6257291,primary
+UZ,2018-06-15,Рўза ҳайит,religious,yes,https://lex.uz/ru/docs/3777365,primary
+UZ,2018-08-21,Қурбон ҳайит,religious,yes,https://lex.uz/ru/docs/3865571,primary
+UZ,2018-08-31,День независимости (дополнительный день),national,no,https://lex.uz/ru/docs/3479237,primary
+UZ,2018-09-01,День независимости,national,no,https://lex.uz/ru/docs/6257291,primary
+UZ,2018-10-01,День учителя и наставника,national,no,https://lex.uz/ru/docs/6257291,primary
+UZ,2018-12-08,День Конституции,national,no,https://lex.uz/ru/docs/6257291,primary
+UZ,2019-01-01,Новый год,newyear,no,https://lex.uz/ru/docs/6257291,primary
+UZ,2019-01-02,Новый год (дополнительный день),newyear,no,https://lex.uz/ru/docs/4054703,primary
+UZ,2019-03-08,День женщин,womens,no,https://lex.uz/ru/docs/6257291,primary
+UZ,2019-03-21,Праздник Навруз,national,no,https://lex.uz/ru/docs/6257291,primary
+UZ,2019-03-22,Праздник Навруз (дополнительный день),national,no,https://lex.uz/ru/docs/4054703,primary
+UZ,2019-05-09,День памяти и почестей,victory,no,https://lex.uz/ru/docs/6257291,primary
+UZ,2019-06-05,Рўза ҳайит,religious,yes,https://lex.uz/ru/docs/4358664,primary
+UZ,2019-08-11,Қурбон ҳайит,religious,yes,https://lex.uz/ru/docs/4460099,primary
+UZ,2019-09-01,День независимости,national,no,https://lex.uz/ru/docs/6257291,primary
+UZ,2019-09-02,День независимости (дополнительный день),national,no,https://lex.uz/ru/docs/4054703,primary
+UZ,2019-10-01,День учителя и наставника,national,no,https://lex.uz/ru/docs/6257291,primary
+UZ,2019-12-08,День Конституции,national,no,https://lex.uz/ru/docs/6257291,primary
+UZ,2020-01-01,Новый год,newyear,no,https://lex.uz/ru/docs/6257291,primary
+UZ,2020-01-02,Новый год (дополнительный день),newyear,no,https://lex.uz/ru/docs/4595651,primary
+UZ,2020-03-08,День женщин,womens,no,https://lex.uz/ru/docs/6257291,primary
+UZ,2020-03-21,Праздник Навруз,national,no,https://lex.uz/ru/docs/6257291,primary
+UZ,2020-03-23,Праздник Навруз (дополнительный день),national,no,https://lex.uz/ru/docs/4595651,primary
+UZ,2020-05-09,День памяти и почестей,victory,no,https://lex.uz/ru/docs/6257291,primary
+UZ,2020-05-24,Рўза ҳайит,religious,yes,https://lex.uz/ru/docs/4819099,primary
+UZ,2020-07-31,Қурбон ҳайит,religious,yes,https://lex.uz/ru/docs/4910245,primary
+UZ,2020-08-31,День независимости (дополнительный день),national,no,https://lex.uz/ru/docs/4595651,primary
+UZ,2020-09-01,День независимости,national,no,https://lex.uz/ru/docs/6257291,primary
+UZ,2020-10-01,День учителя и наставника,national,no,https://lex.uz/ru/docs/6257291,primary
+UZ,2020-12-08,День Конституции,national,no,https://lex.uz/ru/docs/6257291,primary
+UZ,2021-01-01,Новый год,newyear,no,https://lex.uz/ru/docs/6257291,primary
+UZ,2021-01-02,Новый год (дополнительный день),newyear,no,https://lex.uz/ru/docs/5137160,primary
+UZ,2021-03-08,День женщин,womens,no,https://lex.uz/ru/docs/6257291,primary
+UZ,2021-03-20,Праздник Навруз (дополнительный день),national,no,https://lex.uz/ru/docs/5137160,primary
+UZ,2021-03-21,Праздник Навруз,national,no,https://lex.uz/ru/docs/6257291,primary
+UZ,2021-03-22,Праздник Навруз (дополнительный день),national,no,https://lex.uz/ru/docs/5137160,primary
+UZ,2021-05-09,День памяти и почестей,victory,no,https://lex.uz/ru/docs/6257291,primary
+UZ,2021-05-13,Рўза ҳайит,religious,yes,https://lex.uz/ru/docs/5416181,primary
+UZ,2021-05-14,Рўза ҳайит (дополнительный день),religious,yes,https://lex.uz/ru/docs/5416219,primary
+UZ,2021-05-15,Рўза ҳайит (дополнительный день),religious,yes,https://lex.uz/ru/docs/5416219,primary
+UZ,2021-07-20,Қурбон ҳайит,religious,yes,https://lex.uz/ru/docs/5509431,primary
+UZ,2021-07-21,Қурбон ҳайит (дополнительный день),religious,yes,https://lex.uz/ru/docs/5416219,primary
+UZ,2021-07-22,Қурбон ҳайит (дополнительный день),religious,yes,https://lex.uz/ru/docs/5416219,primary
+UZ,2021-09-01,День независимости,national,no,https://lex.uz/ru/docs/6257291,primary
+UZ,2021-09-02,День независимости (дополнительный день),national,no,https://lex.uz/ru/docs/5416219,primary
+UZ,2021-09-03,День независимости (дополнительный день),national,no,https://lex.uz/ru/docs/5416219,primary
+UZ,2021-09-04,День независимости (дополнительный день),national,no,https://lex.uz/ru/docs/5416219,primary
+UZ,2021-10-01,День учителя и наставника,national,no,https://lex.uz/ru/docs/6257291,primary
+UZ,2021-12-08,День Конституции,national,no,https://lex.uz/ru/docs/6257291,primary
+UZ,2021-12-31,Новый год (дополнительный день),newyear,no,https://lex.uz/ru/docs/5416219,primary
+UZ,2022-01-01,Новый год,newyear,no,https://lex.uz/ru/docs/6257291,primary
+UZ,2022-01-03,Новый год (дополнительный день),newyear,no,https://lex.uz/ru/docs/5784921,primary
+UZ,2022-03-08,День женщин,womens,no,https://lex.uz/ru/docs/6257291,primary
+UZ,2022-03-21,Праздник Навруз,national,no,https://lex.uz/ru/docs/6257291,primary
+UZ,2022-03-22,Праздник Навруз (дополнительный день),national,no,https://lex.uz/ru/docs/5784921,primary
+UZ,2022-03-23,Праздник Навруз (дополнительный день),national,no,https://lex.uz/ru/docs/5784921,primary
+UZ,2022-05-02,Рўза ҳайит,religious,yes,https://lex.uz/ru/docs/5990057,primary
+UZ,2022-05-03,Рўза ҳайит (дополнительный день),religious,yes,https://lex.uz/ru/docs/5990051,primary
+UZ,2022-05-09,День памяти и почестей,victory,no,https://lex.uz/ru/docs/6257291,primary
+UZ,2022-07-09,Қурбон ҳайит,religious,yes,https://lex.uz/ru/docs/6089597,primary
+UZ,2022-07-11,Қурбон ҳайит (дополнительный день),religious,yes,https://lex.uz/ru/docs/5784921,primary
+UZ,2022-09-01,День независимости,national,no,https://lex.uz/ru/docs/6257291,primary
+UZ,2022-09-02,День независимости (дополнительный день),national,no,https://lex.uz/ru/docs/5784921,primary
+UZ,2022-10-01,День учителя и наставника,national,no,https://lex.uz/ru/docs/6257291,primary
+UZ,2022-12-08,День Конституции,national,no,https://lex.uz/ru/docs/6257291,primary
+UZ,2023-01-01,Новый год,newyear,no,https://lex.uz/ru/docs/6257291,primary
+UZ,2023-01-02,Новый год (дополнительный день),newyear,no,https://lex.uz/ru/docs/6324666,primary
+UZ,2023-03-08,День женщин,womens,no,https://lex.uz/ru/docs/6257291,primary
+UZ,2023-03-21,Праздник Навруз,national,no,https://lex.uz/ru/docs/6257291,primary
+UZ,2023-04-21,Рўза ҳайит,religious,yes,https://lex.uz/ru/docs/6438134,primary
+UZ,2023-04-24,Рўза ҳайит (дополнительный день),religious,yes,https://lex.uz/ru/docs/6438134,primary
+UZ,2023-05-09,День памяти и почестей,victory,no,https://lex.uz/ru/docs/6257291,primary
+UZ,2023-06-28,Қурбон ҳайит,religious,yes,https://lex.uz/ru/docs/6505608,primary
+UZ,2023-06-29,Қурбон ҳайит (дополнительный день),religious,yes,https://lex.uz/ru/docs/6324666,primary
+UZ,2023-06-30,Қурбон ҳайит (дополнительный день),religious,yes,https://lex.uz/ru/docs/6324666,primary
+UZ,2023-09-01,День независимости,national,no,https://lex.uz/ru/docs/6257291,primary
+UZ,2023-10-01,День учителя и наставника,national,no,https://lex.uz/ru/docs/6257291,primary
+UZ,2023-12-08,День Конституции,national,no,https://lex.uz/ru/docs/6257291,primary
+UZ,2024-01-01,Новый год,newyear,no,https://lex.uz/ru/docs/6257291,primary
+UZ,2024-03-08,День женщин,womens,no,https://lex.uz/ru/docs/6257291,primary
+UZ,2024-03-21,Праздник Навруз,national,no,https://lex.uz/ru/docs/6257291,primary
+UZ,2024-03-22,Праздник Навруз (дополнительный день),national,no,https://lex.uz/ru/docs/6704072,primary
+UZ,2024-04-10,Рўза ҳайит,religious,yes,https://lex.uz/ru/docs/6873343,primary
+UZ,2024-04-11,Рўза ҳайит (дополнительный день),religious,yes,https://lex.uz/ru/docs/6704072,primary
+UZ,2024-05-09,День памяти и почестей,victory,no,https://lex.uz/ru/docs/6257291,primary
+UZ,2024-06-16,Қурбон ҳайит,religious,yes,https://lex.uz/ru/docs/6965703,primary
+UZ,2024-06-18,Қурбон ҳайит (дополнительный день),religious,yes,https://lex.uz/ru/docs/6704072,primary
+UZ,2024-09-01,День независимости,national,no,https://lex.uz/ru/docs/6257291,primary
+UZ,2024-09-03,День независимости (дополнительный день),national,no,https://lex.uz/ru/docs/6704072,primary
+UZ,2024-10-01,День учителя и наставника,national,no,https://lex.uz/ru/docs/6257291,primary
+UZ,2024-12-08,День Конституции,national,no,https://lex.uz/ru/docs/6257291,primary
+UZ,2024-12-31,Новый год (дополнительный день),newyear,no,https://lex.uz/ru/docs/6704072,primary
+UZ,2025-01-01,Новый год,newyear,no,https://lex.uz/ru/docs/6257291,primary
+UZ,2025-01-02,Новый год (дополнительный день),newyear,no,https://lex.uz/ru/docs/7276736,primary
+UZ,2025-03-08,День женщин,womens,no,https://lex.uz/ru/docs/6257291,primary
+UZ,2025-03-21,Праздник Навруз,national,no,https://lex.uz/ru/docs/6257291,primary
+UZ,2025-03-30,Рўза ҳайит,religious,yes,https://lex.uz/ru/docs/7447452,primary
+UZ,2025-05-09,День памяти и почестей,victory,no,https://lex.uz/ru/docs/6257291,primary
+UZ,2025-06-06,Қурбон ҳайит,religious,yes,https://lex.uz/ru/docs/7549348,primary
+UZ,2025-09-01,День независимости,national,no,https://lex.uz/ru/docs/6257291,primary
+UZ,2025-10-01,День учителя и наставника,national,no,https://lex.uz/ru/docs/6257291,primary
+UZ,2025-12-08,День Конституции,national,no,https://lex.uz/ru/docs/6257291,primary
+UZ,2025-12-31,Новый год (дополнительный день),newyear,no,https://lex.uz/ru/docs/7938924,primary
+UZ,2026-01-01,Новый год,newyear,no,https://lex.uz/ru/docs/6257291,primary
+UZ,2026-01-02,Новый год (дополнительный день),newyear,no,https://lex.uz/ru/docs/7938924,primary
+UZ,2026-03-08,День женщин,womens,no,https://lex.uz/ru/docs/6257291,primary
+UZ,2026-03-20,Рўза ҳайит,religious,yes,https://lex.uz/ru/docs/8090632,primary
+UZ,2026-03-21,Праздник Навруз,national,no,https://lex.uz/ru/docs/6257291,primary
+UZ,2026-05-09,День памяти и почестей,victory,no,https://lex.uz/ru/docs/6257291,primary
+UZ,2026-05-27,Қурбон ҳайит,religious,yes,https://lex.uz/ru/docs/8212932,primary
+UZ,2026-05-28,Қурбон ҳайит (дополнительный день),religious,yes,https://lex.uz/ru/docs/7938924,primary
+UZ,2026-05-29,Қурбон ҳайит (дополнительный день),religious,yes,https://lex.uz/ru/docs/7938924,primary
+UZ,2026-08-31,День независимости (дополнительный день),national,no,https://lex.uz/ru/docs/7938924,primary
+UZ,2026-09-01,День независимости,national,no,https://lex.uz/ru/docs/6257291,primary
+UZ,2026-10-01,День учителя и наставника,national,no,https://lex.uz/ru/docs/6257291,primary
+UZ,2026-12-08,День Конституции,national,no,https://lex.uz/ru/docs/6257291,primary
+UZ,2026-12-31,Новый год (дополнительный день),newyear,no,https://lex.uz/ru/docs/7938924,primary
