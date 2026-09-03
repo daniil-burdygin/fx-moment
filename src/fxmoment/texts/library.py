@@ -39,6 +39,13 @@ TEMPLATES: dict[tuple[str, str], Template] = {
         "{rate} ₽ за {unit} — ниже, чем в {pct} % дней за {months} мес. "
         "Снижение остановилось {days} дн. назад.",
     ),
+    (BUY_NOW, "level_drift"): Template(
+        BUY_NOW,
+        "level_drift",
+        "Курс {cur} ниже своей тенденции за {months} мес.",
+        "Сейчас {rate} ₽ за {unit} — ниже, чем в {pct} % дней за последние {months} мес. с поправкой "
+        "на тенденцию: курс {cur} к доллару за год {drift_dir} на {drift} %.",
+    ),
     (BUY_NOW, "momentum"): Template(
         BUY_NOW,
         "momentum",
@@ -178,6 +185,9 @@ def render(corridor: str, scenario: str, indicator: str, rate: float, facts: dic
         # простая средняя за span дней публикации (dip.py); в неделях не пересчитываем — день
         # публикации не равен 1/5 недели (аудит 03.09), а «рабочих дней» проверяемо буквально
         "span": int(float(facts.get("span", 40) or 40)),
+        # дрейф локальной ноги за год (level_drift.py): факт о прошлом, знак — в глаголе
+        "drift": f"{abs(float(facts.get('drift_pct_year', 0) or 0)):.1f}".replace(".", ","),
+        "drift_dir": "снизился" if float(facts.get("drift_pct_year", 0) or 0) < 0 else "вырос",
     }
     if indicator == "seasonality":
         values["n"] = values["n_years"]
@@ -199,6 +209,7 @@ def library_texts() -> list[tuple[str, str, str]]:
         "target_month": 12,
         "dev_pct": -1.4,
         "span": 40,
+        "drift_pct_year": -3.4,
     }
     out = []
     for (scenario, indicator), _t in TEMPLATES.items():

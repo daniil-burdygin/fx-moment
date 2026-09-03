@@ -23,6 +23,8 @@ MATRIX_KEYS: tuple[str, ...] = ("indicator", "corridor", "window", "h", "tol_bps
 RUN_LOCAL: tuple[str, ...] = ("split",)  # номер окна свой у каждого прогона, сравнивать нечего
 TOL = 1e-9
 DECISIONS: tuple[str, ...] = ("sent", "muted", "thinned", "cooldown", "storm")
+# что из провенанса прогона переносится в провенанс сравнения
+RUN_KEYS: tuple[str, ...] = ("code", "built_at_utc", "first_test", "rank_base", "ml", "extra_indicators")
 
 
 def _read(path: Path) -> pd.DataFrame:
@@ -105,6 +107,74 @@ def matrix_compare(
     a, b = align_splits(latest, variant)
     cmp = paired_pooled_both(a, b, h=h, tol_bps=tol_bps)
     return _rename_ab(cmp, "indicator") if len(cmp) else cmp
+
+
+def pairs_compare(
+    latest: pd.DataFrame,
+    variant: pd.DataFrame,
+    pairs: dict[str, str],
+    h: int = CALIBRATION_H,
+    tol_bps: float = PRIMARY_TOL_BPS,
+) -> pd.DataFrame:
+    """Индикатор варианта против ДРУГОГО индикатора latest на общих окнах (`level_drift` против
+    `level`): строки варианта переименовываются в индикатор latest и идут в тот же парный бутстреп —
+    по всем коридорам (`corridor = all`) и по каждому отдельно. Пара, у которой одной стороны нет,
+    пропускается."""
+    if not pairs or latest.empty or variant.empty:
+        return pd.DataFrame()
+    a, b = align_splits(latest, variant)
+    rows: list[pd.DataFrame] = []
+    for v_name, l_name in pairs.items():
+        la = a[a["indicator"] == l_name]
+        vb = b[b["indicator"] == v_name].assign(indicator=l_name)
+        if la.empty or vb.empty:
+            continue
+        for corridor in ("all", *sorted(set(la["corridor"]) & set(vb["corridor"]))):
+            xa = la if corridor == "all" else la[la["corridor"] == corridor]
+            xb = vb if corridor == "all" else vb[vb["corridor"] == corridor]
+            cmp = paired_pooled_both(xa, xb, h=h, tol_bps=tol_bps)
+            cmp = cmp[cmp["indicator"] == l_name] if len(cmp) else cmp
+            if cmp.empty:
+                continue
+            out = _rename_ab(cmp.assign(indicator=f"{v_name} → {l_name}"), "pair")
+            out.insert(1, "corridor", corridor)
+            rows.append(out)
+    return pd.concat(rows, ignore_index=True) if rows else pd.DataFrame()
+
+
+def extra_indicators_summary(
+    variant: pd.DataFrame,
+    latest_indicators: set[str],
+    h: int = CALIBRATION_H,
+    tol_bps: float = PRIMARY_TOL_BPS,
+) -> pd.DataFrame:
+    """Индикаторы только у варианта (`level_drift`): по коридорам и по всем — окна, события, pooled
+    lift «по среднему» и выгода сверх случайного дня (взвешены событиями окна), медиана частоты,
+    доля пустых месяцев."""
+    if variant.empty:
+        return pd.DataFrame()
+    m = variant[
+        (variant["h"] == h) & (variant["tol_bps"] == tol_bps) & ~variant["indicator"].isin(latest_indicators)
+    ]
+    if m.empty:
+        return pd.DataFrame()
+    rows: list[dict] = []
+    for ind, mi in m.groupby("indicator"):
+        for corridor, g in [*mi.groupby("corridor"), ("all", mi)]:
+            hit, base = _pooled(g, "hit_mean"), _pooled(g, "base_mean")
+            rows.append(
+                {
+                    "indicator": ind,
+                    "corridor": corridor,
+                    "windows": int(g["window"].nunique()),
+                    "events": int(g["n_events"].fillna(0).sum()),
+                    "lift_mean_pooled": hit / base if base > 0 else np.nan,
+                    "benefit_excess_pooled_bps": _pooled(g, "benefit_excess_bps"),
+                    "freq_per_week_median": float(g["freq_per_week"].median()),
+                    "empty_month_share_mean": float(g["empty_month_share"].mean()),
+                }
+            )
+    return pd.DataFrame(rows)
 
 
 def stream_compare(
@@ -275,11 +345,18 @@ def _md(df: pd.DataFrame) -> str:
     return _md_table(df.round(3)) if len(df) else "нет данных"
 
 
-def compare_runs(latest_dir: Path, variant_dir: Path, panel: pd.DataFrame | None = None) -> Path:
+def compare_runs(
+    latest_dir: Path,
+    variant_dir: Path,
+    panel: pd.DataFrame | None = None,
+    pairs: dict[str, str] | None = None,
+) -> Path:
     """Пишет `reports/<вариант>/vs_latest/`: проверку общих окон, парные сравнения матрицы и потока,
-    форму потока, решения политики и сводку окон только у варианта. `panel` не нужна: всё берётся
-    из CSV обоих прогонов; параметр оставлен для симметрии с `analyze`."""
+    форму потока, решения политики, сводку окон и индикаторов только у варианта и пары
+    «индикатор варианта против индикатора latest» (`pairs`). `panel` не нужна: всё берётся из CSV
+    обоих прогонов; параметр оставлен для симметрии с `analyze`."""
     _ = panel
+    pairs = pairs or {}
     out = variant_dir / "vs_latest"
     out.mkdir(parents=True, exist_ok=True)
     pa, pb = _provenance(latest_dir), _provenance(variant_dir)
@@ -308,15 +385,22 @@ def compare_runs(latest_dir: Path, variant_dir: Path, panel: pd.DataFrame | None
     dec.to_csv(out / "decisions.csv", index=False)
     extra = extra_windows_summary(mb, latest_windows)
     extra.to_csv(out / "extra_windows.csv", index=False)
+    latest_indicators = set(ma["indicator"]) if len(ma) else set()
+    extra_ind = extra_indicators_summary(mb, latest_indicators)
+    extra_ind.to_csv(out / "extra_indicators.csv", index=False)
+    pcmp = pairs_compare(ma, mb, pairs)
+    pcmp.to_csv(out / "pairs_compare.csv", index=False)
     bad = overlap[overlap["rows_differ"] > 0]
     common_n = int(overlap["rows"].iloc[0]) if len(overlap) else 0
     provenance = {
         "code": git_hash(),
         "built_at_utc": f"{datetime.now(UTC):%Y-%m-%dT%H:%M:%SZ}",
-        "latest": {k: pa.get(k) for k in ("code", "built_at_utc", "first_test", "rank_base")},
-        "variant": {k: pb.get(k) for k in ("code", "built_at_utc", "first_test", "rank_base")},
+        "latest": {k: pa.get(k) for k in RUN_KEYS},
+        "variant": {k: pb.get(k) for k in RUN_KEYS},
         "common_windows": sorted(set(la) & set(lb)),
         "variant_only_windows": [w for w in lb if w not in set(la)],
+        "variant_only_indicators": sorted(set(mb["indicator"]) - latest_indicators) if len(mb) else [],
+        "pairs": pairs,
         "matrix_rows_compared": common_n,
         "matrix_columns_differ": bad["column"].tolist(),
     }
@@ -326,6 +410,8 @@ def compare_runs(latest_dir: Path, variant_dir: Path, panel: pd.DataFrame | None
     show = [
         c
         for c in (
+            "pair",
+            "corridor",
             "scenario",
             "indicator",
             "blocks",
@@ -352,7 +438,9 @@ def compare_runs(latest_dir: Path, variant_dir: Path, panel: pd.DataFrame | None
         "",
         f"latest: код `{pa.get('code', '?')}`, первое окно {pa.get('first_test', '?')}, база ранга "
         f"{pa.get('rank_base', 'window')}. Вариант: код `{pb.get('code', '?')}`, первое окно "
-        f"{pb.get('first_test', '?')}, база ранга {pb.get('rank_base', 'window')}. Сравнение: код "
+        f"{pb.get('first_test', '?')}, база ранга {pb.get('rank_base', 'window')}, обучаемый "
+        f"{pb.get('ml') or 'local'}, добавлены индикаторы: "
+        f"{', '.join(provenance['variant_only_indicators']) or 'нет'}. Сравнение: код "
         f"`{git_hash()}`, {datetime.now(UTC):%Y-%m-%d %H:%M} UTC. Общих окон "
         f"{len(provenance['common_windows'])}, только у варианта {len(provenance['variant_only_windows'])}.",
         "",
@@ -371,6 +459,18 @@ def compare_runs(latest_dir: Path, variant_dir: Path, panel: pd.DataFrame | None
         "## Индикаторы на общих окнах (вариант − latest, парный бутстреп)",
         "",
         _md(mcmp[[c for c in show if c in mcmp.columns]]) if len(mcmp) else "нет данных",
+        "",
+        "## Пары индикаторов на общих окнах (индикатор варианта − индикатор latest)",
+        "",
+        "Индикатор варианта против другого индикатора latest (`compare-runs --pair level_drift=level`): "
+        "строки варианта идут в тот же парный бутстреп под именем индикатора latest. По всем коридорам "
+        "(`all`) и по каждому отдельно.",
+        "",
+        _md(pcmp[[c for c in show if c in pcmp.columns]]) if len(pcmp) else "пар не задано",
+        "",
+        "## Индикаторы только у варианта",
+        "",
+        _md(extra_ind),
         "",
         "## Итоговый поток на общих окнах по сценариям (вариант − latest)",
         "",

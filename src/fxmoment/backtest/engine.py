@@ -223,6 +223,7 @@ def fit_indicator(
             "_pos_rate_val": round(float(ind.pos_rate_val_), 3)  # type: ignore[attr-defined]
             if ind.fitted_  # type: ignore[attr-defined]
             else None,
+            **ind.fit_info(),  # type: ignore[attr-defined]  # у объединённого — коридоры и строки обучения
         }
         return ind, params, []
     params, log = _calibrate(
@@ -267,6 +268,21 @@ def _event_rows(
     return rows
 
 
+def context_columns(
+    panel: pd.DataFrame,
+    context: tuple[str, ...],
+    corridors: tuple[str, ...] = (),
+    indicators: tuple[type[Indicator], ...] = (),
+) -> list[str]:
+    """Столбцы контекста: валюты `context`; плюс ряды коридоров прогона, когда среди индикаторов есть
+    объединённый (`pooled`, 💬 03.09 вечер, пункт 5) — ему нужны чужие ряды в обучении. Без него
+    список тот же, что и раньше, и матрица прогона по умолчанию не меняется."""
+    cols = [c for c in context if c in panel.columns]
+    if any(getattr(cls, "pooled", False) for cls in indicators):
+        cols += [c for c in corridors if c in panel.columns and c not in cols]
+    return cols
+
+
 def run_backtest(
     panel: pd.DataFrame,
     corridors: tuple[str, ...] = CORRIDORS,
@@ -289,7 +305,7 @@ def run_backtest(
     общие с прогоном по умолчанию, обязаны дать те же строки матрицы."""
     ana = panel.loc[pd.Timestamp(analysis_start) :]
     splits = splits or make_splits(ana.index, first_test=first_test)
-    ctx_all = panel[[c for c in context if c in panel.columns]]
+    ctx_all = panel[context_columns(panel, context, corridors, indicators)]
     sig_rows: list[dict] = []
     mat_rows: list[dict] = []
     cal_rows: list[dict] = []
@@ -385,7 +401,7 @@ def signals_as_of(
     splits = splits or make_splits(ana.index)
     split = split_for_date(splits, cutoff, ana.index)  # после последнего окна — живое окно
     avail = panel.loc[:cutoff]
-    ctx_all = avail[[c for c in CONTEXT if c in avail.columns]]
+    ctx_all = avail[context_columns(avail, CONTEXT, corridors, indicators)]
     rows: list[dict] = []
     for corridor in corridors:
         rate = avail[corridor].dropna()

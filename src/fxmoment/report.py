@@ -25,6 +25,7 @@ MARKERS = {
     "seasonality": ("s", "tab:orange"),
     "ml_localmin": ("D", "tab:purple"),
     "dip_vs_trend": ("P", "tab:cyan"),
+    "level_drift": ("o", "tab:olive"),
 }
 
 
@@ -63,13 +64,20 @@ def stamp() -> str:
 
 
 def write_report(
-    result: BacktestResult, panel: pd.DataFrame, out_dir: Path | None = None, policy: Any = None
+    result: BacktestResult,
+    panel: pd.DataFrame,
+    out_dir: Path | None = None,
+    policy: Any = None,
+    notes: dict[str, Any] | None = None,
 ) -> Path:
-    """`policy` — параметры политики потока (`PolicyParams`); None — умолчания. Вариант ранга и начало
-    первого окна пишутся в провенанс, чтобы каталог варианта нельзя было принять за основной."""
+    """`policy` — параметры политики потока (`PolicyParams`); None — умолчания. `notes` — условия
+    варианта, которых нет в политике (`ml`: local | pooled, `extra_indicators`). Вариант ранга,
+    начало первого окна и заметки пишутся в провенанс, чтобы каталог варианта нельзя было принять
+    за основной."""
     from fxmoment.combine import PolicyParams
 
     policy = policy or PolicyParams()
+    notes = notes or {}
     out = out_dir or (repo_root() / "reports" / "latest")
     out.mkdir(parents=True, exist_ok=True)
     result.signals.to_csv(out / "signals.csv", index=False)
@@ -102,11 +110,16 @@ def write_report(
         "windows": [s.label() for s in result.splits],
         "first_test": f"{result.splits[0].test_start:%Y-%m-%d}" if result.splits else None,
         "rank_base": policy.rank_base,
+        **notes,
     }
     (out / "provenance.json").write_text(
         json.dumps(provenance, ensure_ascii=False, indent=1), encoding="utf-8"
     )
     variant = "" if policy.rank_base == "window" else f"; ранг индикаторов на базе «{policy.rank_base}»"
+    if notes.get("ml") == "pooled":
+        variant += "; обучаемый один на коридоры прогона"
+    if notes.get("extra_indicators"):
+        variant += "; добавлен " + ", ".join(f"`{i}`" for i in notes["extra_indicators"])
     lines = [
         "# Бэктест — сводка (h = 20, допуск 25 бп, медианы по окнам walk-forward" + variant + ")",
         "",
