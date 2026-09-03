@@ -148,6 +148,37 @@ def compare_by_hour(
     return pd.DataFrame(rows)
 
 
+def plot_by_hour(by_hour: pd.DataFrame, path: Path) -> None:
+    """Расхождение с фиксингом по часам: где кривая выходит на полку, там фиксинг уже определён."""
+    import matplotlib
+
+    matplotlib.use("Agg")
+    import matplotlib.pyplot as plt
+
+    if by_hour.empty:
+        return
+    fig, (ax_diff, ax_r2) = plt.subplots(1, 2, figsize=(12, 4.5), sharex=True)
+    for cur, g in by_hour.groupby("currency"):
+        g = g.sort_values("hour")
+        ax_diff.plot(g["hour"], g["median_abs_diff_bps"], marker="o", label=str(cur))
+        ax_r2.plot(g["hour"], g["r2_change"], marker="o", label=str(cur))
+    for ax, title, ylabel in (
+        (ax_diff, "Расхождение с фиксингом дня", "медиана |разницы|, бп"),
+        (ax_r2, "Дневное изменение фиксинга,\nобъяснённое движением биржи", "R² изменений"),
+    ):
+        ax.axvline(CBR_PUBLICATION_HOUR, color="grey", linestyle="--", linewidth=1)
+        ax.set_title(title)
+        ax.set_xlabel("час торгов (МСК), бары не позже него")
+        ax.set_ylabel(ylabel)
+        ax.grid(alpha=0.3)
+    ax_diff.set_yscale("log")
+    ax_diff.legend(fontsize=8)
+    fig.suptitle("К какому часу биржа определяет фиксинг ЦБ (пунктир — публикация ЦБ, ≈ 15:30)")
+    fig.tight_layout()
+    fig.savefig(path, dpi=130)
+    plt.close(fig)
+
+
 def write_comparison(
     cbr_panel: pd.DataFrame,
     bar_panel: pd.DataFrame,
@@ -165,6 +196,7 @@ def write_comparison(
     liq.to_csv(out_dir / "moex_liquidity.csv", index=False)
     levels.to_csv(out_dir / "cbr_vs_moex.csv", index=False)
     by_hour.to_csv(out_dir / "cbr_vs_moex_by_hour.csv", index=False)
+    plot_by_hour(by_hour, out_dir / "cbr_vs_moex_by_hour.png")
 
     meta = load_moex_meta()
     lines = [
@@ -178,22 +210,23 @@ def write_comparison(
         "Бар в ISS появляется только при сделках, поэтому число баров в день — прямая мера того,",
         "есть ли внутри дня чему двигаться. `share_days_traded` — доля рабочих дней периода со сделками.",
         "",
-        _md_table(liq),
+        _md_table(liq.round(3)),
         "",
         "## Биржевое закрытие дня против фиксинга, опубликованного в тот же день",
         "",
         "Оба ряда — рублей за 1 единицу. `corr_changes` — по дневным изменениям (уровни",
         "скоррелированы общим трендом рубля и связь переоценивают).",
         "",
-        _md_table(levels),
+        _md_table(levels.round(3)),
         "",
         "## К какому часу биржа определяет сегодняшний фиксинг",
         "",
         f"ЦБ публикует курс дня около {CBR_PUBLICATION_HOUR}:30 МСК; строки с "
         "`before_cbr_publication` = True относятся к барам, заведомо ему предшествующим.",
         "`r2_change` — доля дисперсии дневного изменения фиксинга, объяснённая движением биржи к часу H.",
+        "График — `cbr_vs_moex_by_hour.png`.",
         "",
-        _md_table(by_hour),
+        _md_table(by_hour.round(3)),
     ]
     (out_dir / "README.md").write_text("\n".join(lines) + "\n", encoding="utf-8")
     return out_dir
