@@ -151,18 +151,20 @@ def cmd_fetch_forecast(args: argparse.Namespace) -> int:
     snap = fc.build_snapshot(
         panel, model, currencies, start=args.start, batch=max(args.batch, 1) * 4, log=print
     )
-    worst = fc.self_check(model, panel, snap, n=args.check)
+    check = fc.self_check(model, panel, snap, n=args.check)
+    worst = float(check["diff_bps"].max())
     ok = worst <= fc.SELF_CHECK_TOL_BPS
+    pd.set_option("display.width", 250)
+    print(check.round(4).to_string(index=False))
     verdict = "ок" if ok else "НЕ СОШЛОСЬ"
     print(f"самопроверка: {args.check} строк поодиночке, наибольшее расхождение {worst:.4f} бп → {verdict}")
-    if not ok:
-        return 1
-    fc.save_snapshot(
+    path = fc.save_snapshot(
         snap,
         {"device": str(model.device), "self_check_rows": int(args.check), "self_check_max_diff_bps": worst},
+        verified=ok,
     )
-    print(f"снимок → {fc.FORECAST_CSV} ({len(snap)} строк)")
-    return 0
+    print(f"снимок → {path} ({len(snap)} строк)")
+    return 0 if ok else 1
 
 
 def cmd_analyze_forecast(args: argparse.Namespace) -> int:

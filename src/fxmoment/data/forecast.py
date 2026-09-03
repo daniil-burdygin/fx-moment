@@ -14,6 +14,7 @@ from __future__ import annotations
 import hashlib
 import json
 from datetime import UTC, datetime
+from pathlib import Path
 from typing import Any
 
 import numpy as np
@@ -40,6 +41,7 @@ USD_FEATURE = "mean20_bps"  # от доллара берётся один при
 DERIVED_DIR = repo_root() / "data" / "derived"
 FORECAST_CSV = DERIVED_DIR / "timesfm_daily.csv"
 FORECAST_META = DERIVED_DIR / "timesfm_daily.meta.json"
+UNVERIFIED_CSV = DERIVED_DIR / "timesfm_daily.unverified.csv"  # не прошёл самопроверку: только для разбора
 
 
 def feature_names() -> tuple[str, ...]:
@@ -136,44 +138,67 @@ def build_snapshot(
     batch: int = 256,
     log: Any = None,
 ) -> pd.DataFrame:
+    """Снимок по валютам и датам. В батч идут только контексты одной длины: модель выравнивает
+    короткие контексты нулями до самого длинного в батче и на редких рядах отвечает на это не
+    тождественно (до 0,81 бп в квантиле 0,1 на шаге 20, замер 03.09), так что прогноз зависел бы
+    от соседей по батчу. Одна длина в батче — тот же результат, что поодиночке, и самопроверка
+    это подтверждает."""
     rows: list[dict] = []
     for ccy in currencies:
         rate = panel[ccy].dropna()
         dates = rate.index[rate.index >= pd.Timestamp(start)]
-        for i in range(0, len(dates), batch):
-            rows.extend(forecast_rows(model, rate, dates[i : i + batch], cap))
+        lengths = np.minimum(rate.index.get_indexer(dates) + 1, cap)
+        for length in np.unique(lengths):
+            same = dates[lengths == length]
+            for i in range(0, len(same), batch):
+                rows.extend(forecast_rows(model, rate, same[i : i + batch], cap))
         if log:
-            log(f"{ccy}: {len(dates)} дат, контекст до {cap}")
+            log(f"{ccy}: {len(dates)} дат, контекст до {cap}, длин контекста {len(np.unique(lengths))}")
     return pd.DataFrame(rows).sort_values(["currency", "pub_date"]).reset_index(drop=True)
 
 
 def self_check(
     model: Any, panel: pd.DataFrame, snapshot: pd.DataFrame, n: int = 8, seed: int = 0, cap: int = CONTEXT_CAP
-) -> float:
-    """Пересчёт случайных строк снимка поодиночке с контекстом `panel.loc[:T]`: наибольшее
-    расхождение в бп. Проверяет сразу два свойства — в контексте нет ничего после T и результат
-    не зависит от состава батча."""
+) -> pd.DataFrame:
+    """Пересчёт случайных строк снимка поодиночке с контекстом `panel.loc[:T]`: по строке —
+    валюта, дата, длина контекста, худший признак и расхождение в бп. Проверяет сразу два
+    свойства: в контексте нет ничего после T и результат не зависит от состава батча."""
     rng = np.random.default_rng(seed)
     idx = rng.choice(len(snapshot), size=min(n, len(snapshot)), replace=False)
-    worst = 0.0
-    for i in idx:
-        row = snapshot.iloc[int(i)]
+    rows: list[dict] = []
+    for i in sorted(int(j) for j in idx):
+        row = snapshot.iloc[i]
         t = pd.Timestamp(row["pub_date"])
         rate = panel.loc[:t, str(row["currency"])].dropna()
         fresh = forecast_rows(model, rate, pd.DatetimeIndex([t]), cap)[0]
-        worst = max(worst, max(abs(fresh[k] - float(row[k])) for k in feature_names()))
-    return worst
+        diffs = {k: abs(fresh[k] - float(row[k])) for k in feature_names()}
+        worst = max(diffs, key=diffs.get)  # type: ignore[arg-type]
+        rows.append(
+            {
+                "currency": row["currency"],
+                "pub_date": t,
+                "context_len": min(len(rate), cap),
+                "worst_feature": worst,
+                "diff_bps": diffs[worst],
+            }
+        )
+    return pd.DataFrame(rows)
 
 
 # ------------------------------------------------------------------------------- снимок
 
 
-def _sha256(path: Any) -> str:
+def _sha256(path: Path) -> str:
     return hashlib.sha256(path.read_bytes()).hexdigest() if path.exists() else ""
 
 
-def save_snapshot(df: pd.DataFrame, extra: dict[str, Any]) -> None:
+def save_snapshot(df: pd.DataFrame, extra: dict[str, Any], verified: bool = True) -> Path:
+    """Снимок и метаданные. Не прошедший самопроверку снимок пишется под именем `unverified`
+    без метаданных: `load_snapshot` его не читает, он нужен только чтобы разобрать расхождение."""
     DERIVED_DIR.mkdir(parents=True, exist_ok=True)
+    if not verified:
+        df.to_csv(UNVERIFIED_CSV, index=False, date_format="%Y-%m-%d", float_format="%.4f")
+        return UNVERIFIED_CSV
     df.to_csv(FORECAST_CSV, index=False, date_format="%Y-%m-%d", float_format="%.4f")
     cbr = load_meta()
     meta = {
@@ -192,6 +217,7 @@ def save_snapshot(df: pd.DataFrame, extra: dict[str, Any]) -> None:
         **extra,
     }
     FORECAST_META.write_text(json.dumps(meta, ensure_ascii=False, indent=2), encoding="utf-8")
+    return FORECAST_CSV
 
 
 def load_snapshot() -> pd.DataFrame:

@@ -11,6 +11,7 @@ from fxmoment.config import CONTEXT
 from fxmoment.data.forecast import (
     HORIZON,
     attach_forecast,
+    build_snapshot,
     column_name,
     feature_names,
     features_from_quantiles,
@@ -95,3 +96,27 @@ def test_ml_learns_on_forecast_features_and_calibration_ignores_them_after_train
     clean = run_backtest(p, **kw)
     dirty = run_backtest(spoiled, **kw)
     assert clean.calibration["params"].tolist() == dirty.calibration["params"].tolist()
+
+
+class _RecordingModel:
+    """Заглушка модели: запоминает длины контекстов каждого вызова, отвечает ровной медианой."""
+
+    def __init__(self) -> None:
+        self.calls: list[list[int]] = []
+
+    def predict_batch(self, contexts, horizon, return_quantiles=True, **_):
+        self.calls.append([len(c) for c in contexts])
+        for c in contexts:
+            q = np.tile(np.linspace(0.99, 1.01, 9) * float(c[-1]), (horizon, 1)).astype(np.float32)
+            yield type("Out", (), {"quantiles": q, "forecast": q[:, 4]})()
+
+
+def test_snapshot_batches_hold_one_context_length_each(panel):
+    model = _RecordingModel()
+    start = panel.index[100]
+    snap = build_snapshot(panel, model, ("TJS", "USD"), start=str(start.date()), cap=300, batch=64)
+    assert all(len(set(lengths)) == 1 for lengths in model.calls)
+    assert max(max(c) for c in model.calls) == 300
+    assert len(snap) == 2 * (len(panel) - 100)
+    assert snap.groupby("currency")["pub_date"].is_monotonic_increasing.all()
+    assert snap["mean20_bps"].abs().max() < 0.01  # ровная медиана → прогноз равен курсу (float32)
