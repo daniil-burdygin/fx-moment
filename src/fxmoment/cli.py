@@ -15,15 +15,39 @@ import pandas as pd
 from fxmoment.config import (
     ALL_CURRENCIES,
     ANALYSIS_START,
+    CALIBRATION_FREQ_RANGE,
     CONTEXT,
     CORRIDORS,
     FIRST_TEST,
+    MIN_CALIBRATION_EVENTS,
     MOEX_RAW_START,
     RAW_START,
+    SLOW_MIN_CALIBRATION_EVENTS,
 )
 
 FORTS_URL_FOR_META = "https://iss.moex.com/iss/engines/futures/markets/forts/securities"
 PROTECTED_RUNS = ("latest", "fixed", "intraday")  # каталоги основных отчётов: варианты сюда не пишутся
+
+
+def calibration_bounds_arg(
+    freq_band: list[float] | None, min_events: int
+) -> tuple[float, float, int] | None:
+    """Полоса допустимости калибровки из аргументов CLI, одна на все правила (режим точности, Ш7).
+    Разбирается один раз здесь, на границе: дальше по коду ходит либо готовая тройка, либо None —
+    «у каждого индикатора свои границы», как было. Минимум событий по умолчанию берётся по полосе:
+    полоса ниже общей (0,3 в неделю) физически не даёт 30 событий на трёх годах обучения, поэтому там
+    минимум как у медленного индикатора. Ошибка ввода — ValueError, её ловит команда."""
+    if freq_band is None:
+        if min_events:
+            raise ValueError("--min-events действует только вместе с --freq-band")
+        return None
+    lo, hi = float(freq_band[0]), float(freq_band[1])
+    if not 0 < lo < hi:
+        raise ValueError(f"--freq-band {lo:g} {hi:g}: нужно 0 < LO < HI, сигналов в неделю")
+    if min_events < 0:
+        raise ValueError("--min-events: число событий не бывает отрицательным")
+    default = MIN_CALIBRATION_EVENTS if lo >= CALIBRATION_FREQ_RANGE[0] else SLOW_MIN_CALIBRATION_EVENTS
+    return (lo, hi, min_events or default)
 
 
 def cmd_fetch(args: argparse.Namespace) -> int:
@@ -131,17 +155,23 @@ def cmd_backtest(args: argparse.Namespace) -> int:
     from fxmoment.indicators import BASE_INDICATORS, LearnedMinimum, LearnedMinimumPooled, LevelDrift
     from fxmoment.report import write_report
 
+    try:
+        bounds = calibration_bounds_arg(args.freq_band, args.min_events)
+    except ValueError as e:
+        print(str(e))
+        return 2
     variant = (
         args.first_test != FIRST_TEST
         or args.rank_base != "window"
         or args.ml != "local"
         or args.with_level_drift
         or bool(args.signal_source)
+        or bounds is not None
     )
     if variant and not args.out:
         print(
             "вариантный прогон (--first-test, --rank-base, --ml pooled, --with-level-drift, "
-            "--signal-source) пишется только в свой каталог: укажите --out"
+            "--signal-source, --freq-band) пишется только в свой каталог: укажите --out"
         )
         return 2
     if args.signal_source and args.ml == "pooled":
@@ -167,11 +197,16 @@ def cmd_backtest(args: argparse.Namespace) -> int:
         fixed_params=args.fixed_params,
         first_test=args.first_test,
         signal_source=args.signal_source or None,
+        bounds=bounds,
         **kwargs,
     )
     name = args.out or ("fixed" if args.fixed_params else "latest")
     out_dir = repo_root() / "reports" / name
-    notes = {"ml": args.ml, "extra_indicators": ["level_drift"] if args.with_level_drift else []}
+    notes = {
+        "ml": args.ml,
+        "extra_indicators": ["level_drift"] if args.with_level_drift else [],
+        "bounds": list(bounds) if bounds else None,
+    }
     if args.signal_source:  # только у варианта: провенанс основных отчётов не меняется
         notes["signal_source"] = args.signal_source
     out = write_report(result, panel, out_dir, policy=PolicyParams(rank_base=args.rank_base), notes=notes)
@@ -526,10 +561,14 @@ def main(argv: list[str] | None = None) -> int:
         help="добавить `level_drift`: уровень на ряде с вычтенным дрейфом локальной ноги rate / usd",
     )
     b.add_argument(
-        "--signal-source",
-        choices=CONTEXT,
-        default="",
-        help="считать индикаторы по этому курсу (один сигнал на все коридоры), попадания — по коридору",
+    CALIBRATION_FREQ_RANGE,
+    CONTEXT,
+    CORRIDORS,
+    FIRST_TEST,
+    MIN_CALIBRATION_EVENTS,
+    MOEX_RAW_START,
+    RAW_START,
+    SLOW_MIN_CALIBRATION_EVENTS,
     )
     b.add_argument("--out", default="", help="каталог варианта внутри reports/ (обязателен для вариантов)")
     b.set_defaults(func=cmd_backtest)

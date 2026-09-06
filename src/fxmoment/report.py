@@ -71,9 +71,9 @@ def write_report(
     notes: dict[str, Any] | None = None,
 ) -> Path:
     """`policy` — параметры политики потока (`PolicyParams`); None — умолчания. `notes` — условия
-    варианта, которых нет в политике (`ml`: local | pooled, `extra_indicators`). Вариант ранга,
-    начало первого окна и заметки пишутся в провенанс, чтобы каталог варианта нельзя было принять
-    за основной."""
+    варианта, которых нет в политике (`ml`: local | pooled, `extra_indicators`, `bounds` — полоса
+    допустимости калибровки). Вариант ранга, начало первого окна и заметки пишутся в провенанс,
+    чтобы каталог варианта нельзя было принять за основной."""
     from fxmoment.combine import PolicyParams
 
     policy = policy or PolicyParams()
@@ -122,6 +122,10 @@ def write_report(
         variant += "; добавлен " + ", ".join(f"`{i}`" for i in notes["extra_indicators"])
     if notes.get("signal_source"):
         variant += f"; сигнал общий, по курсу {notes['signal_source']}"
+    if notes.get("bounds"):
+        lo, hi, min_n = notes["bounds"]
+        variant += f"; полоса допустимости калибровки {lo:g}–{hi:g} в неделю при ≥ {int(min_n)} событиях"
+
     lines = [
         "# Бэктест — сводка (h = 20, допуск 25 бп, медианы по окнам walk-forward" + variant + ")",
         "",

@@ -1,0 +1,7 @@
+indicator,sent_latest,muted_latest,thinned_latest,cooldown_latest,storm_latest,sent_variant,muted_variant,thinned_variant,cooldown_variant,storm_variant
+dip_vs_trend,54,309,38,90,5,56,149,44,59,4
+level,193,146,76,192,16,127,39,40,107,6
+ml_localmin,84,40,61,81,6,103,40,50,74,5
+momentum,239,484,88,152,25,103,39,17,77,12
+reversal,90,295,5,125,10,89,27,4,119,14
+seasonality,75,12,24,18,5,85,12,18,18,5

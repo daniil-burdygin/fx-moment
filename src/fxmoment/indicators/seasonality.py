@@ -6,7 +6,7 @@ from __future__ import annotations
 import numpy as np
 import pandas as pd
 
-from fxmoment.config import BUY_NOW
+from fxmoment.config import BUY_NOW, SLOW_MIN_CALIBRATION_EVENTS
 from fxmoment.indicators.base import Indicator, rearm_events
 
 
@@ -66,7 +66,7 @@ class Seasonality(Indicator):
         """Сигнал не чаще раза в месяц (rearm = 20): потолок частоты ≈ 0,25 в неделю, событий на
         трёх годах обучения ≈ 12–18; общий порог 0,3 в неделю и 30 событий для сезонности
         недостижим при любых данных."""
-        return (0.05, 0.3, 12)
+        return (0.05, 0.3, SLOW_MIN_CALIBRATION_EVENTS)
 
     def compute(self, rate: pd.Series, context: pd.DataFrame | None = None) -> pd.DataFrame:
         monthly = rate.groupby([rate.index.year, rate.index.month]).mean()
