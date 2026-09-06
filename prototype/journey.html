@@ -84,9 +84,9 @@ h1{margin:5px 0 8px;font-size:26px;line-height:1.15;letter-spacing:-.01em;font-w
 .stage-phone{flex:1 1 auto;min-height:0;width:100%;display:flex;justify-content:center;align-items:flex-start}
 .phone-scale{transform-origin:top center}
 
-/* Строка шагов под макетом: один ряд пилюль, на узком вьюпорте — своя
+/* Строка шагов над макетом: один ряд пилюль без пояснений, на узком вьюпорте — своя
    горизонтальная прокрутка, чтобы страница целиком не ехала вбок. */
-.stepper{flex:0 0 auto;max-width:100%;display:flex;gap:4px;padding:9px 2px 2px;
+.stepper{order:-1;flex:0 0 auto;max-width:100%;display:flex;gap:4px;padding:2px 2px 9px;
   overflow-x:auto;overflow-y:hidden;scrollbar-width:none}
 .stepper::-webkit-scrollbar{display:none}
 .stepper button{flex:0 0 auto;display:inline-flex;align-items:baseline;gap:4px;white-space:nowrap;
@@ -440,7 +440,7 @@ h1{margin:5px 0 8px;font-size:26px;line-height:1.15;letter-spacing:-.01em;font-w
     <p class="hint lead">Путь можно пройти прямо в телефоне: тапайте по экрану.</p>
     <div id="acts"></div>
     <div class="sep"></div>
-    <p class="hint">Экран открывается ссылкой: <code id="permalink">?step=0</code>. Строка шагов под
+    <p class="hint">Экран открывается ссылкой: <code id="permalink">?step=0</code>. Строка шагов над
       макетом и клавиши <b>0</b>–<b>7</b> дублируют тапы по экрану, <b>Esc</b> закрывает шторку.</p>
   </aside>
 </div>
@@ -943,10 +943,10 @@ var SCREENS = [
         '</div>'+
       '</div>';
   },
-  cta:[["В начало","secondary","go:0"]], foot:false,
+  cta:[["Открыть пуш позже, 22.06","primary","go:6:changed"],["В начало","secondary","go:0"]], foot:false,
   acts:[
-    ["В начало", "Вернуться к пушу на блокировке", "go:0", true],
-    ["Открыть развилку 22.06", "Тот же пуш, открытый позже", "go:6:changed", false]
+    ["Открыть пуш позже, 22.06", "Тот же пуш через 8 дней публикации", "go:6:changed", true],
+    ["В начало", "Вернуться к пушу на блокировке", "go:0", false]
   ]
 },
 
@@ -1016,7 +1016,7 @@ var STEP_NAMES = ["Пуш на блокировке","Экран перевод�
   "Готово и вердикт","Курс изменился","Напомним при новом сигнале"];
 
 /* Подписи пилюль под макетом: тот же порядок, укороченный до одной строки. */
-var STEP_SHORT = ["Пуш","Перевод","Получатель","Сумма","Проверка","Готово","Курс изменился",
+var STEP_SHORT = ["Пуш","Перевод","Получатель","Сумма","Проверка","Готово","Позже",
   "Напомним"];
 
 /* ═══ Состояние и отрисовка ════════════════════════════════════════════════ */
