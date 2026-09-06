@@ -285,8 +285,11 @@ h1{margin:5px 0 8px;font-size:26px;line-height:1.15;letter-spacing:-.01em;font-w
 .done .demo{font-size:13px;color:var(--color-text-tertiary);margin-top:var(--gap-8)}
 .vcard .hd{display:flex;align-items:center;justify-content:space-between;gap:var(--gap-8)}
 .vcard .hd .k{font-size:15px;font-weight:500}
-.vcard .m{font-size:13px;color:var(--color-text-secondary);margin-top:var(--gap-8);line-height:1.45}
-.vcard .m b{color:var(--color-text-primary);font-weight:500}
+.vcard .claim{font-size:15px;line-height:1.35;margin-top:var(--gap-8)}
+.vcard .kv{display:grid;grid-template-columns:repeat(3,1fr);gap:var(--gap-8);margin-top:var(--gap-12)}
+.vcard .kv div{background:var(--color-specialbg-transparent);border-radius:var(--border-radius-10);padding:8px 10px;min-width:0}
+.vcard .kv .l{display:block;font-size:12px;color:var(--color-text-secondary);white-space:nowrap}
+.vcard .kv .v{display:block;text-align:left;font-size:15px;font-weight:500;margin-top:2px;white-space:nowrap}
 
 /* ── шторка (bottom-sheet) ──────────────────────────────────────────────── */
 .sheet-back{position:absolute;inset:0;background:rgba(0,0,0,.5);z-index:8;display:none}
@@ -876,7 +879,7 @@ var SCREENS = [
   list:[
     "<b>Правило одно на все пуши</b>: средний курс следующих 20 дней публикации против курса пуша с допуском 25 бп.",
     "<b>«Ещё идёт»</b> — горизонт не закрылся на дату экрана; вердикт не подставляется задним числом.",
-    "<b>Снимок данных отделён от знания клиента</b>: что вышло на самом деле, показано отдельной строкой и с датой.",
+    "<b>Что вышло на самом деле</b> (снимок ЦБ РФ на 03.09.2026): средний курс этих 20 дней — 8,09146 ₽ при пороге 7,64965 ₽, утверждение сбылось. Клиент увидит это 08.07.2026, не раньше.",
     "Тот же счёт ведёт журнал попаданий в <code>index.html</code> и машина времени."
   ],
   nav:["Перевод отправлен",""],
@@ -885,8 +888,8 @@ var SCREENS = [
     var v = verdict(SIGNAL), fresh = ctx.key === "live";
     var label = v === "hit" ? "сбылся" : v === "miss" ? "не сбылся" : "ещё идёт";
     var cls   = v === "hit" ? "pos" : v === "miss" ? "neg" : "att";
-    /* На дату экрана горизонт ещё не закрылся: клиент 09.06 вердикта знать не может. */
-    var closed = fresh ? false : true;
+    /* Вердикт известен только с 08.07.2026 (knownIdx): на любом экране раньше — «ещё идёт». */
+    var closed = ctx.idx >= SIGNAL.knownIdx;
     return '<div class="done">'+
       '<div class="ok">'+svg('<path d="M5 12.5 10 17.5 19 7"/>',2.4)+'</div>'+
       '<div class="t">Перевод подтверждён</div>'+
@@ -896,12 +899,14 @@ var SCREENS = [
       '<div class="card vcard">'+
         '<div class="hd"><span class="k">Этот сигнал</span>'+
         '<span class="badge '+(closed?cls:"att")+'">'+(closed?label:"ещё идёт")+'</span></div>'+
-        '<div class="m">Пуш ' + PUSH.pubDate + ' утверждал проверяемое: средний курс следующих ' + HORIZON +
-          ' дней публикации не ниже ' + num(SIGNAL.rate,5) + ' ₽ больше чем на ' + TOL_BPS + ' бп, то есть не ниже <b>' +
-          num(threshold(SIGNAL),5) + ' ₽</b>. Вердикт становится известен ' + SIGNAL.known + '.</div>'+
-        '<div class="m">По снимку данных ЦБ РФ на 03.09.2026 средний курс этих 20 дней — <b>' +
-          num(SIGNAL.mean20,5) + ' ₽</b>, то есть утверждение <b>' + label + '</b>. ' +
-          'На экране ' + ctx.date + ' стоит «' + (closed?label:"ещё идёт") + '»: задним числом вердикт не подставляется.</div>'+
+        '<div class="claim">Средний курс 20 дней не ниже '+num(threshold(SIGNAL),2)+' ₽</div>'+
+        '<div class="kv">'+
+          '<div><span class="l">В пуше</span><span class="v">'+num(SIGNAL.rate,2)+' ₽</span></div>'+
+          '<div><span class="l">Порог</span><span class="v">'+num(threshold(SIGNAL),2)+' ₽</span></div>'+
+          (closed
+            ? '<div><span class="l">Факт</span><span class="v">'+num(SIGNAL.mean20,2)+' ₽</span></div>'
+            : '<div><span class="l">Итог</span><span class="v">'+SIGNAL.known.slice(0,5)+'</span></div>')+
+        '</div>'+
       '</div>';
   },
   cta:[["В начало","secondary","go:0"]], foot:false,
