@@ -363,7 +363,12 @@ def holiday_matrix(
     return pd.DataFrame(rows)
 
 
-HOLIDAY_BASELINES: tuple[str, ...] = ("calendar:day25:first", "calendar:day25:all", "seasonality")
+HOLIDAY_BASELINES: tuple[str, ...] = (
+    "calendar:all-days:all",
+    "calendar:day25:first",
+    "calendar:day25:all",
+    "seasonality",
+)
 HOLIDAY_COMPARE_COLUMNS = [
     "rule",
     "baseline",
@@ -455,3 +460,57 @@ def holiday_vs_baselines(
                 out[f"diff_{metric}_ci_lo{suffix}"], out[f"diff_{metric}_ci_hi{suffix}"], "праздники", "база"
             )
     return out[HOLIDAY_COMPARE_COLUMNS]
+
+
+# Ссылочное «правило», срабатывающее каждый день публикации: его lift равен единице по построению,
+# поэтому парная разница с ним и есть отклонение правила от случайного дня — с интервалом.
+RANDOM_DAY_RULE: tuple[str, int, int, tuple[str, ...]] = ("all-days", 1, 31, ("all",))
+RANDOM_DAY_LABEL = "calendar:all-days:all"
+
+
+def holiday_stream_overlap(
+    panel: pd.DataFrame,
+    splits: list[Split],
+    decided: pd.DataFrame | None,
+    corridors: tuple[str, ...] = CORRIDORS,
+    holidays: pd.DataFrame | None = None,
+    ks: tuple[int, ...] = HOLIDAY_K,
+    scope: str = "all",
+    h: int = CALIBRATION_H,
+    tol_bps: float = PRIMARY_TOL_BPS,
+) -> pd.DataFrame:
+    """Пуши итогового потока, разложенные на попавшие в предпраздничное окно и остальные. Отвечает на
+    вопрос «что с этим делать»: если предпраздничные дни хуже случайного, то стоит ли глушить в них
+    поток — и сколько пушей это заденет."""
+    if decided is None or not len(decided):
+        return pd.DataFrame()
+    hol = load_holidays() if holidays is None else holidays
+    sent = decided[(decided["decision"] == "sent") & (decided["push_scenario"] == BUY_NOW)]
+    rows: list[dict] = []
+    for corridor in corridors:
+        if corridor not in panel.columns or corridor not in CORRIDOR_COUNTRY:
+            continue
+        rate = panel[corridor].dropna()
+        dates = pd.to_datetime(sent[sent["corridor"] == corridor]["date"])
+        push = pd.Series(rate.index.isin(pd.DatetimeIndex(sorted(set(dates)))), index=rate.index)
+        starts = holiday_starts(hol, CORRIDOR_COUNTRY[corridor], scope)
+        for k in ks:
+            near = holiday_events(rate.index, starts, k)
+            for where, events in (("in", push & near), ("out", push & ~near)):
+                for sp in splits:
+                    m = metrics.evaluate_events(
+                        rate, events, BUY_NOW, h, (sp.test_start, sp.test_end), tol_bps, with_ci=False
+                    )
+                    rows.append(
+                        {
+                            "indicator": f"stream:{where}_holiday:k{k}",
+                            "k": k,
+                            "scope": scope,
+                            "corridor": corridor,
+                            "split": sp.id,
+                            "window": sp.label(),
+                            "scenario": BUY_NOW,
+                            **m,
+                        }
+                    )
+    return pd.DataFrame(rows)

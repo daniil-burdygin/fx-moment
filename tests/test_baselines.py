@@ -131,3 +131,36 @@ def test_holiday_matrix_and_comparison_on_synthetic(panel):
         hol, hol.assign(indicator="calendar:day25:first"), pd.DataFrame(), bases=("calendar:day25:first",)
     )
     assert abs(float(same["diff_lift"].iloc[0])) < 1e-12 and same["verdict_lift"].iloc[0] == "разницы нет"
+
+
+def test_holiday_random_day_reference_has_lift_one(panel):
+    """Ссылочное правило «каждый день публикации» — база случайного дня: hit = base, lift = 1."""
+    splits = make_splits(panel.loc["2018-01-01":].index, first_test="2020-01-01", test_months=6)
+    ref = baselines.calendar_matrix(
+        panel, splits, corridors=("TJS",), rules=(baselines.RANDOM_DAY_RULE,)
+    )
+    assert set(ref["indicator"]) == {baselines.RANDOM_DAY_LABEL}
+    assert (ref["lift_mean"].dropna() - 1).abs().max() < 1e-9
+    assert (ref["benefit_excess_bps"].dropna()).abs().max() < 1e-9
+
+
+def test_holiday_stream_overlap_splits_pushes_without_losing_any(panel):
+    splits = make_splits(panel.loc["2018-01-01":].index, first_test="2020-01-01", test_months=6)
+    dates = panel.loc["2020-01-01":"2021-06-30"].index[::7]
+    decided = pd.DataFrame(
+        {
+            "date": dates,
+            "corridor": "TJS",
+            "decision": "sent",
+            "push_scenario": "BUY_NOW",
+        }
+    )
+    ov = baselines.holiday_stream_overlap(panel, splits, decided, corridors=("TJS",), ks=(5,))
+    assert set(ov["indicator"]) == {"stream:in_holiday:k5", "stream:out_holiday:k5"}
+    inside = int(ov[ov["indicator"] == "stream:in_holiday:k5"]["n_events"].sum())
+    outside = int(ov[ov["indicator"] == "stream:out_holiday:k5"]["n_events"].sum())
+    in_windows = sum(
+        int(((dates >= sp.test_start) & (dates <= sp.test_end)).sum()) for sp in splits
+    )
+    assert inside + outside == in_windows and inside > 0  # разбиение без потерь и без задвоения
+    assert baselines.holiday_stream_overlap(panel, splits, None).empty
