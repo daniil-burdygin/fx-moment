@@ -62,7 +62,7 @@ body{
 /* ── рамка страницы ─────────────────────────────────────────────────────── */
 .shell{
   flex:1 1 auto;min-height:0;
-  display:grid;grid-template-columns:minmax(250px,330px) minmax(420px,1fr) minmax(230px,290px);
+  display:grid;grid-template-columns:minmax(214px,282px) minmax(400px,1fr) minmax(170px,190px);
   gap:24px;align-items:start;padding:16px 28px 8px;max-width:1560px;margin:0 auto;width:100%;
 }
 .left,.right{max-height:100%;overflow:auto;scrollbar-width:thin}
@@ -79,9 +79,25 @@ h1{margin:5px 0 8px;font-size:26px;line-height:1.15;letter-spacing:-.01em;font-w
   font-size:11.5px;line-height:1.55;color:var(--color-text-tertiary)}
 .prov code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:11px;color:var(--color-text-secondary)}
 
-/* ── центр: телефон ─────────────────────────────────────────────────────── */
-.stage{display:flex;justify-content:center;align-items:flex-start;height:100%;min-height:0}
+/* ── центр: телефон и строка шагов ──────────────────────────────────────── */
+.stage{display:flex;flex-direction:column;align-items:center;height:100%;min-height:0;min-width:0}
+.stage-phone{flex:1 1 auto;min-height:0;width:100%;display:flex;justify-content:center;align-items:flex-start}
 .phone-scale{transform-origin:top center}
+
+/* Строка шагов под макетом: один ряд пилюль, на узком вьюпорте — своя
+   горизонтальная прокрутка, чтобы страница целиком не ехала вбок. */
+.stepper{flex:0 0 auto;max-width:100%;display:flex;gap:4px;padding:9px 2px 2px;
+  overflow-x:auto;overflow-y:hidden;scrollbar-width:none}
+.stepper::-webkit-scrollbar{display:none}
+.stepper button{flex:0 0 auto;display:inline-flex;align-items:baseline;gap:4px;white-space:nowrap;
+  border:1px solid var(--color-border-secondary);border-radius:99px;padding:4px 9px;
+  background:var(--color-bg-secondary);color:var(--color-text-secondary);
+  font:inherit;font-size:11.5px;line-height:16px;cursor:pointer}
+.stepper button:hover{border-color:var(--color-border-primary)}
+.stepper button i{font-style:normal;font-weight:700;color:var(--color-text-tertiary)}
+.stepper button[aria-current="true"]{background:var(--color-accent-secondary);border-color:transparent;
+  color:var(--color-text-primary-inverted);font-weight:500}
+.stepper button[aria-current="true"] i{color:var(--color-text-primary-inverted);opacity:.55}
 .phone{
   position:relative;width:var(--phone-w);height:var(--phone-h);
   background:var(--color-bg-primary);border-radius:44px;
@@ -343,10 +359,6 @@ h1{margin:5px 0 8px;font-size:26px;line-height:1.15;letter-spacing:-.01em;font-w
 .act kbd{flex:0 0 auto;font:inherit;font-size:11px;font-weight:700;color:var(--color-text-tertiary);
   border:1px solid var(--color-border-primary);border-radius:6px;padding:1px 6px}
 .act.primary kbd{color:rgba(255,255,255,.85);border-color:rgba(255,255,255,.4)}
-.act[aria-current="true"]{border-color:var(--color-accent-primary)}
-.steps .act{padding:7px 12px;margin-bottom:5px;background:transparent}
-.steps .act .n{font-size:12.5px;font-weight:400;color:var(--color-text-secondary)}
-.steps .act[aria-current="true"] .n{color:var(--color-text-primary);font-weight:500}
 .sep{height:1px;background:var(--color-border-secondary);margin:14px 0}
 .hint{font-size:11.5px;color:var(--color-text-tertiary);line-height:1.5;margin:0}
 .hint.lead{margin:-2px 0 10px}
@@ -357,9 +369,31 @@ h1{margin:5px 0 8px;font-size:26px;line-height:1.15;letter-spacing:-.01em;font-w
 
 @media (max-width:1150px){
   body{overflow:auto;height:auto}
-  .shell{grid-template-columns:1fr}
-  .stage{order:-1}
+  /* minmax(0,1fr), а не 1fr: иначе строка шагов растягивает колонку по своему
+     содержимому и телефон становится шире вьюпорта. */
+  .shell{grid-template-columns:minmax(0,1fr)}
+  .stage{order:-1;height:auto;width:100%}
+  .stage-phone{align-items:flex-start}
   .left,.right{max-height:none;overflow:visible}
+}
+
+/* ── узкая панель: корпуса нет, экран во всю ширину вьюпорта ─────────────── */
+@media (max-width:480px){
+  html,body{overflow-x:hidden}
+  .shell{padding:0 0 8px;gap:14px;max-width:100%}
+  .left,.right{padding:0 14px}
+  .stage{width:100%;max-width:100%}
+  .stage-phone,.phone-scale{width:100%}
+  .phone-scale{transform:none}
+  /* Рамка, статус-бар и скругления корпуса — декорация макета; на телефоне их роль
+     играет само устройство, а 390 px корпуса резали бы экран на вьюпорте 375. */
+  .phone{width:100%;height:calc(100dvh - 44px);min-height:520px;
+    border:0;border-radius:0;box-shadow:none}
+  .notch,.statusbar,.homebar{display:none}
+  /* Строка шагов уходит над экраном: под экраном на всю высоту её не было бы видно. */
+  .stepper{order:-1;width:100%;padding:8px 12px;
+    border-bottom:1px solid var(--color-border-secondary)}
+  .disclaimer{margin:0 14px;padding:9px 0 12px}
 }
 </style>
 </head>
@@ -376,23 +410,26 @@ h1{margin:5px 0 8px;font-size:26px;line-height:1.15;letter-spacing:-.01em;font-w
   </aside>
 
   <main class="stage" id="stage">
-    <div class="phone-scale" id="phoneScale">
-      <div class="phone" id="phone">
-        <div class="notch" aria-hidden="true"></div>
-        <div class="statusbar">
-          <span id="clock">19:07</span>
-          <span class="icons" aria-hidden="true">
-            <svg width="17" height="11" viewBox="0 0 17 11" fill="currentColor"><rect x="0" y="7" width="3" height="4" rx="1"/><rect x="4.5" y="5" width="3" height="6" rx="1"/><rect x="9" y="2.5" width="3" height="8.5" rx="1"/><rect x="13.5" y="0" width="3" height="11" rx="1"/></svg>
-            <svg width="16" height="11" viewBox="0 0 16 11" fill="currentColor"><path d="M8 10.6 6 8.3a3 3 0 0 1 4 0l-2 2.3Zm-4-4.6a7 7 0 0 1 8 0l-1.3 1.5a5 5 0 0 0-5.4 0L4 6ZM.9 2.9a11.4 11.4 0 0 1 14.2 0L13.8 4.4a9.4 9.4 0 0 0-11.6 0L.9 2.9Z"/></svg>
-            <svg width="26" height="12" viewBox="0 0 26 12" fill="none"><rect x=".5" y=".5" width="21" height="11" rx="3.2" stroke="currentColor" opacity=".45"/><rect x="2" y="2" width="18" height="8" rx="2" fill="currentColor"/><path d="M23.5 4v4a2.4 2.4 0 0 0 0-4Z" fill="currentColor" opacity=".45"/></svg>
-          </span>
+    <div class="stage-phone" id="stagePhone">
+      <div class="phone-scale" id="phoneScale">
+        <div class="phone" id="phone">
+          <div class="notch" aria-hidden="true"></div>
+          <div class="statusbar">
+            <span id="clock">19:07</span>
+            <span class="icons" aria-hidden="true">
+              <svg width="17" height="11" viewBox="0 0 17 11" fill="currentColor"><rect x="0" y="7" width="3" height="4" rx="1"/><rect x="4.5" y="5" width="3" height="6" rx="1"/><rect x="9" y="2.5" width="3" height="8.5" rx="1"/><rect x="13.5" y="0" width="3" height="11" rx="1"/></svg>
+              <svg width="16" height="11" viewBox="0 0 16 11" fill="currentColor"><path d="M8 10.6 6 8.3a3 3 0 0 1 4 0l-2 2.3Zm-4-4.6a7 7 0 0 1 8 0l-1.3 1.5a5 5 0 0 0-5.4 0L4 6ZM.9 2.9a11.4 11.4 0 0 1 14.2 0L13.8 4.4a9.4 9.4 0 0 0-11.6 0L.9 2.9Z"/></svg>
+              <svg width="26" height="12" viewBox="0 0 26 12" fill="none"><rect x=".5" y=".5" width="21" height="11" rx="3.2" stroke="currentColor" opacity=".45"/><rect x="2" y="2" width="18" height="8" rx="2" fill="currentColor"/><path d="M23.5 4v4a2.4 2.4 0 0 0 0-4Z" fill="currentColor" opacity=".45"/></svg>
+            </span>
+          </div>
+          <div id="body"></div>
+          <div class="homebar"><i></i></div>
+          <div class="sheet-back" id="sheetBack"></div>
+          <div class="sheet" id="sheet"></div>
         </div>
-        <div id="body"></div>
-        <div class="homebar"><i></i></div>
-        <div class="sheet-back" id="sheetBack"></div>
-        <div class="sheet" id="sheet"></div>
       </div>
     </div>
+    <nav class="stepper" id="stepper" aria-label="Экраны"></nav>
   </main>
 
   <aside class="right">
@@ -400,11 +437,8 @@ h1{margin:5px 0 8px;font-size:26px;line-height:1.15;letter-spacing:-.01em;font-w
     <p class="hint lead">Путь можно пройти прямо в телефоне: тапайте по экрану.</p>
     <div id="acts"></div>
     <div class="sep"></div>
-    <h2>Экраны</h2>
-    <div id="steps" class="steps"></div>
-    <div class="sep"></div>
-    <p class="hint">Экран открывается ссылкой: <code id="permalink">?step=0</code>. Панель и клавиши
-      <b>0</b>–<b>7</b> дублируют тапы по экрану, <b>Esc</b> закрывает шторку.</p>
+    <p class="hint">Экран открывается ссылкой: <code id="permalink">?step=0</code>. Строка шагов под
+      макетом и клавиши <b>0</b>–<b>7</b> дублируют тапы по экрану, <b>Esc</b> закрывает шторку.</p>
   </aside>
 </div>
 
@@ -464,7 +498,7 @@ var SIGNAL = { rate:7.66882, mean20:8.09146, known:"08.07.2026", knownIdx:109 };
 var FORM = {
   country:"Таджикистан", flag:"🇹🇯", currency:"сомони",
   method:"По номеру телефона", phone:"+992 ·· ··· 45",
-  bank:"Амонатбонк", account:"Текущий счёт ··0000",
+  bank:"Хакатонбанк", account:"Текущий счёт ··0000",
   purpose:"Безвозмездный перевод на текущие расходы",
   purposeEn:"Non-repayable transfer for current expenses"
 };
@@ -976,6 +1010,10 @@ var SCREENS = [
 var STEP_NAMES = ["Пуш на блокировке","Экран перевода","Получатель","Сумма","Проверка",
   "Готово и вердикт","Курс изменился","Напомним при новом сигнале"];
 
+/* Подписи пилюль под макетом: тот же порядок, укороченный до одной строки. */
+var STEP_SHORT = ["Пуш","Перевод","Получатель","Сумма","Проверка","Готово","Курс изменился",
+  "Напомним"];
+
 /* ═══ Состояние и отрисовка ════════════════════════════════════════════════ */
 
 var state = { step:0, ctx:"live", sheet:"",
@@ -1053,10 +1091,18 @@ function render(){
 
   var steps = "";
   for (i=0;i<SCREENS.length;i++){
-    steps += '<button class="act" type="button" data-do="go:' + i + '" aria-current="' + (i === state.step) + '">' +
-      '<span class="txt"><span class="n">' + i + '. ' + STEP_NAMES[i] + '</span></span><kbd>' + i + '</kbd></button>';
+    steps += '<button type="button" data-do="go:' + i + '" aria-current="' + (i === state.step) + '"' +
+      ' title="' + STEP_NAMES[i] + '"><i>' + i + '</i>' + STEP_SHORT[i] + '</button>';
   }
-  document.getElementById("steps").innerHTML = steps;
+  var stepper = document.getElementById("stepper");
+  stepper.innerHTML = steps;
+  /* Текущая пилюля подтягивается в видимую часть, когда строка прокручена вбок. */
+  var cur = stepper.querySelector('[aria-current="true"]');
+  if (cur && stepper.scrollWidth > stepper.clientWidth){
+    var l = cur.offsetLeft, r = l + cur.offsetWidth;
+    if (l < stepper.scrollLeft) stepper.scrollLeft = l - 8;
+    else if (r > stepper.scrollLeft + stepper.clientWidth) stepper.scrollLeft = r - stepper.clientWidth + 8;
+  }
 
   document.getElementById("permalink").textContent = syncUrl();
 
@@ -1073,9 +1119,9 @@ function render(){
 
 /* Телефон 390×844 не всегда влезает в окно — масштабируем целиком, а не режем контент. */
 function fit(){
-  var stage = document.getElementById("stage"), sc = document.getElementById("phoneScale");
+  var box = document.getElementById("stagePhone"), sc = document.getElementById("phoneScale");
   if (window.innerWidth <= 1150){ sc.style.transform = ""; return; }
-  var k = Math.min(1, (stage.clientHeight - 8) / 844);
+  var k = Math.min(1, (box.clientHeight - 8) / 844);
   sc.style.transform = k < 1 ? "scale(" + k.toFixed(4) + ")" : "";
 }
 
