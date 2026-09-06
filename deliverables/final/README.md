@@ -42,18 +42,18 @@
 | `Окна_и_метрики_интерактивный_разбор.html` | `deliverables/промежуточные_артефакты/4_Дополнительные_материалы/` |
 | `reports_latest_README.md` | `reports/latest/README.md` |
 | `reports_latest_analysis_README.md` | `reports/latest/analysis/README.md` |
-| `reports_intraday_README.md` | `reports/intraday/README.md` |
-| `reports_intraday_README_bars.md` | `reports/intraday/README_bars.md` |
+| `reports_intraday_README.md` | `reports/intraday/README.md` + `README_bars.md` одним файлом (два отчёта внутридневного ряда склеены, чтобы освободить слот) |
+| `Прототип_клиентский_путь.html` | `prototype/journey.html` — восемь экранов из пуша в перевод на компонентах Альфа-Онлайн, развилка «курс изменился», панель «Действия», `?step=N` |
 | `chart_TJS.png` | `reports/latest/chart_TJS.png` |
 | `frontier.png` | `reports/latest/analysis/frontier.png` |
 | `day_of_month.png` | `reports/latest/analysis/day_of_month.png` |
 
-Слотов ровно десять. `cbr_vs_moex_by_hour.png` и графики остальных четырёх коридоров в комплект не помещаются и остаются в репозитории.
+Слотов ровно десять: два README внутридневного ряда склеены в один файл, чтобы вошёл прототип пути клиента. `cbr_vs_moex_by_hour.png` и графики остальных четырёх коридоров в комплект не помещаются и остаются в репозитории.
 
 ## Команда копирования (запускать утром 07.09, после финального прогона)
 
 ```bash
-cd ~/projects/fx-moment && cp docs/product/{concept,texts,pilot,limitations,star-task,market}.md deliverables/final/3_Продуктовые_материалы/ && cp prototype/timemachine.html deliverables/final/4_Дополнительные_материалы/Машина_времени_сигналы_на_дату.html && cp deliverables/промежуточные_артефакты/4_Дополнительные_материалы/Окна_и_метрики_интерактивный_разбор.html deliverables/final/4_Дополнительные_материалы/ && cp reports/latest/README.md deliverables/final/4_Дополнительные_материалы/reports_latest_README.md && cp reports/latest/analysis/README.md deliverables/final/4_Дополнительные_материалы/reports_latest_analysis_README.md && cp reports/intraday/README.md deliverables/final/4_Дополнительные_материалы/reports_intraday_README.md && cp reports/intraday/README_bars.md deliverables/final/4_Дополнительные_материалы/reports_intraday_README_bars.md && cp reports/latest/chart_TJS.png reports/latest/analysis/frontier.png reports/latest/analysis/day_of_month.png deliverables/final/4_Дополнительные_материалы/
+cd ~/projects/fx-moment && cp docs/product/{concept,texts,pilot,limitations,star-task,market}.md deliverables/final/3_Продуктовые_материалы/ && cp prototype/timemachine.html deliverables/final/4_Дополнительные_материалы/Машина_времени_сигналы_на_дату.html && cp deliverables/промежуточные_артефакты/4_Дополнительные_материалы/Окна_и_метрики_интерактивный_разбор.html deliverables/final/4_Дополнительные_материалы/ && cp reports/latest/README.md deliverables/final/4_Дополнительные_материалы/reports_latest_README.md && cp reports/latest/analysis/README.md deliverables/final/4_Дополнительные_материалы/reports_latest_analysis_README.md && { cat reports/intraday/README.md; printf '\n\n---\n\n'; cat reports/intraday/README_bars.md; } > deliverables/final/4_Дополнительные_материалы/reports_intraday_README.md && cp prototype/journey.html deliverables/final/4_Дополнительные_материалы/Прототип_клиентский_путь.html && cp reports/latest/chart_TJS.png reports/latest/analysis/frontier.png reports/latest/analysis/day_of_month.png deliverables/final/4_Дополнительные_материалы/
 ```
 
 Вторая строка, для файлов из работы 06.09: `cp docs/defense/qa.md deliverables/final/3_Продуктовые_материалы/Лист_ответов.md && cp docs/process/clean-clone-check.md deliverables/final/3_Продуктовые_материалы/Запуск_с_чистого_клона.md && cp prototype/index.html deliverables/final/4_Дополнительные_материалы/Прототип_момент_изменился.html`.
