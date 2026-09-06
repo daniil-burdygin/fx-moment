@@ -101,6 +101,24 @@ def rank_from_history(
     return rank, muted
 
 
+def holiday_flag(index: pd.DatetimeIndex, corridor: str, k: int, scope: str = "all") -> pd.Series:
+    """Причинный флаг предпраздничного окна: k последних дней публикации перед началом нерабочего
+    блока страны-получателя коридора. Определение взято ровно то же, что в замере Ш1
+    (`baselines.holiday_events`, `docs/decisions/holidays-experiment.md`), — иначе числа фильтра и
+    замера несопоставимы.
+
+    Заглядывания вперёд нет: дата праздника известна заранее (фиксированная — на годы, плавающая —
+    за 1–3 недели, `data/holidays.md`), значение курса в неё не входит, и флаг вообще не зависит от
+    ряда — только от оси публикации и таблицы праздников. Коридор без страны в календаре и k < 1
+    дают пустой флаг: фильтр молча ничего не снимает."""
+    from fxmoment.baselines import CORRIDOR_COUNTRY, holiday_events, holiday_starts, load_holidays
+
+    if k < 1 or corridor not in CORRIDOR_COUNTRY:
+        return pd.Series(False, index=index)
+    starts = holiday_starts(load_holidays(), CORRIDOR_COUNTRY[corridor], scope)
+    return holiday_events(index, starts, k)
+
+
 def _shape_row(
     rate: pd.Series,
     sent_dates: pd.Series | pd.DatetimeIndex,
@@ -119,6 +137,7 @@ def _shape_row(
         "pushes": int(len(ev_idx)),
         "storm_days": int(storm.reindex(days).fillna(False).sum()),
         "storm_blocked": int((dec["decision"] == "storm").sum()) if len(dec) else 0,
+        "holiday_blocked": int((dec["decision"] == "holiday").sum()) if len(dec) else 0,
         "freq_per_week": metrics.frequency_per_week(len(ev_idx), split.test_start, end),
         "clump_share_series": cl.share_series,
         "clump_cv_gaps": cl.cv_gaps,
@@ -147,6 +166,11 @@ def evaluate_stream(
     for corridor in result.signals["corridor"].unique():
         rate = panel[corridor].dropna()
         storm = storm_flag(rate, params.storm_vol_window, params.storm_rank_window, params.storm_rank)
+        holiday = (
+            holiday_flag(rate.index, str(corridor), params.holiday_filter)
+            if params.holiday_filter
+            else None
+        )
         history: list[tuple[pd.Timestamp, str]] = []
         for split in result.splits:
             ev = result.signals[
@@ -160,7 +184,9 @@ def evaluate_stream(
                 sent = ev.iloc[0:0]
             else:
                 p = PolicyParams(**{**params.__dict__, "muted": params.muted + muted})
-                dec = apply_policy(ev, rank, rate.index, p, prior_sent={corridor: history}, storm=storm)
+                dec = apply_policy(
+                    ev, rank, rate.index, p, prior_sent={corridor: history}, storm=storm, holiday=holiday
+                )
                 decided.append(dec)
                 sent = dec[dec["decision"] == "sent"]
                 history.extend(zip(sent["date"], sent["push_scenario"], strict=True))
@@ -256,5 +282,6 @@ def stream_shape_summary(shape: pd.DataFrame) -> pd.DataFrame:
             "clump_share_series_mean": g["clump_share_series"].mean(),
             "storm_days": g["storm_days"].sum(),
             "storm_blocked": g["storm_blocked"].sum(),
+            "holiday_blocked": g["holiday_blocked"].sum(),
         }
     ).reset_index()

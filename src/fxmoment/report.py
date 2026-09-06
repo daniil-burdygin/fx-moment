@@ -95,7 +95,8 @@ def write_report(
 ) -> Path:
     """`policy` — параметры политики потока (`PolicyParams`); None — умолчания. `notes` — условия
     варианта, которых нет в политике (`ml`: local | pooled, `ml_features`, `extra_indicators`,
-    `bounds` — полоса допустимости калибровки). Вариант ранга, начало первого окна и заметки
+    `bounds` — полоса допустимости калибровки, `holiday_filter` — предпраздничное окно). Вариант
+    ранга, начало первого окна и заметки
     пишутся в провенанс, чтобы каталог варианта нельзя было принять за основной."""
     from fxmoment.combine import PolicyParams
 
@@ -143,6 +144,11 @@ def write_report(
         variant += "; добавлен " + ", ".join(f"`{i}`" for i in notes["extra_indicators"])
     if notes.get("signal_source"):
         variant += f"; сигнал общий, по курсу {notes['signal_source']}"
+    if notes.get("holiday_filter"):
+        variant += (
+            f"; поток молчит в {int(notes['holiday_filter'])} днях публикации до праздника "
+            "страны-получателя"
+        )
     if notes.get("bounds"):
         lo, hi, min_n = notes["bounds"]
         variant += f"; полоса допустимости калибровки {lo:g}–{hi:g} в неделю при ≥ {int(min_n)} событиях"

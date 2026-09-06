@@ -22,7 +22,7 @@ from fxmoment.report import _md_table, git_hash, write_provenance
 MATRIX_KEYS: tuple[str, ...] = ("indicator", "corridor", "window", "h", "tol_bps")
 RUN_LOCAL: tuple[str, ...] = ("split",)  # номер окна свой у каждого прогона, сравнивать нечего
 TOL = 1e-9
-DECISIONS: tuple[str, ...] = ("sent", "muted", "thinned", "cooldown", "storm")
+DECISIONS: tuple[str, ...] = ("sent", "muted", "thinned", "cooldown", "storm", "holiday")
 # что из провенанса прогона переносится в провенанс сравнения
 RUN_KEYS: tuple[str, ...] = (
     "code",
@@ -34,6 +34,7 @@ RUN_KEYS: tuple[str, ...] = (
     "extra_indicators",
     "signal_source",
     "bounds",  # полоса допустимости калибровки: (частота от, частота до, минимум событий)
+    "holiday_filter",  # дней публикации до праздника страны-получателя, в которые поток молчит
 )
 
 
@@ -476,6 +477,7 @@ def compare_runs(
         f"{pb.get('ml') or 'local'}, наборы признаков: "
         f"{', '.join(pb.get('ml_features') or []) or 'нет'}, "
         f"сигнал по {pb.get('signal_source') or 'своему коридору'}, "
+        f"предпраздничный фильтр {pb.get('holiday_filter') or 'выключен'}, "
         f"полоса калибровки {_band(pb)}, добавлены индикаторы: "
         f"{', '.join(provenance['variant_only_indicators']) or 'нет'}. Сравнение: код "
         f"`{git_hash()}`, {datetime.now(UTC):%Y-%m-%d %H:%M} UTC. Общих окон "
