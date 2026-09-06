@@ -24,7 +24,15 @@ RUN_LOCAL: tuple[str, ...] = ("split",)  # номер окна свой у ка�
 TOL = 1e-9
 DECISIONS: tuple[str, ...] = ("sent", "muted", "thinned", "cooldown", "storm")
 # что из провенанса прогона переносится в провенанс сравнения
-RUN_KEYS: tuple[str, ...] = ("code", "built_at_utc", "first_test", "rank_base", "ml", "extra_indicators")
+RUN_KEYS: tuple[str, ...] = (
+    "code",
+    "built_at_utc",
+    "first_test",
+    "rank_base",
+    "ml",
+    "extra_indicators",
+    "bounds",  # полоса допустимости калибровки: (частота от, частота до, минимум событий)
+)
 
 
 def _read(path: Path) -> pd.DataFrame:
@@ -341,6 +349,16 @@ def extra_windows_shape(variant: pd.DataFrame, latest_windows: set[str]) -> pd.D
     return pd.concat([out, pd.DataFrame([total])], ignore_index=True)
 
 
+def _band(prov: dict) -> str:
+    """Полоса допустимости калибровки прогона для шапки сравнения: тройка из провенанса или
+    «у каждого индикатора своя» — так у прогона по умолчанию (класс-специфичные границы)."""
+    b = prov.get("bounds")
+    if not b:
+        return "у каждого индикатора своя"
+    lo, hi, min_n = b
+    return f"{lo:g}–{hi:g} в неделю при ≥ {int(min_n)} событиях"
+
+
 def _md(df: pd.DataFrame) -> str:
     return _md_table(df.round(3)) if len(df) else "нет данных"
 
@@ -439,7 +457,7 @@ def compare_runs(
         f"latest: код `{pa.get('code', '?')}`, первое окно {pa.get('first_test', '?')}, база ранга "
         f"{pa.get('rank_base', 'window')}. Вариант: код `{pb.get('code', '?')}`, первое окно "
         f"{pb.get('first_test', '?')}, база ранга {pb.get('rank_base', 'window')}, обучаемый "
-        f"{pb.get('ml') or 'local'}, добавлены индикаторы: "
+        f"{pb.get('ml') or 'local'}, полоса калибровки {_band(pb)}, добавлены индикаторы: "
         f"{', '.join(provenance['variant_only_indicators']) or 'нет'}. Сравнение: код "
         f"`{git_hash()}`, {datetime.now(UTC):%Y-%m-%d %H:%M} UTC. Общих окон "
         f"{len(provenance['common_windows'])}, только у варианта {len(provenance['variant_only_windows'])}.",

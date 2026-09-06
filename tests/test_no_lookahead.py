@@ -15,6 +15,10 @@ from fxmoment.metrics import TRUNC_COLUMNS
 CORRIDORS = ("TJS", "KZT")
 
 
+def _fired_key(df: pd.DataFrame) -> set:
+    return {(r.corridor, r.indicator, round(r.strength, 9), r.facts) for r in df.itertuples()}
+
+
 def test_signals_as_of_equals_full_run(panel):
     splits = make_splits(panel.index, first_test="2019-07-01", test_months=6, purge_days=20)
     full = run_backtest(
@@ -50,6 +54,38 @@ def test_signals_as_of_equals_full_run(panel):
                 & (full.calibration["split"] == r.split)
             ]
             assert json.loads(cal["params"].iloc[0]) == json.loads(r.params)
+
+
+def test_signals_as_of_equals_full_run_with_bounds(panel):
+    """То же для варианта «режим точности»: полоса допустимости калибровки меняет выбранные
+    параметры, и срез обязан совпасть с полным прогоном при ТОЙ ЖЕ полосе. Иначе вариант
+    проверен не был бы: инвариант 1 держится у прогона по умолчанию, а поехал бы у варианта."""
+    band = (0.1, 0.3, 5)
+    splits = make_splits(panel.index, first_test="2019-07-01", test_months=6, purge_days=20)
+    kw = dict(corridors=CORRIDORS, indicators=ALL_INDICATORS, analysis_start="2017-03-01", splits=splits)
+    full = run_backtest(panel, horizons=(5,), bounds=band, **kw)
+    plain = run_backtest(panel, horizons=(5,), **kw)
+    t = splits[1].test_end
+    state = signals_as_of(panel, t, bounds=band, **kw)
+    fired = state[state["signal"]]
+    expect = full.signals[full.signals["date"] == t]
+    got, want = _fired_key(fired), _fired_key(expect)
+    assert got == want, f"расхождение на {t.date()}: {got ^ want}"
+    for r in state.itertuples():
+        cal = full.calibration[
+            (full.calibration["corridor"] == r.corridor)
+            & (full.calibration["indicator"] == r.indicator)
+            & (full.calibration["split"] == r.split)
+        ]
+        assert json.loads(cal["params"].iloc[0]) == json.loads(r.params)
+    # полоса действительно сдвинула калибровку правил, иначе проверка была бы пустой
+    rules = [c.name for c in ALL_INDICATORS if not c.trainable]
+    a = full.calibration[full.calibration["indicator"].isin(rules)]["params"].tolist()
+    b = plain.calibration[plain.calibration["indicator"].isin(rules)]["params"].tolist()
+    assert a != b
+    # обучаемый индикатор сеткой не калибруется: его строки от полосы не зависят
+    ml = full.matrix["indicator"] == "ml_localmin"
+    assert full.matrix[ml].reset_index(drop=True).equals(plain.matrix[ml.to_numpy()].reset_index(drop=True))
 
 
 def test_fit_and_calibration_ignore_data_after_train_end(panel):
