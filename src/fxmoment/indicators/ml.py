@@ -12,7 +12,7 @@ from sklearn.ensemble import HistGradientBoostingClassifier
 from fxmoment.config import BUY_NOW, CORRIDORS
 from fxmoment.data.forecast import is_forecast_column, split_column
 from fxmoment.indicators.base import Indicator, rearm_events, rolling_pct_rank
-from fxmoment.indicators.features import EURUSD_KEY, build_features
+from fxmoment.indicators.features import EURUSD_KEY, MINFIN_KEYS, build_features
 from fxmoment.labels import benefit_fwd_bps, local_min_label
 
 
@@ -234,13 +234,17 @@ def _corridor_of(rate: pd.Series) -> str:
 def _currency_context(context: pd.DataFrame | None, corridor: str = "") -> pd.DataFrame | None:
     """Контекст для чужого коридора в объединённом обучении: валютные столбцы без служебных
     `_rank_*` и `_dsm_*` (они посчитаны по своему ряду), плюс производные включённых наборов
-    ML-признаков. `_eurusd` и `_usd_fc_*` от коридора не зависят и переносятся как есть, а прогноз
-    привязан к ряду — чужому коридору кладётся его собственный (`<коридор>_fc_<признак>`), иначе
+    ML-признаков. `_eurusd`, `_minfin_*` и `_usd_fc_*` от коридора не зависят и переносятся как есть,
+    а прогноз привязан к ряду — чужому коридору кладётся его собственный (`<коридор>_fc_<признак>`), иначе
     строки чужих коридоров ушли бы в обучение без этих признаков, а не с их значениями."""
     if context is None:
         return None
     plain = [c for c in context.columns if not str(c).startswith("_")]
-    shared = [c for c in context.columns if str(c) == EURUSD_KEY or str(c).startswith("_usd_fc_")]
+    shared = [
+        c
+        for c in context.columns
+        if str(c) == EURUSD_KEY or str(c) in MINFIN_KEYS or str(c).startswith("_usd_fc_")
+    ]
     out = context[plain + shared].copy()
     for col in plain:
         if is_forecast_column(col):

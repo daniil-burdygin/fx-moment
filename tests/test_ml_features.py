@@ -247,3 +247,94 @@ def test_snapshot_batches_hold_one_context_length_each(panel):
     assert len(snap) == 2 * (len(panel) - 100)
     assert snap.groupby("currency")["pub_date"].is_monotonic_increasing.all()
     assert snap["mean20_bps"].abs().max() < 0.01  # ровная медиана → прогноз равен курсу (float32)
+
+
+# ------------------------------------------------------------------ режим Минфина
+
+
+def minfin_panel() -> pd.DataFrame:
+    """Панель на окне снимка объявлений (2018-06 … ): режим на ней меняется, а не стоит `none`."""
+    from conftest import make_panel
+
+    return make_panel(n_days=1400, start="2018-01-02")
+
+
+def test_minfin_features_appear_only_with_the_flag_and_have_no_gaps():
+    """Три столбца на оси публикации: продажа, пауза, объём. Пропусков нет нигде — строка с NaN
+    выпала бы из обучения целиком."""
+    from fxmoment.indicators.features import MINFIN_KEYS
+
+    p = minfin_panel()
+    rate = p["TJS"]
+    off = build_features(rate, enrich_context(rate, p[["USD"]]))
+    assert not [c for c in off.columns if c.startswith("minfin_")]
+    ctx = enrich_context(rate, p[["USD"]], ml_features=("minfin",))
+    assert list(MINFIN_KEYS) == [c for c in ctx.columns if c.startswith("_minfin")]
+    x = build_features(rate, ctx)
+    want = {"minfin_is_sell", "minfin_is_none", "minfin_rub_per_day_bln"}
+    assert want <= set(x.columns)
+    assert x[list(want)].notna().all().all()
+    assert set(x["minfin_is_sell"].unique()) == {0.0, 1.0}  # оба режима на окне есть
+    assert set(x["minfin_is_none"].unique()) == {0.0, 1.0}
+    # флаги взаимоисключающие: покупка — базовый уровень (0, 0)
+    assert not ((x["minfin_is_sell"] > 0) & (x["minfin_is_none"] > 0)).any()
+    # объём известен там, где операции объявлены, и обнулён в паузе
+    assert (x.loc[x["minfin_is_none"] > 0, "minfin_rub_per_day_bln"] >= 0).all()
+    assert x.loc[x["minfin_is_none"] == 0, "minfin_rub_per_day_bln"].max() > 0
+
+
+def test_minfin_feature_ignores_announcements_published_after_t():
+    """Нет утечки: значение признака на дату T не меняется, если обрезать снимок по T."""
+    from fxmoment import minfin
+
+    p = minfin_panel()
+    rate = p["TJS"]
+    full = build_features(rate, enrich_context(rate, p[["USD"]], ml_features=("minfin",)))
+    ann = minfin.load_announcements()
+    cols = ["minfin_is_sell", "minfin_is_none", "minfin_rub_per_day_bln"]
+    for t in ("2019-05-15", "2021-02-10", "2022-06-01"):
+        cut = pd.Timestamp(t)
+        idx = rate.index[rate.index <= cut]
+        got = minfin.regime_features(idx, ann, as_of=cut)
+        got.columns = cols
+        pd.testing.assert_frame_equal(got, full.loc[idx, cols], check_names=False)
+        # порча объявлений после T тоже не двигает признак до T
+        spoiled = ann.copy()
+        after = spoiled["announce_date"] > cut
+        spoiled.loc[after, "direction"] = "sell"
+        spoiled.loc[after, "rub_per_day_bln"] = 999.0
+        later = minfin.regime_features(idx, spoiled)
+        later.columns = cols
+        pd.testing.assert_frame_equal(later, full.loc[idx, cols], check_names=False)
+
+
+def test_minfin_flag_changes_only_the_learnable_indicator():
+    p = minfin_panel()
+    kw = dict(corridors=TWO, indicators=(*BASE_INDICATORS, LearnedMinimum), analysis_start="2018-01-02")
+    kw["splits"] = make_splits(p.index, first_test="2021-01-01", test_months=6, purge_days=20)
+    off = run_backtest(p, horizons=(20,), **kw).matrix
+    on = run_backtest(p, horizons=(20,), ml_features=("minfin",), **kw).matrix
+    base = (off["indicator"] != "ml_localmin").to_numpy()
+    pd.testing.assert_frame_equal(off[base].reset_index(drop=True), on[base].reset_index(drop=True))
+    assert not off[~base].reset_index(drop=True).equals(on[~base].reset_index(drop=True))
+
+
+def test_minfin_features_reach_the_pooled_model_of_another_corridor():
+    """У объединённого обучаемого режим — общий фактор: чужой коридор получает те же три столбца."""
+    p = minfin_panel()
+    ctx = enrich_context(p["TJS"], p[["USD"]], ml_features=("minfin",))
+    other = _currency_context(ctx, "KZT")
+    for key in ("_minfin_is_sell", "_minfin_is_none", "_minfin_rub_per_day_bln"):
+        pd.testing.assert_series_equal(other[key], ctx[key])
+    assert set(build_features(p["KZT"], other).columns) == set(build_features(p["TJS"], ctx).columns)
+
+
+def test_cli_accepts_minfin_feature_set(capsys):
+    """`--ml-features minfin` принят и опознан как вариантный прогон, а опечатка отвергнута."""
+    from fxmoment.cli import main
+
+    assert main(["backtest", "--ml-features", "minfin"]) == 2
+    assert "укажите --out" in capsys.readouterr().out
+    assert main(["backtest", "--ml-features", "minfinn", "--out", "t"]) == 2
+    out = capsys.readouterr().out
+    assert "допустимы" in out and "minfin" in out

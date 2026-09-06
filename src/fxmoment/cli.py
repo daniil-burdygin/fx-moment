@@ -610,7 +610,8 @@ def main(argv: list[str] | None = None) -> int:
         "--ml-features",
         default="",
         help="наборы признаков обучаемого через запятую: eurusd (EUR/RUB ÷ USD/RUB), "
-        "timesfm (снимок прогнозов, data/derived/); по умолчанию ни одного",
+        "timesfm (снимок прогнозов, data/derived/), minfin (режим бюджетного правила: продажа, "
+        "пауза, объявленный дневной объём, data/minfin_fx_operations.csv); по умолчанию ни одного",
     )
     b.add_argument(
         "--with-level-drift",

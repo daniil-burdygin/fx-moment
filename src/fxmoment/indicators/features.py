@@ -2,7 +2,7 @@
 
 Наборы `ML_FEATURE_SETS` по умолчанию выключены (`backtest --ml-features …`): прогон без флага
 обязан дать те же признаки и те же байты матрицы, что и прежде. Включённый набор виден по
-производному столбцу контекста (`_eurusd`, `_fc_*`), а не по параметру индикатора: тогда
+производному столбцу контекста (`_eurusd`, `_fc_*`, `_minfin_*`), а не по параметру индикатора: тогда
 `build_features` остаётся чистой функцией ряда и контекста, а состав признаков — свойством прогона.
 """
 
@@ -19,8 +19,13 @@ RANK_WINDOWS = (20, 60, 120, 250)
 CACHED_WINDOWS = (60, 120, 250)  # окна сеток `level` и `reversal`, в шагах дневного ряда
 
 # наборы ML-признаков за флагом; в продукт по умолчанию не входит ни один
-ML_FEATURE_SETS: tuple[str, ...] = ("eurusd", "timesfm")
+ML_FEATURE_SETS: tuple[str, ...] = ("eurusd", "timesfm", "minfin")
 EURUSD_KEY = "_eurusd"  # производный столбец контекста: включён набор `eurusd`
+MINFIN_KEYS: tuple[str, ...] = (  # производные столбцы набора `minfin`; от коридора не зависят
+    "_minfin_is_sell",
+    "_minfin_is_none",
+    "_minfin_rub_per_day_bln",
+)
 
 
 def enrich_context(
@@ -56,12 +61,19 @@ def attach_ml_context(
     У остальных признаков рубль стоит в обеих частях, поэтому движение своей валюты они не отличают
     от общего движения к доллару.
     `timesfm` — прогнозные столбцы снимка (`<валюта>_fc_<признак>`): свой коридор → `_fc_<признак>`,
-    доллар → один признак. Чужие коридоры в признаки не идут: пять коридоров — почти один фактор."""
+    доллар → один признак. Чужие коридоры в признаки не идут: пять коридоров — почти один фактор.
+    `minfin` — режим бюджетного правила на дату публикации (`data/minfin_fx_operations.csv`):
+    продажа, пауза и объявленный дневной объём. Ряд от коридора не зависит — операции идут по
+    рублю, — поэтому берётся по оси контекста, а не по курсу."""
     unknown = [f for f in ml_features if f not in ML_FEATURE_SETS]
     if unknown:
         raise ValueError(f"неизвестный набор признаков {unknown}; допустимы {ML_FEATURE_SETS}")
     if "eurusd" in ml_features and {"USD", "EUR"} <= set(ctx.columns):
         ctx[EURUSD_KEY] = ctx["EUR"] / ctx["USD"]
+    if "minfin" in ml_features:
+        from fxmoment.minfin import regime_features
+
+        ctx[list(MINFIN_KEYS)] = regime_features(pd.DatetimeIndex(ctx.index))
     if "timesfm" in ml_features:
         for col in [c for c in ctx.columns if is_forecast_column(c)]:
             ccy, feat = split_column(str(col))
@@ -106,6 +118,10 @@ def build_features(rate: pd.Series, context: pd.DataFrame | None = None) -> pd.D
         f["eurusd_ret5"] = eurusd.pct_change(5)
         f["eurusd_ret20"] = eurusd.pct_change(20)
         f["eurusd_rank250"] = rolling_pct_rank(eurusd, 250)
+    if context is not None and MINFIN_KEYS[0] in context.columns:
+        # режим бюджетного правила на дату T: объявления с `announce_date` ≤ T, и только они
+        for key in MINFIN_KEYS:
+            f[key.removeprefix("_")] = context[key].reindex(rate.index)
     if context is not None:
         # прогноз TimesFM на дату T (снимок `data/derived/`, замер): в бп к курсу действия
         for feat in ML_FEATURES:

@@ -6,8 +6,8 @@
 входят только строки с `announce_date ≤ T`. Снимок и его границы — `data/minfin_fx_operations.csv`
 и `data/minfin_fx_operations.md`.
 
-Здесь не индикатор, а разрез: попадание и выгода индикатора уровня и итогового потока `BUY_NOW`,
-посчитанные отдельно в днях покупки, продажи и паузы. Признак обучаемому этот модуль не добавляет.
+Здесь не индикатор, а разрез (`regime_table`) плюс тот же режим в виде трёх столбцов признака
+(`regime_features`) для обучаемого за флагом `backtest --ml-features minfin`.
 """
 
 from __future__ import annotations
@@ -21,6 +21,8 @@ from fxmoment import labels, metrics
 from fxmoment.config import BUY_NOW, CALIBRATION_H, CORRIDORS, PRIMARY_TOL_BPS
 
 REGIMES: tuple[str, ...] = ("buy", "sell", "none")
+# столбцы признака режима в контексте обучаемого (`--ml-features minfin`); от коридора не зависят
+FEATURE_KEYS: tuple[str, ...] = ("_minfin_is_sell", "_minfin_is_none", "_minfin_rub_per_day_bln")
 LEVEL_INDICATOR = "level"
 STREAM_LABEL = "stream BUY_NOW"
 SNAPSHOT = "data/minfin_fx_operations.csv"
@@ -84,6 +86,42 @@ def regime_series(
             inside &= index <= row.to_date
         out[inside] = row.direction
         # дни между объявлением и началом периода наследуют прошлый режим — их не трогаем
+    return out
+
+
+def regime_features(
+    index: pd.DatetimeIndex, ann: pd.DataFrame | None = None, as_of: pd.Timestamp | None = None
+) -> pd.DataFrame:
+    """Режим дня как три столбца на оси публикации: продажа, пауза, объявленный объём в млрд ₽.
+
+    Покупка — базовый уровень пары флагов (0, 0), поэтому третьего флага нет. Объём берётся
+    `merge_asof`-ом снимка по `announce_date` назад: строка не может опередить свою дату публикации,
+    и это та же граница каузальности, что у `regime_series`. У пауз объёма в релизе нет, до первого
+    объявления снимка (2018-06) его нет тоже — там 0, а не пропуск: пропуск выбросил бы строку из
+    обучения целиком (`LearnedMinimum.fit` берёт только строки без NaN), и год до начала снимка
+    молча выпал бы из обучения.
+
+    Шов: объявление выходит за несколько дней до начала своего периода, и в эти дни направление ещё
+    прошлое, а объём уже новый. Обе величины при этом опубликованы, так что каузальность цела."""
+    ann = load_announcements() if ann is None else ann
+    if as_of is not None:
+        ann = ann[ann["announce_date"] <= pd.Timestamp(as_of)]
+    out = pd.DataFrame(index=index)
+    if not len(index):
+        for key in FEATURE_KEYS:
+            out[key] = pd.Series(dtype=float)
+        return out
+    reg = regime_series(index, ann)
+    out[FEATURE_KEYS[0]] = (reg == "sell").astype(float)
+    out[FEATURE_KEYS[1]] = (reg == "none").astype(float)
+    vol = pd.merge_asof(
+        pd.DataFrame({"pub_date": pd.DatetimeIndex(index)}),
+        ann[["announce_date", "rub_per_day_bln"]].sort_values("announce_date", kind="stable"),
+        left_on="pub_date",
+        right_on="announce_date",
+        direction="backward",
+    )["rub_per_day_bln"]
+    out[FEATURE_KEYS[2]] = vol.fillna(0.0).to_numpy(dtype=float)
     return out
 
 
