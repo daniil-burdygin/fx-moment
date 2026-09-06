@@ -1113,7 +1113,13 @@ def _final_analyses(
     """Три таблицы, добавленные 03.09 вечером (💬 пункты 4, 3, 6): календарное правило как база стека,
     выживаемость пуша до исполнения, разворот как сожаление. Импорт локальный: модули сами читают
     помощников отсюда."""
-    from fxmoment.baselines import calendar_matrix, calendar_summary, calendar_vs_stack
+    from fxmoment.baselines import (
+        calendar_matrix,
+        calendar_summary,
+        calendar_vs_stack,
+        holiday_matrix,
+        holiday_vs_baselines,
+    )
     from fxmoment.execution import execution_survival_table, load_spreads
     from fxmoment.regret import reversal_regret_table
 
@@ -1124,6 +1130,12 @@ def _final_analyses(
     cal_sum.to_csv(out / "calendar_rule.csv", index=False)
     cal_cmp = calendar_vs_stack(cal, result.matrix, stream_matrix)
     cal_cmp.to_csv(out / "calendar_vs_stack.csv", index=False)
+    hol = holiday_matrix(panel, result.splits, corridors=ran)
+    hol.to_csv(out / "holiday_rule_windows.csv", index=False)
+    hol_sum = calendar_summary(hol)
+    hol_sum.to_csv(out / "holiday_rule.csv", index=False)
+    hol_cmp = holiday_vs_baselines(hol, cal, result.matrix)
+    hol_cmp.to_csv(out / "holiday_vs_baseline.csv", index=False)
     dec_path = out.parent / "stream_decisions.csv"
     decided = (
         pd.read_csv(dec_path, parse_dates=["date"])
@@ -1142,6 +1154,8 @@ def _final_analyses(
     return {
         "calendar": cal_sum,
         "calendar_vs_stack": cal_cmp,
+        "holiday": hol_sum,
+        "holiday_vs_baseline": hol_cmp,
         "survival": survival,
         "regret": regret,
         "client_window": cw_summary,
@@ -1245,6 +1259,26 @@ def _analysis_readme(
     cal_first = cal[cal["indicator"].str.endswith(":first")] if len(cal) else cal
     cal_all = cal[cal["indicator"].str.endswith(":all") & (cal["corridor"] == "all")] if len(cal) else cal
     cal_cmp = extra.get("calendar_vs_stack", pd.DataFrame())
+    hol = extra.get("holiday", pd.DataFrame())
+    hol_all = hol[hol["corridor"] == "all"] if len(hol) else hol
+    hol_by_corr = hol[hol["corridor"] != "all"] if len(hol) else hol
+    hol_cmp = extra.get("holiday_vs_baseline", pd.DataFrame())
+    hol_cmp_show = [
+        "rule",
+        "baseline",
+        "events_rule",
+        "events_base",
+        "lift_rule",
+        "lift_base",
+        "diff_lift",
+        "diff_lift_ci_lo",
+        "diff_lift_ci_hi",
+        "verdict_lift",
+        "verdict_lift_by_window",
+        "diff_benefit",
+        "verdict_benefit",
+        "verdict_benefit_by_window",
+    ]
     cwin = extra.get("client_window", pd.DataFrame())
     cw_cols = [
         "strategy",
@@ -1518,6 +1552,42 @@ def _analysis_readme(
         "Все столбцы — `calendar_vs_stack.csv`.",
         "",
         _md(cal_cmp[[c for c in cmp_show if c in cal_cmp.columns]]) if len(cal_cmp) else "нет данных",
+        "",
+        "## Праздники страны-получателя как календарное правило",
+        "",
+        "Гипотеза постановки кейса: перед праздником дома поток переводов растёт, и день перед ним "
+        "отличается от случайного. Правило `holiday:k<K>:<отбор>` ставит событие на K последних дней "
+        "публикации перед началом праздничного блока страны получателя (`data/holidays.csv`, 755 "
+        "нерабочих дней шести стран за 2018–2026 с первоисточниками). Подряд идущие нерабочие дни — "
+        "один блок: правило целится в его первый день. Отбор `all` — все нерабочие праздничные дни, "
+        "`major` — Навруз, оба айта, Новый год и дни независимости, `fixed` — только праздники с "
+        "фиксированной датой. Российские строки календаря не используются: нерабочие дни РФ уже "
+        "вырезаны из оси публикации ЦБ.",
+        "",
+        "Правило смотрит вперёд по календарю, а не по курсу: дата праздника известна заранее "
+        "(фиксированная — на годы, плавающая — за 1–3 недели, `data/holidays.md`), значение курса в "
+        "неё не входит, и тест на заглядывание вперёд это не нарушает. Отбор `fixed` оставляет только "
+        "даты, известные вне всяких оговорок. Метрика и окна те же, что у индикаторов; медианы — по "
+        "активным окнам, pooled — взвешенно по событиям. По коридорам и окнам — "
+        "`holiday_rule_windows.csv`, все строки сводки — `holiday_rule.csv`.",
+        "",
+        "Все коридоры:",
+        "",
+        _md(hol_all) if len(hol_all) else "нет данных",
+        "",
+        "По коридорам:",
+        "",
+        _md(hol_by_corr) if len(hol_by_corr) else "нет данных",
+        "",
+        "Против прозрачных баз: `diff_*` = праздники − база, парный блочный бутстреп, интервалы по "
+        "парам «коридор × окно» и по окнам. Базы — календарь «первый день с 25-го» в обоих режимах и "
+        "индикатор сезонности: он ловит ту же внутримесячную форму, и без него непонятно, добавляет ли "
+        "праздник что-то к ней. Вердикт «разницы нет» — интервал содержит ноль. Девять правил на пяти "
+        "коридорах — 45 ячеек, и при уровне 95 % две-три ложные находки в них ожидаемы: строка "
+        "засчитывается, только если интервал выше нуля и по парам, и по окнам. Все столбцы — "
+        "`holiday_vs_baseline.csv`.",
+        "",
+        _md(hol_cmp[[c for c in hol_cmp_show if c in hol_cmp.columns]]) if len(hol_cmp) else "нет данных",
         "",
         "## Окно клиента: решение клиента, а не индикатора",
         "",
