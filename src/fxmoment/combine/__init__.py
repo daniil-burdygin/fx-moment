@@ -1,6 +1,7 @@
 from fxmoment.combine.evaluate import (
     evaluate_stream,
     history_status,
+    holiday_flag,
     rank_from_history,
     stream_shape_summary,
     stream_summary,
@@ -12,6 +13,7 @@ __all__ = [
     "apply_policy",
     "evaluate_stream",
     "history_status",
+    "holiday_flag",
     "rank_from_history",
     "stream_shape_summary",
     "storm_flag",

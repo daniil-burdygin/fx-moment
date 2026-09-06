@@ -167,6 +167,9 @@ def cmd_backtest(args: argparse.Namespace) -> int:
     if unknown:
         print(f"--ml-features {', '.join(unknown)}: допустимы {', '.join(ML_FEATURE_SETS)}")
         return 2
+    if args.holiday_filter < 0:
+        print(f"--holiday-filter {args.holiday_filter}: дней публикации до праздника не меньше нуля")
+        return 2
     variant = (
         args.first_test != FIRST_TEST
         or args.rank_base != "window"
@@ -175,11 +178,13 @@ def cmd_backtest(args: argparse.Namespace) -> int:
         or bool(args.signal_source)
         or bounds is not None
         or bool(ml_features)
+        or args.holiday_filter > 0
     )
     if variant and not args.out:
         print(
             "вариантный прогон (--first-test, --rank-base, --ml pooled, --ml-features, "
-            "--with-level-drift, --signal-source, --freq-band) пишется только в свой каталог: укажите --out"
+            "--with-level-drift, --signal-source, --freq-band, --holiday-filter) пишется только "
+            "в свой каталог: укажите --out"
         )
         return 2
     if args.signal_source and args.ml == "pooled":
@@ -223,7 +228,10 @@ def cmd_backtest(args: argparse.Namespace) -> int:
     }
     if args.signal_source:  # только у варианта: провенанс основных отчётов не меняется
         notes["signal_source"] = args.signal_source
-    out = write_report(result, panel, out_dir, policy=PolicyParams(rank_base=args.rank_base), notes=notes)
+    if args.holiday_filter:
+        notes["holiday_filter"] = int(args.holiday_filter)
+    policy = PolicyParams(rank_base=args.rank_base, holiday_filter=int(args.holiday_filter))
+    out = write_report(result, panel, out_dir, policy=policy, notes=notes)
     pd.set_option("display.width", 250)
     for h in (20, 5):
         print(f"\n=== h = {h}, допуск {args.tol:g} бп ===")
@@ -631,6 +639,14 @@ def main(argv: list[str] | None = None) -> int:
         help="минимум событий на обучении для допустимой точки; только с --freq-band, "
         f"0 — по полосе ({SLOW_MIN_CALIBRATION_EVENTS} ниже {CALIBRATION_FREQ_RANGE[0]:g} в неделю, "
         f"иначе {MIN_CALIBRATION_EVENTS})",
+    )
+    b.add_argument(
+        "--holiday-filter",
+        type=int,
+        default=0,
+        metavar="K",
+        help="политика молчит в K последних днях публикации перед нерабочим днём страны-получателя "
+        "коридора (замер Ш1, docs/decisions/holidays-experiment.md); 0 — фильтр выключен",
     )
     b.add_argument("--out", default="", help="каталог варианта внутри reports/ (обязателен для вариантов)")
     b.set_defaults(func=cmd_backtest)

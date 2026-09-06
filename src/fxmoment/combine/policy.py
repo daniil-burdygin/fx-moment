@@ -39,6 +39,9 @@ class PolicyParams:
     storm_vol_window: int = 20  # реализованная волатильность за N дней публикации
     storm_rank_window: int = 250  # её ранг в скользящем году
     storm_rank: float = 0.95  # ранг выше → шторм, пуши BUY_NOW не уходят (> 1 отключает правило)
+    # K последних дней публикации перед нерабочим днём страны-получателя, в которые поток молчит
+    # (замер Ш1, `docs/decisions/holidays-experiment.md`); 0 — фильтр выключен
+    holiday_filter: int = 0
     # база, на которой ранг и отключение считают lift и выгоду: окно (ADR-0006, головная) или
     # календарный месяц (ADR-0011, вариант «ранг на месячной базе»)
     rank_base: str = "window"
@@ -51,12 +54,18 @@ def apply_policy(
     params: PolicyParams | None = None,
     prior_sent: dict[str, list[tuple[pd.Timestamp, str]]] | None = None,
     storm: pd.Series | None = None,
+    holiday: pd.Series | None = None,
 ) -> pd.DataFrame:
-    """Решение по каждому событию: sent / muted / thinned / cooldown / storm.
+    """Решение по каждому событию: sent / muted / thinned / cooldown / storm / holiday.
 
     storm — булев ряд по календарю (см. storm_flag): в день шторма пуш BUY_NOW не уходит —
     «переводите сейчас» в день обвала и есть самая дорогая ошибка; WINDOW_CLOSING в шторм тоже
     молчит, потому что отскок в шторм ничего не подтверждает.
+
+    holiday — булев ряд по календарю (см. `combine.evaluate.holiday_flag`): предпраздничное окно
+    страны-получателя, в котором поток молчит. Курс к получателю перед праздником задран спросом,
+    и пуши потока в этом окне измеримо хуже остальных (замер Ш1). Снятый пуш охлаждения не
+    начинает — как и снятый штормом.
 
     rank: индикатор → ранг надёжности (меньше = надёжнее). calendar — дни публикации коридора
     (лучше весь ряд: тогда позиции глобальны и история `prior_sent` переносится через границы
@@ -91,6 +100,9 @@ def apply_policy(
                 out.loc[i, "decision"] = "thinned"
             if storm is not None and bool(storm.get(day, False)):
                 out.loc[chosen, "decision"] = "storm"
+                continue
+            if holiday is not None and bool(holiday.get(day, False)):
+                out.loc[chosen, "decision"] = "holiday"
                 continue
             if sent and p - sent[-1][0] <= params.cooldown_days:
                 out.loc[chosen, "decision"] = "cooldown"
