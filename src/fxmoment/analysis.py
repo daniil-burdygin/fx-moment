@@ -1020,6 +1020,17 @@ def plot_frontier(
     plt.close(fig)
 
 
+def evening_gate_or_empty(decided: pd.DataFrame | None, panel: pd.DataFrame) -> pd.DataFrame:
+    """Вечерний гейт по снимку фьючерсов; без снимка или без решений — пустая таблица со
+    столбцами, а не выдуманные числа."""
+    from fxmoment.data.store import FORTS_CSV, load_forts_raw
+    from fxmoment.evening import COLUMNS, evening_gate_table
+
+    if decided is None or not len(decided) or not FORTS_CSV.exists():
+        return pd.DataFrame(columns=COLUMNS)
+    return evening_gate_table(decided, panel, load_forts_raw())
+
+
 # ---------------------------------------------------------------- запись
 
 
@@ -1134,6 +1145,8 @@ def _final_analyses(
     survival.to_csv(out / "execution_survival.csv", index=False)
     regret = reversal_regret_table(result.signals, decided, panel, result.splits)
     regret.to_csv(out / "reversal_regret.csv", index=False)
+    evening = evening_gate_or_empty(decided, panel)
+    evening.to_csv(out / "evening_gate.csv", index=False)
     from fxmoment.client_window import client_window_tables
 
     cw_windows, cw_summary = client_window_tables(panel, result.splits, decided, corridors=ran)
@@ -1144,6 +1157,7 @@ def _final_analyses(
         "calendar_vs_stack": cal_cmp,
         "survival": survival,
         "regret": regret,
+        "evening_gate": evening,
         "client_window": cw_summary,
     }
 

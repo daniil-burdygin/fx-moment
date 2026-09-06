@@ -1,4 +1,4 @@
-"""CLI: fetch / fetch-moex / compare-sources / backtest / intraday / analyze /
+"""CLI: fetch / fetch-moex / fetch-forts / compare-sources / backtest / intraday / analyze /
 signals --as-of [--decide] / check-texts."""
 
 from __future__ import annotations
@@ -14,6 +14,7 @@ import pandas as pd
 
 from fxmoment.config import ALL_CURRENCIES, ANALYSIS_START, CORRIDORS, FIRST_TEST, MOEX_RAW_START, RAW_START
 
+FORTS_URL_FOR_META = "https://iss.moex.com/iss/engines/futures/markets/forts/securities"
 PROTECTED_RUNS = ("latest", "fixed", "intraday")  # каталоги основных отчётов: варианты сюда не пишутся
 
 
@@ -42,6 +43,22 @@ def cmd_fetch_moex(args: argparse.Namespace) -> int:
     print(f"{len(df)} свечей → {MOEX_CSV}")
     for cur, n in sorted(per.items()):
         print(f"  {cur}: {n}")
+    return 0
+
+
+def cmd_fetch_forts(args: argparse.Namespace) -> int:
+    from fxmoment.data.forts import FORTS_ASSETS, fetch_all
+    from fxmoment.data.store import FORTS_CSV, save_forts_raw
+
+    start = date.fromisoformat(args.start)
+    end = date.today()
+    assets = tuple(args.assets.split(",")) if args.assets else tuple(FORTS_ASSETS)
+    df = fetch_all(start, end, assets, interval=args.interval)
+    save_forts_raw(df, FORTS_URL_FOR_META, args.start, end.isoformat(), args.interval)
+    print(f"{len(df)} свечей → {FORTS_CSV}")
+    for asset, g in sorted(df.groupby("asset")):
+        span = f"{g['begin'].min()} … {g['begin'].max()}"
+        print(f"  {asset}: {len(g)} баров, {g['secid'].nunique()} контрактов, {span}")
     return 0
 
 
@@ -234,6 +251,30 @@ def cmd_analyze(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_evening_gate(args: argparse.Namespace) -> int:
+    """Только таблица вечернего гейта: остальные отчёты не трогает, чтобы её можно было добавить
+    в ветке, не пересобирая `reports/latest` целиком."""
+    from fxmoment.analysis import evening_gate_or_empty
+    from fxmoment.data.store import load_panel
+
+    out = Path(args.out_dir) / "analysis"
+    out.mkdir(parents=True, exist_ok=True)
+    decisions = out.parent / "stream_decisions.csv"
+    if not decisions.exists():
+        print(f"нет {decisions}: сначала прогон backtest")
+        return 2
+    table = evening_gate_or_empty(pd.read_csv(decisions, parse_dates=["date"]), load_panel())
+    if table.empty:
+        print("нет снимка фьючерсов (`fxmoment fetch-forts`) — таблица пуста")
+    path = out / "evening_gate.csv"
+    table.to_csv(path, index=False)
+    pd.set_option("display.width", 300)
+    show = table[table["corridor"].isin(("all", "CNY"))]
+    print(show.round(4).to_string(index=False))
+    print(f"\n→ {path}")
+    return 0
+
+
 def cmd_signals(args: argparse.Namespace) -> int:
     from fxmoment.backtest import signals_as_of
     from fxmoment.data.store import load_panel
@@ -409,6 +450,22 @@ def main(argv: list[str] | None = None) -> int:
         help="код интервала ISS (не минуты): 1 — минута, 10, 60 — час, 24 — день, 7 — неделя",
     )
     fm.set_defaults(func=cmd_fetch_moex)
+
+    ff = sub.add_parser(
+        "fetch-forts",
+        help="выгрузить часовые свечи фронт-контрактов срочного рынка (Si, CR) в data/raw/",
+    )
+    ff.add_argument("--start", default=FIRST_TEST)
+    ff.add_argument("--assets", default="", help="через запятую, по умолчанию USD,CNY")
+    ff.add_argument("--interval", type=int, default=60, help="код интервала ISS (не минуты)")
+    ff.set_defaults(func=cmd_fetch_forts)
+
+    eg = sub.add_parser(
+        "evening-gate",
+        help="вечерний гейт по фьючерсам → <out-dir>/analysis/evening_gate.csv (только эта таблица)",
+    )
+    eg.add_argument("--out-dir", default=str(Path("reports") / "latest"))
+    eg.set_defaults(func=cmd_evening_gate)
 
     cs = sub.add_parser(
         "compare-sources", help="сверка биржевого закрытия с фиксингом ЦБ → reports/intraday/"
