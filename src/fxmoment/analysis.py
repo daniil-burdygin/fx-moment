@@ -1139,13 +1139,36 @@ def _final_analyses(
     cw_windows, cw_summary = client_window_tables(panel, result.splits, decided, corridors=ran)
     cw_windows.to_csv(out / "client_window_windows.csv", index=False)
     cw_summary.to_csv(out / "client_window.csv", index=False)
+    minfin = _minfin_regime(result, panel, out, decided, ran)
     return {
         "calendar": cal_sum,
         "calendar_vs_stack": cal_cmp,
         "survival": survival,
         "regret": regret,
         "client_window": cw_summary,
+        "minfin": minfin,
     }
+
+
+def _minfin_regime(
+    result: BacktestResult,
+    panel: pd.DataFrame,
+    out: Path,
+    decided: pd.DataFrame | None,
+    ran: tuple[str, ...],
+) -> pd.DataFrame:
+    """Разрез по режиму бюджетного правила (строка Ш14 плана). Снимка нет — таблицы нет: выдумывать
+    режим по календарю нельзя, это был бы признак без источника."""
+    from fxmoment import minfin
+
+    try:
+        ann = minfin.load_announcements()
+    except FileNotFoundError:
+        return pd.DataFrame()
+    window = (result.splits[0].test_start, result.splits[-1].test_end)
+    table = minfin.regime_table(panel, result.signals, decided, window, corridors=ran, ann=ann)
+    table.to_csv(out / "minfin_regime.csv", index=False)
+    return table
 
 
 def _py(v: Any) -> Any:
@@ -1311,6 +1334,8 @@ def _analysis_readme(
         "spread_p90_dev_bps",
     ]
     regret = extra.get("regret", pd.DataFrame())
+    minfin_tbl = extra.get("minfin", pd.DataFrame())
+    minfin_all = minfin_tbl[minfin_tbl["corridor"] == "all"] if len(minfin_tbl) else minfin_tbl
     pw_cols = [
         "corridor",
         "n_fast",
@@ -1577,5 +1602,19 @@ def _analysis_readme(
         "дням окна события.",
         "",
         _md(regret) if len(regret) else "нет данных",
+        "",
+        "## Режим бюджетного правила: покупка, продажа, пауза",
+        "",
+        "Минфин России в третий рабочий день месяца объявляет, покупает он валюту и золото на "
+        "внутреннем рынке или продаёт, называет период и ежедневный объём; операции зеркалирует Банк "
+        "России. Объявление известно заранее и с датой, поэтому режим дня T — каузальный признак: в "
+        "него входят только строки снимка с `announce_date ≤ T`. Снимок и его дыры — "
+        "`data/minfin_fx_operations.csv` и `data/minfin_fx_operations.md`. `base_mean` — случайный "
+        "день **того же режима**, иначе таблица мерила бы не сигнал, а сам режим. Интервал — блочный "
+        "бутстреп по календарным месяцам; строки `sell−buy` и `none−buy` — разница между режимами, "
+        "блоки каждого режима пересобираются независимо (месяц целиком принадлежит одному режиму, "
+        "парности быть не может). Все строки — `minfin_regime.csv`.",
+        "",
+        _md(minfin_all) if len(minfin_all) else "нет данных",
     ]
     return "\n".join(lines)
