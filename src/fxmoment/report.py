@@ -45,7 +45,13 @@ def git_hash() -> str:
         head = run("rev-parse", "--short", "HEAD")
         # неотслеженные файлы тоже грязь: новый модуль меняет поведение, оставаясь вне индекса
         changed = run(
-            "status", "--porcelain", "--", ".", ":(exclude)reports", ":(exclude)data/raw/*.meta.json"
+            "status",
+            "--porcelain",
+            "--",
+            ".",
+            ":(exclude)reports",
+            ":(exclude)data/raw/*.meta.json",
+            ":(exclude)data/derived/*.meta.json",
         )
         dirty = "-dirty" if changed else ""
         return head + dirty
@@ -71,7 +77,7 @@ def write_report(
     notes: dict[str, Any] | None = None,
 ) -> Path:
     """`policy` — параметры политики потока (`PolicyParams`); None — умолчания. `notes` — условия
-    варианта, которых нет в политике (`ml`: local | pooled, `extra_indicators`). Вариант ранга,
+    варианта, которых нет в политике (`ml`: local | pooled, `ml_features`, `extra_indicators`). Вариант ранга,
     начало первого окна и заметки пишутся в провенанс, чтобы каталог варианта нельзя было принять
     за основной."""
     from fxmoment.combine import PolicyParams
@@ -118,6 +124,8 @@ def write_report(
     variant = "" if policy.rank_base == "window" else f"; ранг индикаторов на базе «{policy.rank_base}»"
     if notes.get("ml") == "pooled":
         variant += "; обучаемый один на коридоры прогона"
+    if notes.get("ml_features"):
+        variant += "; признаки обучаемого " + ", ".join(f"`{f}`" for f in notes["ml_features"])
     if notes.get("extra_indicators"):
         variant += "; добавлен " + ", ".join(f"`{i}`" for i in notes["extra_indicators"])
     lines = [

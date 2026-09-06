@@ -27,6 +27,7 @@ from fxmoment.config import (
     PRIMARY_TOL_BPS,
     TOLERANCES_BPS,
 )
+from fxmoment.data.forecast import is_forecast_column
 from fxmoment.indicators import ALL_INDICATORS, Indicator
 from fxmoment.indicators.features import enrich_context
 
@@ -273,13 +274,17 @@ def context_columns(
     context: tuple[str, ...],
     corridors: tuple[str, ...] = (),
     indicators: tuple[type[Indicator], ...] = (),
+    ml_features: tuple[str, ...] = (),
 ) -> list[str]:
     """Столбцы контекста: валюты `context`; плюс ряды коридоров прогона, когда среди индикаторов есть
-    объединённый (`pooled`, 💬 03.09 вечер, пункт 5) — ему нужны чужие ряды в обучении. Без него
-    список тот же, что и раньше, и матрица прогона по умолчанию не меняется."""
+    объединённый (`pooled`, 💬 03.09 вечер, пункт 5) — ему нужны чужие ряды в обучении; плюс
+    прогнозные столбцы снимка TimesFM при `--ml-features timesfm`. Без флагов список тот же, что и
+    раньше, и матрица прогона по умолчанию не меняется."""
     cols = [c for c in context if c in panel.columns]
     if any(getattr(cls, "pooled", False) for cls in indicators):
         cols += [c for c in corridors if c in panel.columns and c not in cols]
+    if "timesfm" in ml_features:
+        cols += [c for c in panel.columns if is_forecast_column(c) and c not in cols]
     return cols
 
 
@@ -297,6 +302,7 @@ def run_backtest(
     bounds: tuple[float, float, int] | None = None,
     context: tuple[str, ...] = CONTEXT,
     first_test: str = FIRST_TEST,
+    ml_features: tuple[str, ...] = (),
 ) -> BacktestResult:
     """`calibration_h`, `grid_scale` и `context` задаются профилем ряда (ADR-0010): по умолчанию —
     дневная ось ЦБ, на часовой оси Мосбиржи горизонт и окна сеток в барах. `bounds` профилем не
@@ -305,13 +311,13 @@ def run_backtest(
     общие с прогоном по умолчанию, обязаны дать те же строки матрицы."""
     ana = panel.loc[pd.Timestamp(analysis_start) :]
     splits = splits or make_splits(ana.index, first_test=first_test)
-    ctx_all = panel[context_columns(panel, context, corridors, indicators)]
+    ctx_all = panel[context_columns(panel, context, corridors, indicators, ml_features)]
     sig_rows: list[dict] = []
     mat_rows: list[dict] = []
     cal_rows: list[dict] = []
     for corridor in corridors:
         rate = panel[corridor].dropna()
-        ctx = enrich_context(rate, ctx_all, scale=grid_scale)
+        ctx = enrich_context(rate, ctx_all, scale=grid_scale, ml_features=ml_features)
         for split in splits:
             rate_train = rate.loc[: split.train_end]
             ctx_train = ctx.loc[: split.train_end]
@@ -387,6 +393,7 @@ def signals_as_of(
     splits: list[Split] | None = None,
     lookback: int = 0,
     fixed_params: bool = False,
+    ml_features: tuple[str, ...] = (),
 ) -> pd.DataFrame:
     """Состояние всех индикаторов на дату среза — по данным с pub_date ≤ cutoff и параметрам,
     откалиброванным на окне, которое действует в эту дату; после последнего тестового окна — на
@@ -401,11 +408,11 @@ def signals_as_of(
     splits = splits or make_splits(ana.index)
     split = split_for_date(splits, cutoff, ana.index)  # после последнего окна — живое окно
     avail = panel.loc[:cutoff]
-    ctx_all = avail[context_columns(avail, CONTEXT, corridors, indicators)]
+    ctx_all = avail[context_columns(avail, CONTEXT, corridors, indicators, ml_features)]
     rows: list[dict] = []
     for corridor in corridors:
         rate = avail[corridor].dropna()
-        ctx = enrich_context(rate, ctx_all)
+        ctx = enrich_context(rate, ctx_all, ml_features=ml_features)
         rate_train = rate.loc[: split.train_end]
         ctx_train = ctx.loc[: split.train_end]
         for cls in indicators:

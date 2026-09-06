@@ -10,8 +10,9 @@ import pandas as pd
 from sklearn.ensemble import HistGradientBoostingClassifier
 
 from fxmoment.config import BUY_NOW, CORRIDORS
+from fxmoment.data.forecast import is_forecast_column, split_column
 from fxmoment.indicators.base import Indicator, rearm_events, rolling_pct_rank
-from fxmoment.indicators.features import build_features
+from fxmoment.indicators.features import EURUSD_KEY, build_features
 from fxmoment.labels import benefit_fwd_bps, local_min_label
 
 
@@ -180,15 +181,14 @@ class LearnedMinimumPooled(LearnedMinimum):
         """Обучение на объединённых строках коридоров до даты среза; дата среза и дни валидации — те
         же, что у `LearnedMinimum` на своём коридоре (последние 20 % его строк), так что отличается
         только модель. Признаки чужих коридоров считаются на контексте без служебного кэша
-        `_rank_*` (он посчитан по своему ряду)."""
+        `_rank_*` (он посчитан по своему ряду) и с прогнозными столбцами своего ряда."""
         own = _corridor_of(rate)
         others = [c for c in CORRIDORS if c != own and context is not None and c in context.columns]
-        plain = _currency_context(context)
         xs: dict[str, pd.DataFrame] = {}
         ys: dict[str, pd.Series] = {}
         for c in (own, *others):
             r = rate if c == own else context[c].dropna()  # type: ignore[index]
-            x = self._features(r, context if c == own else plain)
+            x = self._features(r, context if c == own else _currency_context(context, c))
             y = local_min_label(r, self.h, self.tol_bps)
             ok = x.notna().all(axis=1) & y.notna()
             if train_start is not None:
@@ -231,11 +231,23 @@ def _corridor_of(rate: pd.Series) -> str:
     return "" if rate.name is None else str(rate.name)
 
 
-def _currency_context(context: pd.DataFrame | None) -> pd.DataFrame | None:
-    """Контекст без служебных столбцов `_rank_*`, `_dsm_*`: они посчитаны по своему ряду."""
+def _currency_context(context: pd.DataFrame | None, corridor: str = "") -> pd.DataFrame | None:
+    """Контекст для чужого коридора в объединённом обучении: валютные столбцы без служебных
+    `_rank_*` и `_dsm_*` (они посчитаны по своему ряду), плюс производные включённых наборов
+    ML-признаков. `_eurusd` и `_usd_fc_*` от коридора не зависят и переносятся как есть, а прогноз
+    привязан к ряду — чужому коридору кладётся его собственный (`<коридор>_fc_<признак>`), иначе
+    строки чужих коридоров ушли бы в обучение без этих признаков, а не с их значениями."""
     if context is None:
         return None
-    return context[[c for c in context.columns if not str(c).startswith("_")]]
+    plain = [c for c in context.columns if not str(c).startswith("_")]
+    shared = [c for c in context.columns if str(c) == EURUSD_KEY or str(c).startswith("_usd_fc_")]
+    out = context[plain + shared].copy()
+    for col in plain:
+        if is_forecast_column(col):
+            ccy, feat = split_column(str(col))
+            if ccy == corridor:
+                out[f"_fc_{feat}"] = context[col]
+    return out
 
 
 def _choose_threshold(
