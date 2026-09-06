@@ -17,27 +17,35 @@
 
 /* ═══ Токены ═══════════════════════════════════════════════════════════════
    Значения сняты с Альфа-Онлайн (тёмная тема, 375×812) и совпадают с переменными
-   бандла core-components-styles: имя переменной приложения указано в комментарии. */
+   бандла core-components-styles: имя переменной приложения указано в комментарии.
+   Замер экранов перевода — 06.09.2026, web.alfabank.ru. */
 :root{
   --color-bg-primary:#121213;                    /* color-dark-base-bg-primary */
   --color-bg-secondary:#1c1c1e;                  /* color-dark-base-bg-secondary */
   --color-specialbg-transparent:rgba(214,214,229,.07); /* color-dark-specialbg-secondary-transparent */
+  --color-icon-button-bg:rgba(255,255,255,.04);  /* круглые кнопки «назад» и «×», замер 06.09 */
   --color-text-primary:#fffffff0;                /* color-dark-text-primary, rgba(255,255,255,.94) */
   --color-text-secondary:#eeeefb8c;              /* color-dark-text-secondary, rgba(238,238,251,.55) */
   --color-text-tertiary:#e9e9fa5e;               /* color-dark-text-tertiary */
   --color-accent-primary:#f83a2a;                /* color-dark-accent-primary */
   --color-accent-press:#d92a1c;
+  --color-accent-secondary:#f2f3f5;              /* color-dark-accent-secondary — фон главной кнопки */
+  --color-text-primary-inverted:rgba(3,3,6,.88); /* color-dark-text-primary-inverted — текст на ней */
+  --color-status-info:#3193fc;                   /* color-dark-status-info — тег «Быстро» */
   --color-status-negative:#ff4837;               /* color-dark-status-negative */
   --color-status-positive:#17d055;               /* color-dark-status-positive */
   --color-border-primary:#36363a;                /* color-dark-border-primary */
   --color-border-secondary:#27272a;              /* color-dark-border-secondary */
   --color-status-attention:#ffb800;
 
-  --border-radius-8:8px; --border-radius-12:12px; --border-radius-20:20px; --border-radius-24:24px;
+  --border-radius-8:8px; --border-radius-10:10px; --border-radius-12:12px; --border-radius-16:16px;
+  --border-radius-20:20px; --border-radius-24:24px;
   --gap-4:4px; --gap-8:8px; --gap-12:12px; --gap-14:14px; --gap-16:16px; --gap-20:20px; --gap-24:24px;
 
   --font-family-alfasans:"Alfa Interface Sans",system-ui,-apple-system,"Segoe UI",Roboto,
     "Helvetica Neue",Helvetica,sans-serif;
+  /* Заголовки модалок приложения набраны Styrene UI; файла на CDN нет, фолбэк — тот же гротеск 500. */
+  --font-family-styrene:"Styrene UI",var(--font-family-alfasans);
 
   --phone-w:390px; --phone-h:844px;
 }
@@ -89,12 +97,22 @@ h1{margin:5px 0 8px;font-size:26px;line-height:1.15;letter-spacing:-.01em;font-w
 .homebar i{display:block;width:134px;height:5px;border-radius:99px;background:rgba(255,255,255,.32)}
 
 /* ── навигационная строка приложения (navigation-bar) ───────────────────── */
-.navbar{flex:0 0 auto;display:flex;align-items:center;gap:var(--gap-8);padding:6px var(--gap-12);
-  min-height:44px}
-.navbar .back{width:32px;height:32px;flex:0 0 32px;display:flex;align-items:center;justify-content:center;
-  border-radius:var(--border-radius-8);color:var(--color-text-primary);font-size:22px;line-height:1;cursor:default}
-.navbar .ttl{font-size:18px;font-weight:700;letter-spacing:-.01em}
-.navbar .sub{font-size:12px;color:var(--color-text-secondary);margin-top:1px}
+.navbar{flex:0 0 auto;display:flex;align-items:center;gap:var(--gap-12);padding:4px var(--gap-16) 2px;
+  min-height:56px}
+/* Круглая иконка-кнопка приложения: 48 px, подложка rgba(255,255,255,.04). */
+.navbar .back{width:48px;height:48px;flex:0 0 48px;display:flex;align-items:center;justify-content:center;
+  border-radius:50%;background:var(--color-icon-button-bg);color:var(--color-text-primary);
+  font-size:24px;line-height:1;cursor:default}
+.navbar .sub{font-size:13px;color:var(--color-text-secondary);line-height:18px}
+
+/* ── заголовки экранов (замер 06.09: форма 26/500, списки 30/700, модалка 32/500) ── */
+.h-form{font-size:26px;font-weight:500;line-height:32px;letter-spacing:-.25px;margin:var(--gap-8) 0 var(--gap-16)}
+.h-list{font-size:30px;font-weight:700;line-height:36px;letter-spacing:.1px;margin:var(--gap-8) 0 var(--gap-16)}
+.h-modal{font-family:var(--font-family-styrene);font-size:32px;font-weight:500;line-height:40px;
+  letter-spacing:-.3px;margin:0 0 var(--gap-12)}
+.h-form .sub,.h-list .sub,.h-modal .sub{display:block;font-family:var(--font-family-alfasans);
+  font-size:14px;font-weight:400;line-height:20px;letter-spacing:0;color:var(--color-text-secondary);
+  margin-top:var(--gap-4)}
 
 #body{flex:1 1 auto;min-height:0;display:flex;flex-direction:column}
 .viewport{flex:1 1 auto;min-height:0;overflow:auto;padding:0 var(--gap-16) var(--gap-8);scrollbar-width:none}
@@ -102,13 +120,13 @@ h1{margin:5px 0 8px;font-size:26px;line-height:1.15;letter-spacing:-.01em;font-w
 .ctabar{flex:0 0 auto;padding:6px var(--gap-16) 10px}
 
 /* ── нижняя панель вкладок (tab-bar) ────────────────────────────────────── */
-.tabbar{flex:0 0 auto;display:flex;justify-content:center;background:var(--color-bg-primary);
-  box-shadow:0 -1px 0 0 var(--color-border-secondary)}
+.tabbar{flex:0 0 auto;display:flex;justify-content:center;gap:2px;padding:4px 6px 2px;
+  background:var(--color-bg-primary)}
 .tabbar .tab{flex:1 0 0;display:flex;flex-direction:column;align-items:center;
-  padding:10px 0 6px;color:var(--color-text-tertiary);gap:2px}
-.tabbar .tab.on{color:var(--color-accent-primary)}
-.tabbar .tab .lb{font-size:10px;line-height:13px;font-weight:500;color:var(--color-text-secondary)}
-.tabbar .tab.on .lb{color:inherit}
+  padding:8px 0 7px;color:var(--color-text-secondary);gap:3px;border-radius:var(--border-radius-16)}
+/* Активная вкладка — на плашке #1c1c1e с радиусом 16 (замер 06.09), а не подсветкой цветом. */
+.tabbar .tab.on{background:var(--color-bg-secondary);color:var(--color-text-primary)}
+.tabbar .tab .lb{font-size:14px;line-height:18px;font-weight:400;color:inherit;letter-spacing:-.2px}
 .tabbar svg{width:24px;height:24px;display:block}
 
 /* ── экран блокировки ───────────────────────────────────────────────────── */
@@ -151,12 +169,41 @@ h1{margin:5px 0 8px;font-size:26px;line-height:1.15;letter-spacing:-.01em;font-w
 .cell .s{font-size:14px;font-weight:400;color:var(--color-text-secondary);line-height:18px;margin-top:1px}
 .cell .r{flex:0 0 auto;font-size:14px;color:var(--color-text-secondary);display:flex;align-items:center;gap:6px}
 .cell .chev{color:var(--color-text-tertiary);font-size:19px;line-height:1}
-.cell .radio{width:22px;height:22px;flex:0 0 22px;border-radius:50%;border:1.5px solid var(--color-border-primary)}
-.cell .radio.on{border-color:var(--color-accent-primary)}
-.cell .radio.on::after{content:"";display:block;width:12px;height:12px;border-radius:50%;
-  background:var(--color-accent-primary);margin:3.5px auto}
 .cell.edit .k{color:var(--color-text-secondary);font-size:12px;font-weight:400}
 .cell.edit .v{font-size:16px;font-weight:500;line-height:22px}
+
+/* ── поля формы (input, select) ─────────────────────────────────────────────
+   Замер 06.09: карточка rgba(214,214,229,.07), радиус 10, высота 72, отступы 16;
+   плавающая подпись 14 px вторичным над значением 16/500. */
+.field{display:flex;align-items:center;gap:var(--gap-12);width:100%;min-height:72px;border:0;
+  background:var(--color-specialbg-transparent);border-radius:var(--border-radius-10);
+  padding:var(--gap-12) var(--gap-16);margin-bottom:var(--gap-8);
+  font:inherit;color:inherit;text-align:left;cursor:pointer}
+.field .ic{width:24px;height:24px;flex:0 0 24px;color:var(--color-text-secondary)}
+.field .ic svg{width:24px;height:24px}
+.field .txt{flex:1 1 auto;min-width:0}
+.field .lb{display:block;font-size:14px;font-weight:400;line-height:18px;color:var(--color-text-secondary)}
+.field .vl{display:block;font-size:16px;font-weight:500;line-height:22px;margin-top:2px}
+.field .vl.ph{font-weight:400;color:var(--color-text-secondary)}
+.field .chev{flex:0 0 auto;color:var(--color-text-secondary);font-size:13px;line-height:1}
+.field-hint{font-size:14px;font-weight:400;line-height:18px;color:var(--color-text-secondary);
+  margin:0 2px var(--gap-12);padding-top:2px}
+
+/* ── карточки способа перевода (замер 06.09, модалка «Перевод в Таджикистан») ── */
+.mcard{display:flex;align-items:center;gap:var(--gap-12);width:100%;background:var(--color-bg-secondary);
+  border-radius:var(--border-radius-16);padding:var(--gap-14) var(--gap-16);margin-bottom:var(--gap-8);
+  text-align:left}
+.mcard .txt{flex:1 1 auto;min-width:0}
+.mcard .n{font-size:16px;font-weight:500;line-height:22px}
+.mcard .s{font-size:13px;font-weight:400;line-height:18px;color:var(--color-text-secondary);margin-top:2px}
+.mcard .tag{display:inline-block;margin-top:6px;border-radius:99px;padding:1px 8px;
+  font-size:13px;line-height:18px}
+.mcard .tag.info{background:var(--color-status-info);color:#fff}
+.mcard .tag.mute{background:var(--color-specialbg-transparent);color:var(--color-text-secondary)}
+/* Иллюстрация 132×132 подгружается с CDN приложения; офлайн место остаётся пустым. */
+.mcard .ill{flex:0 0 108px;width:108px;height:108px;background-repeat:no-repeat;
+  background-position:center;background-size:contain}
+.mcard.on{box-shadow:inset 0 0 0 1.5px var(--color-border-primary)}
 
 /* ── карточка факта ─────────────────────────────────────────────────────── */
 .fact .t{font-size:16px;font-weight:700;line-height:1.25}
@@ -189,15 +236,15 @@ h1{margin:5px 0 8px;font-size:26px;line-height:1.15;letter-spacing:-.01em;font-w
 .money div+div{margin-top:6px}
 
 /* ── суммовое поле (amount-input) ───────────────────────────────────────── */
-.amt{background:var(--color-bg-secondary);border-radius:var(--border-radius-12);padding:var(--gap-16);
-  margin-bottom:var(--gap-12)}
-.amt .lab{font-size:12px;color:var(--color-text-secondary)}
-.amt .val{font-size:38px;font-weight:700;letter-spacing:-.02em;line-height:1.15;margin-top:2px;
+.amt{background:var(--color-specialbg-transparent);border-radius:var(--border-radius-10);
+  padding:var(--gap-16);margin-bottom:var(--gap-8)}
+.amt .lab{font-size:14px;line-height:18px;color:var(--color-text-secondary)}
+.amt .val{font-size:34px;font-weight:500;letter-spacing:-.02em;line-height:42px;margin-top:2px;
   display:flex;align-items:baseline}
 .amt .cur{margin-left:6px;color:var(--color-text-secondary);font-weight:500}
-.amt .caret{display:inline-block;width:2px;height:32px;background:var(--color-accent-primary);
+.amt .caret{display:inline-block;width:2px;height:30px;background:var(--color-accent-primary);
   margin-left:3px;align-self:center}
-.amt .hint{font-size:13px;color:var(--color-text-secondary);margin-top:var(--gap-12);line-height:1.4}
+.amt .hint{font-size:14px;color:var(--color-text-secondary);margin-top:var(--gap-12);line-height:18px}
 .amt .hint b{color:var(--color-text-primary);font-weight:500}
 .amt .free{margin-top:var(--gap-8);font-size:13px;font-weight:500;color:var(--color-status-positive)}
 .keys{display:grid;grid-template-columns:repeat(3,1fr);gap:var(--gap-8);margin-top:var(--gap-8)}
@@ -234,20 +281,36 @@ h1{margin:5px 0 8px;font-size:26px;line-height:1.15;letter-spacing:-.01em;font-w
   display:none;max-height:74%;overflow:auto;scrollbar-width:none}
 .phone.sheet-open .sheet-back,.phone.sheet-open .sheet{display:block}
 .sheet .marker{width:36px;height:4px;border-radius:99px;background:var(--color-border-primary);
-  margin:0 auto var(--gap-16)}
-.sheet h3{margin:0 0 var(--gap-12);font-size:22px;font-weight:700;letter-spacing:-.01em}
+  margin:0 auto var(--gap-12)}
+.sheet .hdr{display:flex;align-items:center;gap:var(--gap-12);margin-bottom:var(--gap-12)}
+.sheet h3{margin:0;flex:1 1 auto;font-size:20px;font-weight:700;line-height:26px;letter-spacing:-.01em}
+/* «×» в круге 32 px — замер 06.09. */
+.sheet .close{flex:0 0 32px;width:32px;height:32px;border:0;border-radius:50%;
+  background:var(--color-icon-button-bg);color:var(--color-text-secondary);
+  font:inherit;font-size:17px;line-height:1;cursor:pointer}
+.sheet .opt{display:flex;align-items:flex-start;gap:var(--gap-12);width:100%;background:none;border:0;
+  padding:var(--gap-12) 0;font:inherit;color:inherit;text-align:left;cursor:pointer}
+.sheet .opt .txt{flex:1 1 auto;min-width:0}
+.sheet .opt .n{display:block;font-size:16px;font-weight:400;line-height:22px}
+.sheet .opt .en{display:block;font-size:13px;font-weight:400;line-height:18px;
+  color:var(--color-text-secondary);margin-top:2px}
+.sheet .opt .mark{flex:0 0 auto;width:20px;color:var(--color-text-primary);font-size:16px;line-height:22px}
 .sheet dl{margin:0;display:grid;grid-template-columns:auto 1fr;gap:9px var(--gap-16);font-size:14px}
 .sheet dt{color:var(--color-text-secondary)}
 .sheet dd{margin:0;text-align:right;font-weight:500}
 .sheet p{font-size:13px;color:var(--color-text-secondary);line-height:1.5;margin:var(--gap-16) 0 0}
 .sheet code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12.5px}
 
-/* ── кнопки (button) ────────────────────────────────────────────────────── */
-.btn{display:block;width:100%;border:0;border-radius:var(--border-radius-12);padding:14px 16px;
-  font:inherit;font-size:16px;font-weight:500;cursor:pointer;text-align:center}
+/* ── кнопки (button) ────────────────────────────────────────────────────────
+   Главная кнопка приложения в тёмной теме светлая: #f2f3f5 — это
+   color-dark-accent-secondary, к которому в дизайн-системе привязан вид primary.
+   Красный остаётся на логотипе пуша, тегах и статусах. Замер 06.09.2026. */
+.btn{display:block;width:100%;border:0;border-radius:var(--border-radius-16);
+  min-height:56px;padding:0 27px;font:inherit;font-size:16px;font-weight:500;line-height:20px;
+  cursor:pointer;text-align:center}
 .btn+.btn{margin-top:var(--gap-8)}
-.btn.accent{background:var(--color-accent-primary);color:#fff}
-.btn.accent:active{background:var(--color-accent-press)}
+.btn.primary{background:var(--color-accent-secondary);color:var(--color-text-primary-inverted)}
+.btn.primary:active{background:#dcdee2}
 .btn.secondary{background:var(--color-specialbg-transparent);color:var(--color-text-primary)}
 .footnote{margin-top:6px;font-size:11.5px;color:var(--color-text-tertiary);text-align:center;line-height:1.4}
 
@@ -378,12 +441,27 @@ var PUSH = {
    knownAsOf — дата, до которой на экране стоит «ещё идёт». */
 var SIGNAL = { rate:7.66882, mean20:8.09146, known:"08.07.2026", knownIdx:109 };
 
-/* Единственные выдуманные данные — те же, что в index.html. */
+/* Единственные выдуманные данные — те же, что в index.html; назначение перевода
+   выбрано из списка приложения (замер 06.09), счёт списания назван без чисел. */
 var FORM = {
   country:"Таджикистан", flag:"🇹🇯", currency:"сомони",
   method:"По номеру телефона", phone:"+992 ·· ··· 45",
-  bank:"Амонатбонк", purpose:"Помощь семье"
+  bank:"Амонатбонк", account:"Текущий счёт ··0000",
+  purpose:"Безвозмездный перевод на текущие расходы",
+  purposeEn:"Non-repayable transfer for current expenses"
 };
+
+/* Иллюстрации способов перевода лежат на CDN приложения. В репозиторий они не копируются:
+   офлайн место 108×108 остаётся пустым, вёрстка не съезжает. */
+var CDN_ILL = "https://alfabank.servicecdn.ru/static/transfers/transfer-type-groups/";
+
+/* Список назначений перевода — как в шторке приложения; выбран второй пункт. */
+var PURPOSES = [
+  ["Себе на свой счёт", "Transfer on my own account"],
+  ["Безвозмездный перевод на текущие расходы", "Non-repayable transfer for current expenses"],
+  ["Перевод за услуги", "Payment for services"],
+  ["Оплата за товары для личных нужд", "Payment for goods for personal use"]
+];
 
 /* ═══ Счёт ═════════════════════════════════════════════════════════════════ */
 
@@ -411,7 +489,6 @@ var ICO = {
   chat:'<path d="M20.4 4.6H3.6v11.2h4.2v4.2l5.2-4.2h7.4z"/>',
   phone:'<path d="M8.2 3.6h7.6a1.6 1.6 0 0 1 1.6 1.6v13.6a1.6 1.6 0 0 1-1.6 1.6H8.2a1.6 1.6 0 0 1-1.6-1.6V5.2a1.6 1.6 0 0 1 1.6-1.6z"/><path d="M10.8 17.4h2.4"/>',
   card:'<rect x="3" y="5.6" width="18" height="12.8" rx="2.4"/><path d="M3 10h18"/>',
-  cash:'<rect x="3" y="6.4" width="18" height="11.2" rx="2"/><circle cx="12" cy="12" r="2.6"/>',
   user:'<circle cx="12" cy="8.4" r="3.6"/><path d="M4.8 20.4a7.2 7.2 0 0 1 14.4 0"/>',
   bank:'<path d="M3.6 9.6 12 4.2l8.4 5.4M5.4 9.6v9m4.2-9v9m4.8-9v9m4.2-9v9M3.6 19.8h16.8"/>',
   note:'<path d="M6 3.6h8.4L19.2 8v12.4H6z"/><path d="M8.8 12.8h6.4M8.8 16.2h6.4"/>',
@@ -435,9 +512,25 @@ function tabbar(active){
   return out + '</div>';
 }
 
-function navbar(title, sub){
-  return '<div class="navbar"><div class="back" aria-hidden="true">‹</div><div>'+
-    '<div class="ttl">'+title+'</div>'+(sub?'<div class="sub">'+sub+'</div>':'')+'</div></div>';
+/* Навигационная строка приложения: круглая иконка-кнопка 48 px и больше ничего —
+   заголовок экрана живёт в самом экране (замер 06.09). */
+function navbar(icon){
+  return '<div class="navbar"><div class="back" aria-hidden="true">'+(icon || "‹")+'</div></div>';
+}
+
+function heading(cls, title, sub){
+  return '<div class="'+(cls || "h-form")+'">'+title+
+    (sub ? '<span class="sub">'+sub+'</span>' : '')+'</div>';
+}
+
+function field(label, value, opt){
+  opt = opt || {};
+  return '<div class="field">'+
+    (opt.icon ? '<div class="ic">'+svg(ICO[opt.icon])+'</div>' : '')+
+    '<div class="txt"><div class="lb">'+label+'</div>'+
+    '<div class="vl'+(opt.placeholder ? ' ph' : '')+'">'+value+'</div></div>'+
+    (opt.chevron ? '<div class="chev">▾</div>' : '')+
+    '</div>';
 }
 
 function chart(endIdx){
@@ -484,7 +577,9 @@ function factCard(ctx){
 
 function sheetWhy(ctx){
   var pct = Math.round(PUSH.pctRank*100);
-  return '<div class="marker"></div><h3>Почему это сообщение</h3>'+
+  return '<div class="marker"></div>'+
+    '<div class="hdr"><h3>Почему это сообщение</h3>'+
+    '<button class="close" type="button" data-sheet="" aria-label="Закрыть">×</button></div>'+
     '<dl>'+
     '<dt>Индикатор</dt><dd>' + PUSH.indicator + '</dd>'+
     '<dt>Окно</dt><dd>' + PUSH.window + ' дней публикации (≈ 6 мес.)</dd>'+
@@ -499,18 +594,41 @@ function sheetWhy(ctx){
     '<button class="btn secondary" type="button" data-sheet="">Понятно</button>';
 }
 
-function methodList(){
+/* Три способа перевода — как в модалке приложения: подзаголовки со сроком и комиссией,
+   тег-пилюля, иллюстрация справа. Выбран первый: так же был сделан прошлый перевод. */
+function methodCards(){
   var rows = [
-    ["По номеру телефона", "Как в прошлом переводе · " + FORM.bank, "phone", true],
-    ["По номеру карты", "Карта банка получателя", "card", false],
-    ["Наличными", "Выдача в отделении партнёра", "cash", false]
-  ], out = '<div class="sect">Способ перевода</div><div class="card pad0">';
+    { n:"По номеру телефона", s:["Мгновенно до 1 млн ₽", "Без комиссии", "Как в прошлом переводе · " + FORM.bank],
+      tag:["Быстро","info"], ill:"phone.png", on:true },
+    { n:"По номеру карты", s:["За 1 день до 500 000 ₽", "Без комиссии"], ill:"card.png" },
+    { n:"По номеру счёта", s:["За 2-5 дней до 20 млн ₽", "Комиссия 1%"],
+      tag:["Высокий лимит","mute"], ill:"account.png" }
+  ];
+  var out = '<div class="sect">Способ перевода</div>';
   for (var i=0;i<rows.length;i++){
-    out += '<div class="cell"><div class="ic">'+svg(ICO[rows[i][2]])+'</div>'+
-      '<div class="txt"><div class="k">'+rows[i][0]+'</div><div class="s">'+rows[i][1]+'</div></div>'+
-      '<div class="radio'+(rows[i][3]?' on':'')+'"></div></div>';
+    var r = rows[i], subs = "";
+    for (var j=0;j<r.s.length;j++) subs += '<div class="s">'+r.s[j]+'</div>';
+    out += '<div class="mcard'+(r.on ? " on" : "")+'">'+
+      '<div class="txt"><div class="n">'+r.n+'</div>'+subs+
+      (r.tag ? '<span class="tag '+r.tag[1]+'">'+r.tag[0]+'</span>' : '')+'</div>'+
+      '<div class="ill" style="background-image:url('+CDN_ILL+r.ill+')" aria-hidden="true"></div>'+
+      '</div>';
   }
-  return out + '</div>';
+  return out;
+}
+
+function sheetPurpose(){
+  var out = '<div class="marker"></div>'+
+    '<div class="hdr"><h3>Выберите назначение перевода</h3>'+
+    '<button class="close" type="button" data-sheet="" aria-label="Закрыть">×</button></div>';
+  for (var i=0;i<PURPOSES.length;i++){
+    var on = PURPOSES[i][0] === FORM.purpose;
+    out += '<button class="opt" type="button" data-sheet="">'+
+      '<span class="txt"><span class="n">'+PURPOSES[i][0]+'</span>'+
+      '<span class="en">'+PURPOSES[i][1]+'</span></span>'+
+      '<span class="mark">'+(on ? "✓" : "")+'</span></button>';
+  }
+  return out + '<p>Назначение знает только банк получателя. Выбор назначения не меняет размер комиссии.</p>';
 }
 
 function deltaCard(ctx){
@@ -591,12 +709,13 @@ var SCREENS = [
     "<b>Факт с окном измерения</b> и курсом действия a_T — 7,66882 ₽ за 1 сомони, окно 120 дней публикации.",
     "<b>Мини-график 90 дней</b> публикации с точкой сегодняшнего курса: линия вниз — сомони дешевеет для отправителя.",
     "<b>«Почему это сообщение»</b> раскрывает шторку: индикатор, окно, процентиль, дата публикации, хеш прогона.",
+    "<b>Три способа перевода</b> со сроком, лимитом и комиссией — как в приложении; выбран первый: так же был сделан прошлый перевод.",
     "Курс и факт берутся в момент открытия экрана, а не из уведомления."
   ],
-  nav:["Перевод в Таджикистан","Сомони · курс ЦБ РФ"],
+  nav:["Перевод<br>в Таджикистан","Сомони · курс ЦБ РФ"], head:"h-modal", navIcon:"×",
   tab:"Платежи",
-  render:function(ctx){ return factCard(ctx) + methodList(); },
-  cta:[["Продолжить","accent","go:2"]],
+  render:function(ctx){ return factCard(ctx) + methodCards(); },
+  cta:[["Продолжить","primary","go:2"]],
   acts:[
     ["Продолжить", "К получателю и назначению", "go:2", true],
     ["Открыть «Почему это сообщение»", "Индикатор, окно, процентиль, хеш прогона", "sheet:why", false]
@@ -607,30 +726,32 @@ var SCREENS = [
   id:"recipient", title:"Получатель и назначение",
   lede:"Предзаполнение включается, когда в коридоре есть повторяющийся получатель — не меньше двух из трёх последних переводов (star-task.md, «Предзаполнение формы»).",
   list:[
-    "<b>Три поля из истории переводов</b>: номер, банк получателя, назначение. Анкетных данных не требуется.",
+    "<b>Три поля из истории переводов</b>: номер, банк получателя, назначение; четвёртое — счёт списания. Анкетных данных не требуется.",
     "<b>Каждое поле редактируется</b> до подтверждения — предзаполнение экономит шаги, а не решает за клиента.",
+    "<b>Назначение открывает лист приложения</b> с четырьмя пунктами и английской расшифровкой каждого.",
     "<b>Получатель, банк и назначение — единственные выдуманные данные</b> прототипа: клиентских данных в проекте нет.",
     "Диплинк несёт коридор, получателя и идентификатор сигнала."
   ],
-  nav:["Получатель","Таджикистан · сомони"],
+  nav:["Перевод по номеру телефона","Таджикистан · сомони"],
   tab:"Платежи",
   render:function(){
-    var rows = [
-      ["Номер телефона получателя", FORM.phone, "phone"],
-      ["Банк получателя", FORM.bank, "bank"],
-      ["Назначение перевода", FORM.purpose, "note"]
-    ], out = '<p class="caption">Заполнено из ваших последних переводов в Таджикистан</p><div class="card pad0">';
-    for (var i=0;i<rows.length;i++){
-      out += '<div class="cell edit"><div class="ic">'+svg(ICO[rows[i][2]])+'</div>'+
-        '<div class="txt"><div class="k">'+rows[i][0]+'</div><div class="v">'+rows[i][1]+'</div></div>'+
-        '<div class="chev">›</div></div>';
-    }
-    out += '</div><p class="caption" style="margin-top:12px">Данные можно изменить до подтверждения перевода.</p>';
-    return out;
+    return '<p class="caption">Заполнено из ваших последних переводов в Таджикистан</p>'+
+      field("Счёт списания", FORM.account, {chevron:true})+
+      field("Номер телефона получателя", FORM.phone, {icon:"user"})+
+      field("Банк получателя", FORM.bank, {chevron:true})+
+      '<button class="field" type="button" data-sheet="purpose">'+
+        '<span class="txt"><span class="lb">Назначение перевода</span>'+
+        '<span class="vl">'+FORM.purpose+'</span></span><span class="chev">▾</span></button>'+
+      /* Подсказка приложения набрана в будущем времени («его будет знать»); чекер текстов
+         запрещает будущее, поэтому та же мысль стоит в настоящем. */
+      '<p class="field-hint">Назначение знает только банк получателя. Выбор назначения не влияет '+
+      'на размер комиссии.</p>'+
+      '<p class="caption">Данные можно изменить до подтверждения перевода.</p>';
   },
-  cta:[["Продолжить","accent","go:3"]],
+  cta:[["Продолжить","primary","go:3"]],
   acts:[
     ["Продолжить", "К сумме перевода", "go:3", true],
+    ["Открыть лист назначения", "Четыре пункта, выбран второй", "sheet:purpose", false],
     ["Назад к факту", "Экран перевода", "go:1", false]
   ]
 },
@@ -647,7 +768,8 @@ var SCREENS = [
   nav:["Сумма перевода","Таджикистан · сомони"],
   tab:"Платежи",
   render:function(ctx){
-    return '<div class="amt">'+
+    return field("Счёт списания", FORM.account, {chevron:true})+
+      '<div class="amt">'+
       '<div class="lab">Сумма перевода</div>'+
       '<div class="val">'+num(AMOUNT_RUB,0)+'<span class="cur">₽</span><span class="caret"></span></div>'+
       '<div class="hint">Получатель получит <b>'+num(somoni(ctx.rate),2)+' сомони</b> по курсу ЦБ '+
@@ -660,7 +782,7 @@ var SCREENS = [
         '<span>7</span><span>8</span><span>9</span><span></span><span>0</span><span>⌫</span>'+
       '</div>';
   },
-  cta:[["Продолжить","accent","go:4"]],
+  cta:[["Продолжить","primary","go:4"]],
   acts:[
     ["Продолжить", "К проверке перевода", "go:4", true],
     ["Назад к получателю", "Экран получателя", "go:2", false]
@@ -695,7 +817,7 @@ var SCREENS = [
       '</div>'+
       '<p class="caption">Курс ЦБ РФ на '+ctx.eff+'. Спред и комиссия банка в демо не моделируются.</p>';
   },
-  cta:[["Перевести","accent","go:5"]],
+  cta:[["Перевести","primary","go:5"]],
   acts:[
     ["Перевести", "Подтвердить перевод в демо", "go:5", true],
     ["Изменить сумму", "Экран суммы", "go:3", false]
@@ -758,7 +880,7 @@ var SCREENS = [
       '<p class="caption" style="margin-top:12px">Порог экрана — '+TOL_BPS+
       ' бп, половина медианного дневного шага. Расхождение меньше — открывается обычная форма перевода.</p>';
   },
-  cta:[["Посмотреть курс сейчас","accent","go:1"],["Напомнить при новом сигнале","secondary","go:7"]],
+  cta:[["Посмотреть курс сейчас","primary","go:1"],["Напомнить при новом сигнале","secondary","go:7"]],
   acts:[
     ["Посмотреть курс сейчас", "Экран перевода с текущим курсом", "go:1", true],
     ["Напомнить при новом сигнале", "Наблюдение вместо второго пуша", "go:7", false],
@@ -776,7 +898,7 @@ var SCREENS = [
     "<b>Тупика нет</b>: из экрана есть выход в обычный перевод и возврат в начало.",
     "Фактический поток по коридору — 0,38–0,65 пуша в неделю, серий нет (ADR-0006)."
   ],
-  nav:["Сигналы по переводам",""],
+  nav:["Сигналы по переводам",""], head:"h-list",
   render:function(){
     return '<div class="done">'+
       '<div class="ok accent">'+svg(ICO.bell,1.9)+'</div>'+
@@ -818,7 +940,8 @@ function readState(){
   if (m && SCREENS[+m[1]]) state.step = +m[1];
   m = /[?&]ctx=(live|changed|closed)/.exec(q);
   if (m) state.ctx = m[1];
-  if (/[?&]sheet=why/.test(q)) state.sheet = "why";
+  m = /[?&]sheet=(why|purpose)/.exec(q);
+  if (m) state.sheet = m[1];
   if (state.step === 6 && state.ctx === "live") state.ctx = "changed";
 }
 
@@ -837,8 +960,10 @@ function render(){
   document.getElementById("clock").textContent = s.clock || ctx.clock;
 
   var html = "";
-  if (s.nav) html += navbar(s.nav[0], s.nav[1]);
-  html += s.bare ? s.render(ctx) : '<div class="viewport">' + s.render(ctx) + '</div>';
+  if (s.nav) html += navbar(s.navIcon);
+  html += s.bare ? s.render(ctx)
+    : '<div class="viewport">' +
+      (s.nav ? heading(s.head, s.nav[0], s.nav[1]) : "") + s.render(ctx) + '</div>';
   if (s.cta){
     html += '<div class="ctabar">';
     for (i=0;i<s.cta.length;i++)
@@ -849,7 +974,8 @@ function render(){
   if (s.tab) html += tabbar(s.tab);
   document.getElementById("body").innerHTML = html;
 
-  document.getElementById("sheet").innerHTML = state.sheet === "why" ? sheetWhy(ctx) : "";
+  document.getElementById("sheet").innerHTML =
+    state.sheet === "why" ? sheetWhy(ctx) : state.sheet === "purpose" ? sheetPurpose() : "";
   document.getElementById("phone").className = "phone" + (state.sheet ? " sheet-open" : "");
 
   var acts = "";
@@ -868,7 +994,8 @@ function render(){
   document.getElementById("steps").innerHTML = steps;
 
   document.getElementById("permalink").textContent =
-    "?step=" + state.step + (state.ctx !== "live" ? "&ctx=" + state.ctx : "") + (state.sheet ? "&sheet=why" : "");
+    "?step=" + state.step + (state.ctx !== "live" ? "&ctx=" + state.ctx : "") +
+    (state.sheet ? "&sheet=" + state.sheet : "");
 
   document.getElementById("prov").innerHTML =
     "Пуш — <code>reports/latest/stream_decisions.csv</code>, TJS, 09.06.2026, код <code>" + RUN_HASH + "</code>.<br>" +
