@@ -1,8 +1,9 @@
 """Снимки сырых данных с датой выгрузки: воспроизводимость без сети.
 
-Два источника, две пары «csv + meta»: дневной фиксинг ЦБ (`cbr_daily`) и часовые свечи
-Мосбиржи (`moex_hourly`, ADR-0010). Метаданные пишутся всегда: без даты выгрузки отчёт
-невоспроизводим."""
+Три источника, три пары «csv + meta»: дневной фиксинг ЦБ (`cbr_daily`), часовые свечи валютного
+рынка Мосбиржи (`moex_hourly`, ADR-0010) и часовые свечи фронт-контрактов срочного рынка
+(`moex_futures_hourly`) — единственный открытый ряд после 18:00 МСК. Метаданные пишутся всегда:
+без даты выгрузки отчёт невоспроизводим."""
 
 from __future__ import annotations
 
@@ -24,6 +25,8 @@ RAW_CSV = RAW_DIR / "cbr_daily.csv"
 RAW_META = RAW_DIR / "cbr_daily.meta.json"
 MOEX_CSV = RAW_DIR / "moex_hourly.csv"
 MOEX_META = RAW_DIR / "moex_hourly.meta.json"
+FORTS_CSV = RAW_DIR / "moex_futures_hourly.csv"
+FORTS_META = RAW_DIR / "moex_futures_hourly.meta.json"
 
 
 def save_raw(long_df: pd.DataFrame, source: str, start: str, end: str) -> None:
@@ -103,3 +106,57 @@ def load_bar_panel() -> pd.DataFrame:
     from fxmoment.data.moex import to_bar_panel
 
     return to_bar_panel(load_moex_raw())
+
+
+def save_forts_raw(long_df: pd.DataFrame, source: str, start: str, end: str, interval: int) -> None:
+    """Снимок часовых свечей фронт-контрактов срочного рынка (Si, CR).
+
+    В метаданных — не только границы ряда, но и перечень склеенных контрактов с их экспирациями:
+    склейка фронта проверяема только вместе с ним."""
+    RAW_DIR.mkdir(parents=True, exist_ok=True)
+    long_df.to_csv(FORTS_CSV, index=False, date_format="%Y-%m-%d %H:%M:%S")
+    from fxmoment.data.forts import FORTS_ASSETS
+    from fxmoment.data.moex import ISS_INTERVAL_LENGTH
+
+    per_asset = {
+        str(asset): {
+            "prefix": FORTS_ASSETS.get(str(asset), ("", 0))[0],
+            "facevalue": FORTS_ASSETS.get(str(asset), ("", 0))[1],
+            "bars": int(len(g)),
+            "first_bar": str(g["begin"].min()),
+            "last_bar": str(g["begin"].max()),
+            "contracts": {
+                str(sec): str(pd.Timestamp(exp).date())
+                for sec, exp in g.groupby("secid")["expiry"].first().items()
+            },
+        }
+        for asset, g in long_df.groupby("asset")
+    }
+    meta = {
+        "fetched_at_utc": datetime.now(UTC).isoformat(timespec="seconds"),
+        "source": source,
+        "refetch": "fxmoment fetch-forts --start <ISO> (ISS, открытые данные, ключа не требует)",
+        "interval_code": interval,  # код ISS, не минуты: 60 — час, 24 — день
+        "interval_length": str(ISS_INTERVAL_LENGTH[interval]),
+        "requested_start": start,
+        "requested_end": end,
+        "rows": int(len(long_df)),
+        "assets": per_asset,
+    }
+    FORTS_META.write_text(json.dumps(meta, ensure_ascii=False, indent=2), encoding="utf-8")
+
+
+def load_forts_raw() -> pd.DataFrame:
+    if not FORTS_CSV.exists():
+        raise FileNotFoundError(f"нет снимка {FORTS_CSV}: выполните `fxmoment fetch-forts`")
+    return pd.read_csv(FORTS_CSV, parse_dates=["expiry", "begin", "known_at", "end"])
+
+
+def load_forts_meta() -> dict:
+    return json.loads(FORTS_META.read_text(encoding="utf-8")) if FORTS_META.exists() else {}
+
+
+def load_forts_bar_panel() -> pd.DataFrame:
+    from fxmoment.data.forts import to_bar_panel
+
+    return to_bar_panel(load_forts_raw())
