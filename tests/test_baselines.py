@@ -40,3 +40,127 @@ def test_calendar_matrix_summary_and_comparison_on_synthetic(panel):
     same = baselines.calendar_vs_stack(cal, cal.assign(indicator="level"))
     assert abs(float(same["diff_lift"].iloc[0])) < 1e-12
     assert same["verdict_lift"].iloc[0] == "разницы нет"
+
+
+def _holidays(rows: list[tuple[str, str, str, str]]) -> pd.DataFrame:
+    df = pd.DataFrame(rows, columns=["country", "date", "name", "movable"])
+    df["date"] = pd.to_datetime(df["date"])
+    return df
+
+
+def test_holiday_events_count_publication_days_not_calendar_days():
+    idx = pd.bdate_range("2021-01-01", "2021-01-31")  # только рабочие дни: суббот и воскресений нет
+    starts = pd.DatetimeIndex(["2021-01-13"])  # среда
+    ev = baselines.holiday_events(idx, starts, 3)
+    assert list(ev.index[ev].strftime("%Y-%m-%d")) == ["2021-01-08", "2021-01-11", "2021-01-12"]
+    # k отсчитывается по оси публикации: три дня перекрыли выходные 9–10 января
+    one = baselines.holiday_events(idx, starts, 1)
+    assert list(one.index[one].strftime("%Y-%m-%d")) == ["2021-01-12"]
+    # событие не встаёт на сам праздник и не выходит за начало ряда
+    assert not bool(ev.loc[pd.Timestamp("2021-01-13")])
+    early = baselines.holiday_events(idx, pd.DatetimeIndex(["2021-01-04"]), 5)
+    assert early.sum() == 1 and early.index[early][0] == pd.Timestamp("2021-01-01")
+
+
+def test_holiday_events_never_fall_on_days_without_publication():
+    # в оси публикации нет выходных и есть дыра 18–22 января (нерабочие дни ЦБ)
+    idx = pd.bdate_range("2021-01-01", "2021-01-31").drop(pd.bdate_range("2021-01-18", "2021-01-22"))
+    starts = pd.DatetimeIndex(["2021-01-24", "2021-01-16"])
+    ev = baselines.holiday_events(idx, starts, 3)
+    assert set(ev.index) == set(idx)  # ряд событий живёт только на оси публикации
+    fired = pd.DatetimeIndex(ev.index[ev])
+    assert fired.isin(idx).all() and not fired.isin(pd.bdate_range("2021-01-18", "2021-01-22")).any()
+    assert fired.weekday.max() <= 4
+    # оба праздника выпали на нерабочие дни ЦБ: три последних дня публикации перед ними — 13–15
+    # января, а не 21–23 календарных. Дыра 18–22 в отсчёт k не входит.
+    assert list(fired.strftime("%Y-%m-%d")) == ["2021-01-13", "2021-01-14", "2021-01-15"]
+
+
+def test_holiday_starts_glues_blocks_and_filters_scope():
+    hol = _holidays(
+        [
+            ("TJ", "2021-03-21", "Международный праздник Навруз", "no"),
+            ("TJ", "2021-03-22", "Международный праздник Навруз", "no"),
+            ("TJ", "2021-03-23", "Международный праздник Навруз", "no"),
+            ("TJ", "2021-05-09", "День Победы", "no"),
+            ("TJ", "2021-05-13", "Иди Рамазон", "yes"),
+            ("UZ", "2021-01-01", "Новый год", "no"),
+        ]
+    )
+    assert list(baselines.holiday_starts(hol, "TJ", "all").strftime("%Y-%m-%d")) == [
+        "2021-03-21",
+        "2021-05-09",
+        "2021-05-13",
+    ]
+    assert list(baselines.holiday_starts(hol, "TJ", "major").strftime("%Y-%m-%d")) == [
+        "2021-03-21",
+        "2021-05-13",
+    ]
+    assert list(baselines.holiday_starts(hol, "TJ", "fixed").strftime("%Y-%m-%d")) == [
+        "2021-03-21",
+        "2021-05-09",
+    ]
+    assert list(baselines.holiday_starts(hol, "UZ", "all").strftime("%Y-%m-%d")) == ["2021-01-01"]
+
+
+def test_holiday_calendar_snapshot_covers_all_corridors_and_test_windows():
+    hol = baselines.load_holidays()
+    assert set(baselines.CORRIDOR_COUNTRY.values()) <= set(hol["country"])
+    for country in baselines.CORRIDOR_COUNTRY.values():
+        for scope in baselines.HOLIDAY_SCOPES:
+            starts = baselines.holiday_starts(hol, country, scope)
+            assert len(starts) > 0
+            assert starts.min() <= pd.Timestamp("2018-12-31")
+            assert starts.max() >= pd.Timestamp("2026-01-01")
+
+
+def test_holiday_matrix_and_comparison_on_synthetic(panel):
+    splits = make_splits(panel.loc["2018-01-01":].index, first_test="2020-01-01", test_months=6)
+    hol = baselines.holiday_matrix(panel, splits, corridors=("TJS", "KZT"), ks=(3,), scopes=("major",))
+    assert set(hol["corridor"]) == {"TJS", "KZT"} and len(hol) == 2 * len(splits)
+    assert set(hol["indicator"]) == {"holiday:k3:major"} and (hol["n_events"] > 0).all()
+    summ = baselines.calendar_summary(hol)
+    assert set(summ["corridor"]) == {"TJS", "KZT", "all"}
+    cal = baselines.calendar_matrix(
+        panel, splits, corridors=("TJS", "KZT"), rules=(("day25", 25, 31, ("first",)),)
+    )
+    cmp_ = baselines.holiday_vs_baselines(hol, cal, pd.DataFrame(), bases=("calendar:day25:first",))
+    assert list(cmp_.columns) == baselines.HOLIDAY_COMPARE_COLUMNS
+    assert list(cmp_["rule"]) == ["holiday:k3:major"] and list(cmp_["baseline"]) == ["calendar:day25:first"]
+    same = baselines.holiday_vs_baselines(
+        hol, hol.assign(indicator="calendar:day25:first"), pd.DataFrame(), bases=("calendar:day25:first",)
+    )
+    assert abs(float(same["diff_lift"].iloc[0])) < 1e-12 and same["verdict_lift"].iloc[0] == "разницы нет"
+
+
+def test_holiday_random_day_reference_has_lift_one(panel):
+    """Ссылочное правило «каждый день публикации» — база случайного дня: hit = base, lift = 1."""
+    splits = make_splits(panel.loc["2018-01-01":].index, first_test="2020-01-01", test_months=6)
+    ref = baselines.calendar_matrix(
+        panel, splits, corridors=("TJS",), rules=(baselines.RANDOM_DAY_RULE,)
+    )
+    assert set(ref["indicator"]) == {baselines.RANDOM_DAY_LABEL}
+    assert (ref["lift_mean"].dropna() - 1).abs().max() < 1e-9
+    assert (ref["benefit_excess_bps"].dropna()).abs().max() < 1e-9
+
+
+def test_holiday_stream_overlap_splits_pushes_without_losing_any(panel):
+    splits = make_splits(panel.loc["2018-01-01":].index, first_test="2020-01-01", test_months=6)
+    dates = panel.loc["2020-01-01":"2021-06-30"].index[::7]
+    decided = pd.DataFrame(
+        {
+            "date": dates,
+            "corridor": "TJS",
+            "decision": "sent",
+            "push_scenario": "BUY_NOW",
+        }
+    )
+    ov = baselines.holiday_stream_overlap(panel, splits, decided, corridors=("TJS",), ks=(5,))
+    assert set(ov["indicator"]) == {"stream:in_holiday:k5", "stream:out_holiday:k5"}
+    inside = int(ov[ov["indicator"] == "stream:in_holiday:k5"]["n_events"].sum())
+    outside = int(ov[ov["indicator"] == "stream:out_holiday:k5"]["n_events"].sum())
+    in_windows = sum(
+        int(((dates >= sp.test_start) & (dates <= sp.test_end)).sum()) for sp in splits
+    )
+    assert inside + outside == in_windows and inside > 0  # разбиение без потерь и без задвоения
+    assert baselines.holiday_stream_overlap(panel, splits, None).empty
