@@ -1,23 +1,27 @@
 {
- "code": "972ae6a",
- "built_at_utc": "2026-09-06T16:22:30Z",
+ "code": "bd44482",
+ "built_at_utc": "2026-09-06T17:19:41Z",
  "latest": {
-  "code": "c6a7e90",
-  "built_at_utc": "2026-09-03T22:51:23Z",
+  "code": "bd44482",
+  "built_at_utc": "2026-09-06T17:00:03Z",
   "first_test": "2021-01-01",
   "rank_base": "window",
   "ml": "local",
+  "ml_features": [],
   "extra_indicators": [],
-  "signal_source": null
+  "signal_source": null,
+  "bounds": null
  },
  "variant": {
-  "code": "972ae6a",
-  "built_at_utc": "2026-09-06T16:22:20Z",
+  "code": "bd44482",
+  "built_at_utc": "2026-09-06T17:19:38Z",
   "first_test": "2021-01-01",
   "rank_base": "window",
   "ml": "local",
+  "ml_features": [],
   "extra_indicators": [],
-  "signal_source": "USD"
+  "signal_source": "USD",
+  "bounds": null
  },
  "common_windows": [
   "2021-01…2021-06",
@@ -38,8 +42,8 @@
   "level": "level",
   "ml_localmin": "ml_localmin",
   "dip_vs_trend": "dip_vs_trend",
-  "momentum": "momentum",
   "reversal": "reversal",
+  "momentum": "momentum",
   "seasonality": "seasonality"
  },
  "matrix_rows_compared": 6600,
