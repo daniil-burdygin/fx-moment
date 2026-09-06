@@ -262,6 +262,7 @@ h1{margin:5px 0 8px;font-size:26px;line-height:1.15;letter-spacing:-.01em;font-w
 .pair .c{background:var(--color-specialbg-transparent);border-radius:var(--border-radius-12);padding:var(--gap-12)}
 .pair .c .k{font-size:11.5px;color:var(--color-text-secondary);line-height:1.3;min-height:30px}
 .pair .c .n{font-size:22px;font-weight:700;letter-spacing:-.01em;margin-top:5px}
+.pair .c .chg{margin-top:4px}
 .pair .c .u{font-size:11.5px;color:var(--color-text-tertiary);margin-top:2px}
 
 /* ── суммовое поле (amount-input) ───────────────────────────────────────── */
@@ -489,9 +490,9 @@ var CTX = {
 
 var PUSH = {
   pubDate:"09.06.2026", effDate:"10.06.2026", sentAt:"19:05",
-  rate:7.66882, indicator:"уровень курса в скользящем окне (level)",
+  rate:7.66882, indicator:"насколько сегодняшний курс низкий по сравнению с прошлыми днями (уровень курса в окне)",
   window:WINDOW_DAYS, pctRank:0.041666666666666664, daysSinceMin:14,
-  title:"Курс сомони остановился на низком уровне",
+  title:"Курс сомони не снижается 14-й день: 7,67 ₽ за 1 сомони",
   body:"7,67 ₽ за 1 сомони — ниже, чем в 96 % дней за 6 мес. Снижение остановилось 14 дн. назад."
 };
 
@@ -619,7 +620,7 @@ function chart(endIdx){
     '<path d="'+d+'" fill="none" stroke="#eeeefb8c" stroke-width="1.4" vector-effect="non-scaling-stroke"/>'+
     '<circle cx="'+cx.toFixed(1)+'" cy="'+cy.toFixed(1)+'" r="6" fill="#f83a2a" opacity=".22"/>'+
     '<circle cx="'+cx.toFixed(1)+'" cy="'+cy.toFixed(1)+'" r="2.6" fill="#f83a2a"/>'+
-    '</svg><div class="ax"><span>90 дней публикации</span></div></div>';
+    '</svg><div class="ax"><span>курс за 90 дней публикации</span></div></div>';
 }
 
 function factCard(ctx){
@@ -627,38 +628,40 @@ function factCard(ctx){
   var meas = below >= 50
     ? 'Ниже, чем в ' + below + ' % дней за 6 мес.'
     : 'Выше, чем в ' + Math.round(ctx.pctRank*100) + ' % дней за 6 мес.';
-  /* Дата курса стоит на экране проверки и в шторке — в карточке остаётся одно предложение. */
+  /* Дата курса стоит на экране проверки и в шторке; в карточке — что случилось с курсом
+     и зачем клиенту низкий курс. */
   var note = fresh
     ? 'Снижение остановилось ' + PUSH.daysSinceMin + ' дн. назад.'
     : (below >= 50
-        ? 'Факт из уведомления ' + PUSH.pubDate + ' ещё выполняется, но слабее.'
-        : 'Факт из уведомления ' + PUSH.pubDate + ' больше не выполняется.');
+        ? 'Сомони подорожал с ' + PUSH.pubDate + ', но курс пока ниже, чем в большинстве дней.'
+        : 'Сомони подорожал с ' + PUSH.pubDate + ', низкого уровня из уведомления больше нет.');
   return '<div class="card fact'+(below>=50?'':' warn')+'">'+
     '<div class="t">' + (fresh ? PUSH.title : 'Курс сомони на ' + ctx.date) + '</div>'+
     '<div class="big">' + num(ctx.rate,2) + ' ₽ <span class="unit">за 1 сомони</span></div>'+
     chart(ctx.idx) +
     '<div class="meas">' + meas + '</div>'+
     '<div class="note">' + note + '</div>'+
-    '<button class="why" type="button" data-sheet="why">Почему это сообщение ›</button>'+
+    '<div class="note">Чем ниже курс, тем больше сомони получит получатель.</div>'+
+    '<button class="why" type="button" data-sheet="why">Почему пришло уведомление ›</button>'+
     '</div>';
 }
 
 function sheetWhy(ctx){
   var pct = Math.round(PUSH.pctRank*100);
   return '<div class="marker"></div>'+
-    '<div class="hdr"><h3>Почему это сообщение</h3>'+
+    '<div class="hdr"><h3>Почему пришло уведомление</h3>'+
     '<button class="close" type="button" data-sheet="" aria-label="Закрыть">×</button></div>'+
     '<dl>'+
-    '<dt>Индикатор</dt><dd>' + PUSH.indicator + '</dd>'+
+    '<dt>Что смотрим</dt><dd>' + PUSH.indicator + '</dd>'+
     '<dt>Окно</dt><dd>' + PUSH.window + ' дней публикации (≈ 6 мес.)</dd>'+
-    '<dt>Процентиль</dt><dd>' + pct + '-й: курс ниже, чем в ' + (100-pct) + ' % дней окна</dd>'+
+    '<dt>Насколько низко</dt><dd>' + pct + '-й процентиль: курс ниже, чем в ' + (100-pct) + ' % дней окна</dd>'+
     '<dt>Курс опубликован</dt><dd>' + PUSH.pubDate + ', действует с ' + PUSH.effDate + '</dd>'+
-    '<dt>Порог экрана</dt><dd>' + TOL_BPS + ' бп — половина дневного шага курса</dd>'+
+    '<dt>Порог экрана</dt><dd>' + TOL_BPS + ' бп — это ' + num(TOL_BPS/100,2) + ' %, половина обычного дневного шага курса</dd>'+
     (ctx.key !== "live"
-      ? '<dt>Экран открыт</dt><dd>' + ctx.date + ', через ' + ctx.lag + ' дней публикации</dd>' : '') +
+      ? '<dt>Экран открыт</dt><dd>' + ctx.date + ' — на ' + ctx.lag + ' дней публикации позже уведомления</dd>' : '') +
     '<dt>Хеш прогона</dt><dd><code>' + RUN_HASH + '</code></dd>'+
     '</dl>'+
-    '<p>Сигнал считается по данным, опубликованным не позже даты пуша. Курс и факт на экране берутся ' +
+    '<p>Уведомление считается по курсам, опубликованным не позже его даты. Курс и факт на экране берутся ' +
     'в момент открытия, а не из уведомления. Источник курса — ежедневная публикация ЦБ РФ.</p>'+
     '<button class="btn secondary" type="button" data-sheet="">Понятно</button>';
 }
@@ -699,7 +702,7 @@ function sheetPurpose(){
       '<span class="en">'+PURPOSES[i][1]+'</span></span>'+
       '<span class="mark">'+(on ? "✓" : "")+'</span></button>';
   }
-  return out + '<p>Назначение знает только банк получателя. Выбор назначения не меняет размер комиссии.</p>';
+  return out + '<p>Назначение знает только банк получателя. Выбор назначения не влияет на размер комиссии.</p>';
 }
 
 function deltaCard(ctx){
@@ -708,15 +711,16 @@ function deltaCard(ctx){
   var lostSom = baseSom - nowSom, extraRub = baseSom * ctx.rate - amt();
   var below = pctBelow(ctx.pctRank);
   var head = below >= 50
-    ? 'Курс изменился: факт из уведомления ещё выполняется, но слабее'
-    : 'Курс изменился: факт из уведомления больше не выполняется';
+    ? 'Курс изменился: сомони подорожал, но пока ниже, чем в большинстве дней за 6 мес.'
+    : 'Курс изменился: сомони подорожал — низкого уровня из уведомления больше нет';
   return '<div class="card">'+
     '<div class="fact"><div class="t">'+head+'</div></div>'+
     '<div class="pair">'+
       '<div class="c"><div class="k">В уведомлении<br>'+PUSH.pubDate+', '+PUSH.sentAt+'</div>'+
         '<div class="n">'+num(PUSH.rate,2)+' ₽</div><div class="u">за 1 сомони</div></div>'+
       '<div class="c"><div class="k">Сейчас<br>'+ctx.date+'</div>'+
-        '<div class="n">'+num(ctx.rate,2)+' ₽ <span class="badge neg">+'+num(pct,1)+' %</span></div>'+
+        '<div class="n">'+num(ctx.rate,2)+' ₽</div>'+
+        '<div class="chg"><span class="badge neg">дороже на '+num(pct,1)+' %</span></div>'+
         '<div class="u">за 1 сомони</div></div>'+
     '</div>'+
     '<div class="card pad0" style="margin-top:var(--gap-12);margin-bottom:0">'+
@@ -751,7 +755,7 @@ function keypad(){
 }
 
 function ctaFootnote(){
-  return '<div class="footnote">Курс ЦБ РФ, без комиссии и спреда банка.</div>';
+  return '<div class="footnote">В демо считаем по курсу ЦБ РФ, без комиссии и наценки банка к курсу.</div>';
 }
 
 /* ═══ Экраны ═══════════════════════════════════════════════════════════════ */
@@ -928,26 +932,26 @@ var SCREENS = [
   tab:"Платежи",
   render:function(ctx){
     var v = verdict(SIGNAL), fresh = ctx.key === "live";
-    var label = v === "hit" ? "сбылся" : v === "miss" ? "не сбылся" : "ещё идёт";
+    var label = v === "hit" ? "сбылся" : v === "miss" ? "не сбылся" : "рано судить";
     var cls   = v === "hit" ? "pos" : v === "miss" ? "neg" : "att";
-    /* Вердикт известен только с 08.07.2026 (knownIdx): на любом экране раньше — «ещё идёт». */
+    /* Вердикт известен только с 08.07.2026 (knownIdx): на любом экране раньше — «рано судить». */
     var closed = ctx.idx >= SIGNAL.knownIdx;
     return '<div class="done">'+
       '<div class="ok">'+svg('<path d="M5 12.5 10 17.5 19 7"/>',2.4)+'</div>'+
       '<div class="t">Перевод подтверждён</div>'+
       '<div class="s">'+num(amt(),0)+' ₽ · '+num(somoni(ctx.rate),2)+' сомони</div>'+
-      '<div class="demo">Демонстрация завершена. Деньги не отправляются.</div>'+
+      '<div class="demo">Это демонстрация: перевод не сделан, деньги со счёта не списаны.</div>'+
       '</div>'+
       '<div class="card vcard">'+
-        '<div class="hd"><span class="k">Этот сигнал</span>'+
-        '<span class="badge '+(closed?cls:"att")+'">'+(closed?label:"ещё идёт")+'</span></div>'+
-        '<div class="claim">Средний курс 20 дней публикации не ниже порога</div>'+
+        '<div class="hd"><span class="k">Это уведомление</span>'+
+        '<span class="badge '+(closed?cls:"att")+'">'+(closed?label:"рано судить")+'</span></div>'+
+        '<div class="claim">Что проверяем: средний курс следующих 20 дней — не ниже порога</div>'+
         '<div class="kv">'+
-          '<div><span class="l">В пуше</span><span class="v">'+num(SIGNAL.rate,2)+' ₽</span></div>'+
+          '<div><span class="l">Было</span><span class="v">'+num(SIGNAL.rate,2)+' ₽</span></div>'+
           '<div><span class="l">Порог</span><span class="v">'+num(threshold(SIGNAL),2)+' ₽</span></div>'+
           (closed
             ? '<div><span class="l">Факт</span><span class="v">'+num(SIGNAL.mean20,2)+' ₽</span></div>'
-            : '<div><span class="l">Узнаем</span><span class="v">'+SIGNAL.known.slice(0,5)+'</span></div>')+
+            : '<div><span class="l">Проверим</span><span class="v">'+SIGNAL.known.slice(0,5)+'</span></div>')+
         '</div>'+
       '</div>';
   },
@@ -966,13 +970,13 @@ var SCREENS = [
     "<b>Две цифры сразу</b> — курс в уведомлении и курс сейчас, разница в процентах.",
     "<b>Дельта в сомони и в рублях</b> на 30 000 ₽: проценты за две секунды не считываются.",
     "<b>Ни обещания, ни таймера</b>: «напомнить при новом сигнале» — действие внутри экрана, а не второй пуш.",
-    "<b>Порог экрана</b> — 25 бп, половина медианного дневного шага. Расхождение меньше — открывается обычная форма перевода."
+    "<b>Этот экран показываем</b>, когда курс ушёл больше чем на 25 бп — это 0,25 %, половина обычного дневного шага курса. Ушёл меньше — открывается обычная форма перевода."
   ],
   nav:["Перевод в Таджикистан","Открыто позже уведомления"], back:"go:0",
   render:function(ctx){
     return deltaCard(ctx) + savedForm();
   },
-  cta:[["Посмотреть курс сейчас","primary","go:1"],["Напомнить при новом сигнале","secondary","go:7"]],
+  cta:[["Посмотреть курс сейчас","primary","go:1"],["Присылать такие уведомления","secondary","go:7"]],
   acts:[
     ["Посмотреть курс сейчас", "Экран перевода с текущим курсом", "go:1", true],
     ["Напомнить при новом сигнале", "Наблюдение вместо второго пуша", "go:7", false],
@@ -990,27 +994,27 @@ var SCREENS = [
     "<b>Тупика нет</b>: из экрана есть выход в обычный перевод и возврат в начало.",
     "Фактический поток по коридору — 0,38–0,65 пуша в неделю, серий нет (ADR-0006)."
   ],
-  nav:["Сигналы по переводам",""], head:"h-list",
+  nav:["Уведомления о курсе",""], head:"h-list",
   render:function(){
     return '<div class="done">'+
       '<div class="ok accent">'+svg(ICO.bell,1.9)+'</div>'+
-      '<div class="t">Напомним при новом сигнале</div>'+
-      '<div class="s">Коридор: рубль → сомони</div>'+
+      '<div class="t">Уведомления включены</div>'+
+      '<div class="s">Переводы в сомони</div>'+
       '</div>'+
       '<div class="card pad0">'+
       '<div class="cell"><div class="txt"><div class="k">Когда придёт</div>'+
-        '<div class="s">В день, когда индикатор снова истинен на публикации ЦБ</div></div></div>'+
+        '<div class="s">В день, когда курс ЦБ снова проходит наше правило</div></div></div>'+
       '<div class="cell"><div class="txt"><div class="k">Как часто</div>'+
-        '<div class="s">Не больше 1–2 сигналов в неделю; в волатильные дни поток молчит</div></div></div>'+
+        '<div class="s">Не чаще 1–2 раз в неделю; в дни резких скачков курса мы молчим</div></div></div>'+
       '<div class="cell"><div class="txt"><div class="k">Что не обещаем</div>'+
-        '<div class="s">Ни курса, ни даты следующего сигнала</div></div></div>'+
+        '<div class="s">Ни курса, ни даты следующего уведомления: считаем по уже опубликованному курсу ЦБ</div></div></div>'+
       '</div>'+
       '<div class="card pad0">'+
       '<div class="cell"><div class="ic">'+svg(ICO.gain)+'</div><div class="txt">'+
-        '<div class="k">Как считается сигнал</div><div class="s">Индикатор, окно, процентиль</div></div>'+
+        '<div class="k">Почему приходит уведомление</div><div class="s">Правило, окно сравнения, порог</div></div>'+
         '<div class="chev">›</div></div>'+
       '<div class="cell"><div class="ic">'+svg(ICO.hist)+'</div><div class="txt">'+
-        '<div class="k">Журнал попаданий коридора</div><div class="s">Вердикт каждого прошлого пуша</div></div>'+
+        '<div class="k">Прошлые уведомления</div><div class="s">Что вышло с курсом после каждого</div></div>'+
         '<div class="chev">›</div></div>'+
       '</div>';
   },
@@ -1023,11 +1027,11 @@ var SCREENS = [
 ];
 
 var STEP_NAMES = ["Пуш на блокировке","Экран перевода","Получатель","Сумма","Проверка",
-  "Готово и вердикт","Курс изменился","Напомним при новом сигнале"];
+  "Готово и вердикт","Курс изменился","Уведомления о курсе"];
 
 /* Подписи пилюль под макетом: тот же порядок, укороченный до одной строки. */
 var STEP_SHORT = ["Пуш","Перевод","Получатель","Сумма","Проверка","Готово","Позже",
-  "Напомним"];
+  "Уведомления"];
 
 /* ═══ Состояние и отрисовка ════════════════════════════════════════════════ */
 

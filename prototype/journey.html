@@ -661,7 +661,7 @@ function sheetWhy(ctx){
       ? '<dt>Экран открыт</dt><dd>' + ctx.date + ' — на ' + ctx.lag + ' дней публикации позже уведомления</dd>' : '') +
     '<dt>Хеш прогона</dt><dd><code>' + RUN_HASH + '</code></dd>'+
     '</dl>'+
-    '<p>Сигнал считается по данным, опубликованным не позже даты пуша. Курс и факт на экране берутся ' +
+    '<p>Уведомление считается по курсам, опубликованным не позже его даты. Курс и факт на экране берутся ' +
     'в момент открытия, а не из уведомления. Источник курса — ежедневная публикация ЦБ РФ.</p>'+
     '<button class="btn secondary" type="button" data-sheet="">Понятно</button>';
 }
@@ -1011,7 +1011,7 @@ var SCREENS = [
       '</div>'+
       '<div class="card pad0">'+
       '<div class="cell"><div class="ic">'+svg(ICO.gain)+'</div><div class="txt">'+
-        '<div class="k">Почему приходит уведомление</div><div class="s">Индикатор, окно, процентиль</div></div>'+
+        '<div class="k">Почему приходит уведомление</div><div class="s">Правило, окно сравнения, порог</div></div>'+
         '<div class="chev">›</div></div>'+
       '<div class="cell"><div class="ic">'+svg(ICO.hist)+'</div><div class="txt">'+
         '<div class="k">Прошлые уведомления</div><div class="s">Что вышло с курсом после каждого</div></div>'+

@@ -342,7 +342,7 @@ function howFoot(open, opened, src) {
     '<dt>Курс опубликован</dt><dd>' + PUSH.pubDate + ', действует с ' + PUSH.effDate + '</dd>' +
     (opened ? '<dt>Экран открыт</dt><dd>' + opened.date + ', через ' + opened.lag + ' дней публикации</dd>' : '') +
     '</dl>' +
-    '<p>Сигнал считается по данным, опубликованным не позже даты пуша. Курс и факт на экране берутся ' +
+    '<p>Уведомление считается по курсам, опубликованным не позже его даты. Курс и факт на экране берутся ' +
     'в момент открытия, а не из уведомления.</p>';
   return '<div class="factfoot"><div class="src">' + src + '</div>' +
     '<button class="how" type="button" data-how aria-expanded="' + (open ? "true" : "false") + '">Как рассчитано</button></div>' +
@@ -398,13 +398,13 @@ function deltaBlock(opened, head, note) {
 
 function oneButton() {
   return '<button class="btn primary" type="button">Перевести</button>' +
-    '<div class="foot-note">Расчёт по официальному курсу ЦБ РФ. Комиссия и спред банка в демо не учтены.</div>';
+    '<div class="foot-note">В демо считаем по курсу ЦБ РФ: комиссия и наценка банка к курсу не учтены.</div>';
 }
 
 function twoButtons() {
   return '<button class="btn primary" type="button">Перевести по текущему курсу</button>' +
-    '<button class="btn ghost" type="button">Уведомлять о новом сигнале</button>' +
-    '<div class="foot-note">Расчёт по официальному курсу ЦБ РФ. Комиссия и спред банка в демо не учтены.</div>';
+    '<button class="btn ghost" type="button">Присылать такие уведомления</button>' +
+    '<div class="foot-note">В демо считаем по курсу ЦБ РФ: комиссия и наценка банка к курсу не учтены.</div>';
 }
 
 var SCREENS = {
@@ -453,8 +453,8 @@ var SCREENS = {
         '<div class="saved"><div class="k">Форма сохранена</div><div class="v">' +
         FORM.country + ' · ' + FORM.method.toLowerCase() + ' · ' + FORM.phone + ' · ' + FORM.bank + ' · ' +
         FORM.purpose.toLowerCase() + ' · ' + num(AMOUNT_RUB, 0) + ' ₽. Сумму можно изменить до подтверждения.</div></div>' +
-        '<div class="hintline">Порог экрана — ' + TOL_BPS +
-        ' бп, половина медианного дневного шага. Расхождение меньше — открывается обычная форма.</div>';
+        '<div class="hintline">Этот экран показываем, когда курс ушёл больше чем на ' + TOL_BPS +
+        ' бп — это ' + (TOL_BPS/100).toLocaleString('ru-RU') + ' %, половина обычного дневного шага. Ушёл меньше — открывается обычная форма.</div>';
     },
     actions: twoButtons
   },
@@ -474,10 +474,10 @@ var SCREENS = {
     clock: "08:41",
     render: function (state) {
       var o = OPENED.closed, pct = Math.round(o.pctRank * 100);
-      return deltaBlock(o, "Извините, сигнал устарел",
+      return deltaBlock(o, "Уведомление устарело: сомони подорожал",
           "Когда мы писали, курс был ниже обычного. Сейчас уже нет.") +
         '<div class="fact warn"><div class="t">Факт из уведомления на ' + o.date + '</div>' +
-        '<div class="b">Курс выше, чем в ' + pct + ' % дней за последние 6 мес. Условие индикатора не выполняется.</div>' +
+        '<div class="b">Курс выше, чем в ' + pct + ' % дней за последние 6 мес. Низкого уровня из уведомления больше нет.</div>' +
         howFoot(state.how, o, srcLine(o.effDate)) + '</div>' +
         '<div class="saved"><div class="k">Форма сохранена</div><div class="v">' +
         FORM.country + ' · ' + FORM.method.toLowerCase() + ' · ' + FORM.phone + ' · ' + FORM.bank + ' · ' +
@@ -496,7 +496,7 @@ var SCREENS = {
       "<b>Отрицательный результат виден</b>: 4 попадания из 10 закрытых, и это ниже базы случайного дня.",
       "Тот же журнал — метрика пилота: сходимость вердиктов со стороны клиента и со стороны бэктеста."
     ],
-    screenTitle: "Журнал попаданий",
+    screenTitle: "Прошлые уведомления",
     screenSub: "Сомони · на " + JOURNAL_AS_OF,
     clock: "12:00",
     render: function () {
@@ -539,7 +539,7 @@ var ACT_LABELS = {
   actual:  ["Момент актуален", "Пуш открыт в тот же вечер"],
   changed: ["Момент изменился", "Курс ушёл против клиента"],
   closed:  ["Окно закрылось", "Факт больше не выполняется"],
-  journal: ["Журнал попаданий", "Вердикт по правилу 20 дней"]
+  journal: ["Прошлые уведомления", "Что вышло с курсом после каждого"]
 };
 
 var state = { name: "actual", how: false };
