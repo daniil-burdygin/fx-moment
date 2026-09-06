@@ -1,6 +1,5 @@
 {
- "code": "18ec806",
- "built_at_utc": "2026-09-06T20:49:52Z",
+ "code": "d1d2aac",
  "latest": {
   "code": "bd44482",
   "built_at_utc": "2026-09-06T17:00:03Z",
@@ -10,11 +9,12 @@
   "ml_features": [],
   "extra_indicators": [],
   "signal_source": null,
-  "bounds": null
+  "bounds": null,
+  "holiday_filter": null
  },
  "variant": {
-  "code": "18ec806",
-  "built_at_utc": "2026-09-06T20:49:46Z",
+  "code": "d1d2aac",
+  "built_at_utc": "2026-09-06T21:02:43Z",
   "first_test": "2021-01-01",
   "rank_base": "window",
   "ml": "local",
@@ -23,7 +23,8 @@
   ],
   "extra_indicators": [],
   "signal_source": null,
-  "bounds": null
+  "bounds": null,
+  "holiday_filter": null
  },
  "common_windows": [
   "2021-01…2021-06",
@@ -74,5 +75,6 @@
   "benefit_excess_trunc",
   "base_mean_month_trunc",
   "benefit_excess_month_trunc"
- ]
+ ],
+ "built_at_utc": "2026-09-06T21:02:46Z"
 }

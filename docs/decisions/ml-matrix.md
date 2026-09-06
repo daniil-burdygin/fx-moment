@@ -14,7 +14,7 @@ eurusd,timesfm` (по умолчанию ни одного) и комбинир�
 разошлись только код и время в `provenance.json` и `README.md`. В ветке `feat/eurusd-feature` признак
 был включён безусловно и перезаписывал `reports/latest`; так переносить было нельзя.
 
-Шестой набор, `minfin`, заведён там же (ветка `feat/ml-minfin`, коммит `18ec806`). Три столбца —
+Шестой набор, `minfin`, заведён там же (ветка `feat/ml-minfin`, коммит `e0a8394`). Три столбца —
 `minfin_is_sell`, `minfin_is_none`, `minfin_rub_per_day_bln` — строятся из снимка
 `data/minfin_fx_operations.csv` по рецепту `minfin-experiment.md`: покупка задаётся нулями обоих
 флагов, объём берётся `merge_asof`-ом по `announce_date` назад. Каузальность та же, что у разреза
@@ -142,7 +142,7 @@ TimesFM прибавляет на KZT, общий с EUR/USD — на UZS (0,98 
 отправки, а не точность индикатора, и `WINDOW_CLOSING` там же теряет. 🧩 Слот остаётся за базовым:
 TimesFM в продукт не идёт по лицензии весов, EUR/USD, pooled и Минфин в `latest` не переносятся —
 сдвинули бы все числа документов ради эффекта внутри интервала. Признаки EUR/USD и TimesFM живут в `main` за
-флагом `backtest --ml-features`, набор `minfin` — в ветке `feat/ml-minfin` (коммит `18ec806`); без
+флагом `backtest --ml-features`, набор `minfin` — в ветке `feat/ml-minfin` (коммит `e0a8394`); без
 флага путь прогона не меняется. Разбор — `docs/decisions/ml-matrix.md`.
 
 ### Строка для `limitations.md`
@@ -202,4 +202,4 @@ uv run fxmoment compare-runs --variant ml-minfin --pair ml_localmin=ml_localmin
 в метаданных); пересобрать и проверить его самопроверкой — `uv sync --group forecast && uv run
 fxmoment fetch-forecast` (около 15 минут на M3 Pro, код 1 значит «самопроверка не сошлась, снимок не
 записан»). Прогон `ml-pooled` сделан 03.09 на коммите `32c8677`, три следующих — 06.09 на `629e98a`,
-`ml-minfin` — 06.09 на `18ec806`.
+`ml-minfin` — 06.09 на `d1d2aac` (ветка `feat/ml-minfin`, перебазированная на `f3bbdaa`).

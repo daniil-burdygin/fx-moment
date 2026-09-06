@@ -1,8 +1,7 @@
 {
- "code": "18ec806",
+ "code": "d1d2aac",
  "fetched_at_utc": "2026-09-03T00:04:48+00:00",
  "last_eff_date": "2026-09-03",
- "built_at_utc": "2026-09-06T20:49:46Z",
  "windows": [
   "2021-01…2021-06",
   "2021-07…2021-12",
@@ -23,5 +22,6 @@
   "minfin"
  ],
  "extra_indicators": [],
- "bounds": null
+ "bounds": null,
+ "built_at_utc": "2026-09-06T21:02:43Z"
 }
