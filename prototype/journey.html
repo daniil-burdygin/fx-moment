@@ -977,7 +977,8 @@ var SCREENS = [
       '<div class="ok">'+svg('<path d="M5 12.5 10 17.5 19 7"/>',2.4)+'</div>'+
       '<div class="t">Перевод подтверждён</div>'+
       /* Сумма перевода — крупная ступень плашки успеха (32/40/700), а не описание. */
-      '<div class="s sum">'+num(amt(),0)+' ₽ · '+num(somoni(ctx.rate),2)+' сомони</div>'+
+      '<div class="s sum">'+num(amt(),0)+' ₽</div>'+
+      '<div class="s">'+num(somoni(ctx.rate),2)+' сомони по курсу ЦБ</div>'+
       '<div class="demo">Это демонстрация: перевод не сделан, деньги со счёта не списаны.</div>'+
       '</div>'+
       '<div class="card vcard">'+

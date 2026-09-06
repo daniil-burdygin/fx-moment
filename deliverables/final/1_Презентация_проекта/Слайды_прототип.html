@@ -1,0 +1,120 @@
+<title>Момент · прототип · четыре экрана пути клиента</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;700&family=Golos+Text:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+:root{--ink:#0B1F35;--paper:#FFFFFF;--paper2:#F3F4F5;--red:#EF3124;--orange:#F85010;--lav:#B8A8E0;--black:#0B0B0F;--card:#17171C;--card2:#1F1F26;--muted:#5B6875;--line:#2A2A33}
+*{box-sizing:border-box}
+html,body{margin:0;background:#1a1a1d;color-scheme:light}
+body{font-family:"Golos Text",system-ui,-apple-system,"Segoe UI",Arial,Helvetica,sans-serif;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+.deck{display:flex;flex-direction:column;align-items:center;gap:28px;padding:28px 0}
+.slide{width:1280px;height:720px;position:relative;overflow:hidden;background:var(--black);color:#fff;padding:46px 64px 66px;break-after:page;page-break-after:always;box-shadow:0 8px 30px rgba(0,0,0,.35)}
+.slide:last-child{break-after:auto;page-break-after:auto}
+@media print{html,body{background:#fff}.deck{display:block;padding:0;gap:0}.slide{box-shadow:none;margin:0}@page{size:1280px 720px;margin:0}}
+.eyebrow{font-family:"JetBrains Mono",ui-monospace,Menlo,monospace;font-size:13px;letter-spacing:.12em;text-transform:uppercase;color:var(--lav);font-weight:600;margin:0 0 10px}
+h2{font-family:"Oswald",Impact,"Arial Narrow",sans-serif;font-weight:700;text-transform:uppercase;font-size:35px;line-height:1.04;margin:0 0 14px;letter-spacing:.005em;max-width:1140px}
+h2 .l{color:var(--lav);display:block}
+h3{font-family:"Golos Text",Arial,sans-serif;font-weight:800;font-size:18px;margin:0 0 6px;letter-spacing:-.005em}
+p{margin:0 0 6px;font-size:17px;line-height:1.32}
+.small{font-size:13.5px;color:#B7BEC8;line-height:1.3}
+.mono{font-family:"JetBrains Mono",ui-monospace,Menlo,monospace}
+.num{font-family:"Oswald",Impact,"Arial Narrow",sans-serif;font-weight:700;font-size:44px;line-height:1;letter-spacing:-.01em}
+.cols{display:grid;gap:15px}
+.c2{grid-template-columns:1fr 1fr}.c3{grid-template-columns:1fr 1fr 1fr}.c21{grid-template-columns:1.62fr 1fr}
+.card{background:var(--card);border-radius:14px;padding:13px 17px;color:#fff}
+.card.red{background:var(--red);color:#fff}
+.card.lav{background:var(--lav);color:var(--black)}
+.lab{font-family:"JetBrains Mono",ui-monospace,Menlo,monospace;font-size:12px;letter-spacing:.07em;text-transform:uppercase;font-weight:600;color:#8E96A2}
+.card.lav .lab{color:rgba(11,11,15,.62)}
+.card.red .lab{color:rgba(255,255,255,.72)}
+table{border-collapse:collapse;width:100%;font-size:14.5px;line-height:1.22}
+th{font-family:"JetBrains Mono",ui-monospace,Menlo,monospace;font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:#8E96A2;text-align:left;padding:0 8px 6px;border-bottom:2px solid #33333D;font-weight:600}
+th.n,td.n{text-align:right}
+td{padding:5px 8px;border-bottom:1px solid #26262E;vertical-align:top}
+td.n{font-family:"JetBrains Mono",ui-monospace,Menlo,monospace;white-space:nowrap;font-size:14.5px}
+.footer{position:absolute;left:64px;right:64px;bottom:20px;display:flex;align-items:flex-end;justify-content:space-between;font-size:12px;color:#8E96A2;font-family:"JetBrains Mono",ui-monospace,Menlo,monospace;letter-spacing:.04em;gap:24px}
+.footer .logos{font-weight:600;letter-spacing:.1em;white-space:nowrap}
+.footer .rt{white-space:nowrap;text-align:right}
+.src{font-family:"JetBrains Mono",ui-monospace,Menlo,monospace;font-size:12px;line-height:1.4;color:#767E8A;letter-spacing:.01em}
+ul{margin:0;padding-left:17px}li{margin:0 0 7px;font-size:14.5px;line-height:1.3}
+li b{color:#fff}
+.legend{display:flex;gap:16px;align-items:center;margin-bottom:2px}
+.legend span{display:flex;align-items:center;gap:7px;font-size:12.5px;color:#C9D0D8;white-space:nowrap}
+.legend span.small{font-size:12.5px}
+.sw{width:15px;height:15px;border-radius:4px;display:inline-block}
+/* карта отрицательных результатов */
+table.neg{font-size:13.5px;line-height:1.22}
+table.neg td{padding:8px 9px;border-bottom:1px solid #23232B;vertical-align:middle}
+table.neg th{padding:0 9px 5px}
+table.neg td.h{font-weight:700;color:#fff;width:29%}
+table.neg td.m{color:#C4CBD4;width:49%}
+table.neg td.v{color:var(--lav);font-family:"JetBrains Mono",ui-monospace,Menlo,monospace;font-size:12px;width:22%;letter-spacing:.01em}
+.chip{display:inline-block;background:var(--card2);border-radius:9px;padding:6px 13px;font-size:12.5px;color:#C9D0D8;margin-right:8px}
+.chip b{color:#fff}
+/* финал */
+.fin{background:var(--card);border-radius:14px;padding:14px 18px;height:100%}
+.fin .lab{margin-bottom:9px}
+.finphrase{background:var(--red);border-radius:14px;padding:12px 20px}
+.finphrase p{font-size:18.5px;line-height:1.32;margin:0;font-weight:600}
+
+/* слайды прототипа */
+.pr{display:grid;grid-template-columns:1fr 300px;gap:28px;height:100%}
+.pr .txt{align-self:center;padding-bottom:36px;max-width:860px}
+.pr .txt ul{margin-top:14px}
+.pr h2{font-size:42px;margin-bottom:6px}
+.pr .note{font-size:14.5px}
+.pr .txt li{font-size:17px;margin-bottom:12px;line-height:1.36}
+.pr .ph{display:flex;align-items:flex-start;justify-content:center;margin-top:-6px}
+.pr .ph img{height:584px;width:auto;border-radius:34px;box-shadow:0 12px 40px rgba(0,0,0,.55)}
+.pr .note{margin-top:14px}
+.eyebrow .n{color:#8E96A2;font-weight:400}
+</style>
+<div class="deck">
+<section class="slide">
+  <div class="pr">
+    <div class="txt">
+      <div class="eyebrow">Прототип · экран 1 из 4 · пуш</div>
+      <h2>Пуш утверждает факт, <span class="l">а не прогноз</span></h2>
+      <ul><li><b>Число уже в заголовке:</b> «Курс сомони не снижается 14-й день: 7,67 ₽ за 1 сомони» — шаблон библиотеки текстов, прошёл чекер.</li><li><b>Тело — проверяемое сравнение:</b> ниже, чем в 96 % дней за 6 месяцев. Без призывов поторопиться и без курса на следующий день.</li><li><b>Пуш настоящий:</b> решение потока на 09.06.2026 по коридору рубль → сомони из <span class="mono">reports/latest/stream_decisions.csv</span>.</li></ul>
+      <p class="small note">Тап по уведомлению открывает перевод. Весь путь проходится внутри телефона; строка шагов над макетом — для показа.</p>
+    </div>
+    <div class="ph"><img src="Слайды_прототип_кадры/proto-0.png" alt=""></div>
+  </div>
+  <div class="footer"><div class="src">prototype/journey.html · копия — 4_Дополнительные_материалы/Прототип_клиентский_путь.html · курсы ЦБ РФ, снимок 03.09.2026</div><div class="rt">AI TALENT HUB · ИТМО · АЛЬФА-БАНК<br>Момент · команда 9 · прототип</div></div>
+</section>
+<section class="slide">
+  <div class="pr">
+    <div class="txt">
+      <div class="eyebrow">Прототип · экран 2 из 4 · перевод</div>
+      <h2>Из пуша — <span class="l">сразу в перевод</span></h2>
+      <ul><li><b>Карточка факта</b> над способами перевода: курс, график за 90 дней публикации, строка сравнения и «Почему пришло уведомление» с окном, порогом и хешем прогона.</li><li><b>Дальше — родной Альфа-Онлайн:</b> токены, поля, кнопки и способы перевода сняты с живого кабинета с разрешения представителей банка; получатель, сумма и проверка повторяют приложение.</li><li><b>Один продукт, а не два:</b> те же 7,67 ₽ и 96 % на всех экранах.</li></ul>
+      <p class="small note">Разметка кабинета в репозиторий не переносилась — только числа токенов и правила CSS.</p>
+    </div>
+    <div class="ph"><img src="Слайды_прототип_кадры/proto-1.png" alt=""></div>
+  </div>
+  <div class="footer"><div class="src">prototype/journey.html · копия — 4_Дополнительные_материалы/Прототип_клиентский_путь.html · курсы ЦБ РФ, снимок 03.09.2026</div><div class="rt">AI TALENT HUB · ИТМО · АЛЬФА-БАНК<br>Момент · команда 9 · прототип</div></div>
+</section>
+<section class="slide">
+  <div class="pr">
+    <div class="txt">
+      <div class="eyebrow">Прототип · экран 3 из 4 · вердикт</div>
+      <h2>Перевод отправлен — <span class="l">и вердикт уведомления</span></h2>
+      <ul><li><b>Карточка, которой в банковских приложениях нет:</b> что проверяем, порог 7,65 ₽, дата проверки 08.07.</li><li><b>«Рано судить» на 09.06:</b> вердикт не подставляется задним числом — клиент узнает его в день, когда закроется окно 20 дней.</li><li><b>По снимку ЦБ на 03.09</b> средний курс этих 20 дней — 8,09 ₽: утверждение сбылось. Журнал таких вердиктов — второй прототип «Момент изменился».</li></ul>
+      <p class="small note">Демонстрация: деньги не отправляются, комиссия и наценка банка к курсу не учтены.</p>
+    </div>
+    <div class="ph"><img src="Слайды_прототип_кадры/proto-5.png" alt=""></div>
+  </div>
+  <div class="footer"><div class="src">prototype/journey.html · копия — 4_Дополнительные_материалы/Прототип_клиентский_путь.html · курсы ЦБ РФ, снимок 03.09.2026</div><div class="rt">AI TALENT HUB · ИТМО · АЛЬФА-БАНК<br>Момент · команда 9 · прототип</div></div>
+</section>
+<section class="slide">
+  <div class="pr">
+    <div class="txt">
+      <div class="eyebrow">Прототип · экран 4 из 4 · открыт позже</div>
+      <h2>Открыл через две недели — <span class="l">честная дельта</span></h2>
+      <ul><li><b>Две цифры рядом:</b> 7,67 ₽ в уведомлении и 7,94 ₽ сейчас — дороже на 3,5 %. Первая строка говорит, что случилось с курсом.</li><li><b>Потеря посчитана, а не обещана:</b> на 30 000 ₽ получатель получит на 133,53 сомони меньше, те же 3 911,94 сомони стоят на 1 060 ₽ больше.</li><li><b>Решение у клиента:</b> посмотреть курс сейчас или присылать такие уведомления; форма сохранена.</li></ul>
+      <p class="small note">Экран показываем, когда курс ушёл больше чем на 25 бп — половина обычного дневного шага. Ушёл меньше — обычная форма.</p>
+    </div>
+    <div class="ph"><img src="Слайды_прототип_кадры/proto-6.png" alt=""></div>
+  </div>
+  <div class="footer"><div class="src">prototype/journey.html · копия — 4_Дополнительные_материалы/Прототип_клиентский_путь.html · курсы ЦБ РФ, снимок 03.09.2026</div><div class="rt">AI TALENT HUB · ИТМО · АЛЬФА-БАНК<br>Момент · команда 9 · прототип</div></div>
+</section>
+</div>

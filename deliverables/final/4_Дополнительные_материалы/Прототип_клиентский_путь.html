@@ -21,8 +21,10 @@
    Замер экранов перевода — 06.09.2026, web.alfabank.ru. */
 :root{
   --color-bg-primary:#121213;                    /* color-dark-base-bg-primary */
-  --color-bg-secondary:#1c1c1e;                  /* color-dark-base-bg-secondary */
-  --color-specialbg-transparent:rgba(214,214,229,.07); /* color-dark-specialbg-secondary-transparent */
+  --color-bg-secondary:#1c1c1e;                  /* color-dark-base-bg-secondary; он же кольцо панели вкладок */
+  --color-bg-header:#252527bf;                   /* подложка панели навигации, замер 06.09 */
+  --color-specialbg-transparent:rgba(214,214,229,.07); /* color-dark-neutral-translucent-100 = #d6d6e512 */
+  --color-translucent-300:#dedeee21;             /* color-dark-neutral-translucent-300 — фон поля формы */
   --color-icon-button-bg:rgba(255,255,255,.04);  /* круглые кнопки «назад» и «×», замер 06.09 */
   --color-text-primary:#fffffff0;                /* color-dark-text-primary, rgba(255,255,255,.94) */
   --color-text-secondary:#eeeefb8c;              /* color-dark-text-secondary, rgba(238,238,251,.55) */
@@ -33,14 +35,16 @@
   --color-text-primary-inverted:rgba(3,3,6,.88); /* color-dark-text-primary-inverted — текст на ней */
   --color-status-info:#3193fc;                   /* color-dark-status-info — тег «Быстро» */
   --color-status-negative:#ff4837;               /* color-dark-status-negative */
-  --color-status-positive:#17d055;               /* color-dark-status-positive */
+  --color-status-positive:#17d055;               /* color-dark-status-positive — им красится текст */
+  --color-status-positive-icon:#0cc44d;          /* заливка плашки успеха, замер 06.09 */
   --color-border-primary:#36363a;                /* color-dark-border-primary */
   --color-border-secondary:#27272a;              /* color-dark-border-secondary */
   --color-status-attention:#ffb800;
 
-  --border-radius-8:8px; --border-radius-10:10px; --border-radius-12:12px; --border-radius-16:16px;
+  --border-radius-8:8px; --border-radius-10:10px; --border-radius-12:12px; --border-radius-14:14px;
   --border-radius-20:20px; --border-radius-24:24px;
-  --gap-4:4px; --gap-8:8px; --gap-12:12px; --gap-14:14px; --gap-16:16px; --gap-20:20px; --gap-24:24px;
+  --gap-4:4px; --gap-6:6px; --gap-8:8px; --gap-12:12px; --gap-14:14px; --gap-16:16px; --gap-20:20px;
+  --gap-24:24px; --gap-32:32px;
 
   --font-family-alfasans:"Alfa Interface Sans",system-ui,-apple-system,"Segoe UI",Roboto,
     "Helvetica Neue",Helvetica,sans-serif;
@@ -139,14 +143,20 @@ h1{margin:5px 0 8px;font-size:26px;line-height:1.15;letter-spacing:-.01em;font-w
 .viewport::-webkit-scrollbar{display:none}
 .ctabar{flex:0 0 auto;padding:6px var(--gap-16) 10px}
 
-/* ── нижняя панель вкладок (tab-bar) ────────────────────────────────────── */
-.tabbar{flex:0 0 auto;display:flex;justify-content:center;gap:2px;padding:4px 6px 2px;
-  background:var(--color-bg-primary)}
+/* ── нижняя панель вкладок (tab-bar) ────────────────────────────────────────
+   ⚠️ Мобильного таббара в замере нет: сняты числа десктопной навигации приложения —
+   подложка #252527bf с blur 40, кольцо 1 px цветом #1c1c1e, радиус 24, padding 4.
+   Здесь они перенесены на нижнюю панель прототипа; горизонтальные поля 16 — наши,
+   без них скругление панели не читается. Замер 06.09. */
+.tabbar{flex:0 0 auto;display:flex;justify-content:center;gap:2px;padding:var(--gap-4);
+  margin:0 var(--gap-16) var(--gap-4);border-radius:var(--border-radius-24);
+  background:var(--color-bg-header);box-shadow:inset 0 0 0 1px var(--color-bg-secondary);
+  -webkit-backdrop-filter:blur(40px);backdrop-filter:blur(40px)}
 .tabbar .tab{flex:1 0 0;display:flex;flex-direction:column;align-items:center;
-  padding:8px 0 7px;color:var(--color-text-secondary);gap:3px;border-radius:var(--border-radius-16);
+  padding:8px 0 7px;color:var(--color-text-secondary);gap:3px;border-radius:var(--border-radius-20);
   cursor:default}
-/* Активная вкладка — на плашке #1c1c1e с радиусом 16 (замер 06.09), а не подсветкой цветом. */
-.tabbar .tab.on{background:var(--color-bg-secondary);color:var(--color-text-primary)}
+/* Активная вкладка — плашка neutral-translucent-100 радиусом 20 (замер 06.09). */
+.tabbar .tab.on{background:var(--color-specialbg-transparent);color:var(--color-text-primary)}
 .tabbar .tab .lb{font-size:14px;line-height:18px;font-weight:400;color:inherit;letter-spacing:-.2px}
 .tabbar svg{width:24px;height:24px;display:block}
 
@@ -204,35 +214,47 @@ h1{margin:5px 0 8px;font-size:26px;line-height:1.15;letter-spacing:-.01em;font-w
 .cell.edit .v{font-size:16px;font-weight:500;line-height:22px}
 
 /* ── поля формы (input, select) ─────────────────────────────────────────────
-   Замер 06.09: карточка rgba(214,214,229,.07), радиус 10, высота 72, отступы 16;
-   плавающая подпись 14 px вторичным над значением 16/500. */
-.field{display:flex;align-items:center;gap:var(--gap-12);width:100%;min-height:72px;border:0;
-  background:var(--color-specialbg-transparent);border-radius:var(--border-radius-10);
-  padding:var(--gap-12) var(--gap-16);margin-bottom:var(--gap-8);
+   Замер 06.09: подложка neutral-translucent-300 (#dedeee21), высота 72, отступы 0 16
+   (высоту держит min-height, а не padding), радиус 14 у поля ввода и 12 у селекта.
+   Строки формы идут с шагом 32. Подпись 14/20 вторичным над значением 16/20 весом
+   400: полужирным в приложении набирается только сумма. */
+.field{display:flex;align-items:center;gap:var(--gap-16);width:100%;min-height:72px;border:0;
+  background:var(--color-translucent-300);border-radius:var(--border-radius-14);
+  padding:0 var(--gap-16);margin-bottom:0;
   font:inherit;color:inherit;text-align:left;cursor:pointer}
+.field.sel{border-radius:var(--border-radius-12)}
+.field+.field,.field+.amt{margin-top:var(--gap-32)}
 .field .ic{width:24px;height:24px;flex:0 0 24px;color:var(--color-text-secondary)}
 .field .ic svg{width:24px;height:24px}
 .field .txt{flex:1 1 auto;min-width:0}
-.field .lb{display:block;font-size:14px;font-weight:400;line-height:18px;color:var(--color-text-secondary)}
-.field .vl{display:block;font-size:16px;font-weight:500;line-height:22px;margin-top:2px}
-.field .vl.ph{font-weight:400;color:var(--color-text-secondary)}
+.field .lb{display:block;font-size:14px;font-weight:400;line-height:20px;letter-spacing:-.08px;
+  color:var(--color-text-secondary)}
+.field .vl{display:block;font-size:16px;font-weight:400;line-height:20px;letter-spacing:-.24px;
+  margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.field .vl.ph{color:var(--color-text-secondary)}
 .field .chev{flex:0 0 auto;color:var(--color-text-secondary);font-size:13px;line-height:1}
+/* Подсказка под полем: 14/18, отступ сверху 6 (form-control-sub-paddings = 0). */
 .field-hint{font-size:14px;font-weight:400;line-height:18px;color:var(--color-text-secondary);
-  margin:0 2px var(--gap-12);padding-top:2px}
+  margin:var(--gap-6) 0 var(--gap-12);padding-top:0}
 
-/* ── карточки способа перевода (замер 06.09, модалка «Перевод в Таджикистан») ── */
-.mcard{display:flex;align-items:center;gap:var(--gap-12);width:100%;background:var(--color-bg-secondary);
-  border-radius:var(--border-radius-16);padding:var(--gap-14) var(--gap-16);margin-bottom:var(--gap-8);
-  text-align:left;cursor:pointer}
-.mcard .txt{flex:1 1 auto;min-width:0}
-.mcard .n{font-size:16px;font-weight:500;line-height:22px}
-.mcard .s{font-size:13px;font-weight:400;line-height:18px;color:var(--color-text-secondary);margin-top:2px}
-.mcard .tag{display:inline-block;margin-top:6px;border-radius:99px;padding:1px 8px;
-  font-size:13px;line-height:18px}
+/* ── карточки способа перевода (замер 06.09, модалка «Перевод в Таджикистан») ──
+   Подложка neutral-translucent-100, радиус 24, высоту 132 держит иллюстрация,
+   текстовый столбец с отступами 12/16/16: заголовок 16/24, подзаголовки 13/16. */
+.mcard{display:flex;align-items:stretch;width:100%;min-height:132px;
+  background:var(--color-specialbg-transparent);
+  border-radius:var(--border-radius-24);padding:0;margin-bottom:var(--gap-8);
+  overflow:hidden;text-align:left;cursor:pointer}
+.mcard .txt{flex:1 1 auto;min-width:0;display:flex;flex-direction:column;align-items:flex-start;
+  padding:var(--gap-12) var(--gap-16) var(--gap-16)}
+.mcard .n{font-size:16px;font-weight:500;line-height:24px;margin-bottom:2px}
+.mcard .s{font-size:13px;font-weight:400;line-height:16px;color:var(--color-text-secondary);
+  margin-bottom:2px}
+.mcard .tag{display:inline-block;margin-top:10px;border-radius:var(--border-radius-24);
+  padding:8px 12px;font-size:13px;line-height:16px}
 .mcard .tag.info{background:var(--color-status-info);color:#fff}
 .mcard .tag.mute{background:var(--color-specialbg-transparent);color:var(--color-text-secondary)}
 /* Иллюстрация 132×132 подгружается с CDN приложения; офлайн место остаётся пустым. */
-.mcard .ill{flex:0 0 108px;width:108px;height:108px;background-repeat:no-repeat;
+.mcard .ill{flex:0 0 132px;width:132px;height:132px;align-self:flex-end;background-repeat:no-repeat;
   background-position:center;background-size:contain}
 .mcard.on{box-shadow:inset 0 0 0 1.5px var(--color-border-primary)}
 
@@ -283,26 +305,36 @@ h1{margin:5px 0 8px;font-size:26px;line-height:1.15;letter-spacing:-.01em;font-w
 .keys span[data-do]{cursor:pointer;-webkit-user-select:none;user-select:none}
 .keys span[data-do]:active{background:rgba(214,214,229,.16)}
 
-/* ── строки проверки ────────────────────────────────────────────────────── */
-.kv{display:flex;justify-content:space-between;gap:var(--gap-12);padding:var(--gap-12) 0;
-  border-bottom:1px solid var(--color-border-secondary);font-size:15px}
-.kv:last-child{border-bottom:0}
-.kv .k{color:var(--color-text-secondary);font-weight:400}
-.kv .v{font-weight:500;text-align:right}
-.kv.total .v{font-size:19px;font-weight:700}
-.kv .v i{display:block;font-style:normal;font-size:13px;font-weight:400;
+/* ── строки проверки ────────────────────────────────────────────────────────
+   Замер 06.09: строка — не «слева-справа», а колонка. Подпись 14/20 вторичным стоит
+   над значением 16/20, обёртка с отступами 8/0, разделителей между строками нет.
+   Полужирным набирается только сумма к списанию. */
+.kv{display:flex;flex-direction:column;padding:var(--gap-8) 0}
+.kv .k{font-size:14px;font-weight:400;line-height:20px;letter-spacing:-.08px;
+  color:var(--color-text-secondary)}
+.kv .v{font-size:16px;font-weight:400;line-height:20px;letter-spacing:-.24px;text-align:left}
+.kv.total .v{font-weight:700;letter-spacing:-.05px}
+.kv .v i{display:block;font-style:normal;font-size:13px;font-weight:400;line-height:18px;
   color:var(--color-status-negative);margin-top:2px}
 .kv .v i.at{color:var(--color-text-tertiary)}
 
-/* ── успех ──────────────────────────────────────────────────────────────── */
+/* ── успех ──────────────────────────────────────────────────────────────────
+   Замер 06.09: плашка успеха — суперэллипс 80×80 сплошным #0cc44d с белой галкой 24
+   (в приложении это SVG-путь, здесь приближение радиусом 30 %). Сумма 32/40/700,
+   строка-подпись 20/24/700, описание 18/24 вторичным.
+   Наезда на карточку вердикта (margin-top:-40) здесь нет: карточка «Это уведомление»
+   идёт после блока суммы, а не сразу под иконкой, — накладывать её не на что. */
 .done{text-align:center;padding:var(--gap-24) 0 var(--gap-16)}
-.done .ok{width:72px;height:72px;margin:0 auto var(--gap-16);border-radius:50%;
-  background:rgba(23,208,85,.16);display:flex;align-items:center;justify-content:center}
-.done .ok svg{width:34px;height:34px;color:var(--color-status-positive)}
-.done .ok.accent{background:rgba(248,58,42,.16)}
-.done .ok.accent svg{color:var(--color-accent-primary)}
-.done .t{font-size:22px;font-weight:700}
-.done .s{font-size:15px;color:var(--color-text-secondary);margin-top:var(--gap-4)}
+.done .ok{width:80px;height:80px;margin:0 auto var(--gap-16);border-radius:30%;
+  background:var(--color-status-positive-icon);display:flex;align-items:center;justify-content:center}
+.done .ok svg{width:24px;height:24px;color:#fff}
+.done .ok.accent{background:var(--color-accent-primary)}
+.done .ok.accent svg{color:#fff}
+.done .t{font-size:20px;font-weight:700;line-height:24px;letter-spacing:.33px}
+.done .s{font-size:18px;font-weight:400;line-height:24px;letter-spacing:-.36px;
+  color:var(--color-text-secondary);margin-top:var(--gap-8)}
+.done .s.sum{font-size:32px;font-weight:700;line-height:40px;letter-spacing:-1.36px;
+  color:var(--color-text-primary)}
 .done .demo{font-size:13px;color:var(--color-text-tertiary);margin-top:var(--gap-8)}
 .vcard .hd{display:flex;align-items:center;justify-content:space-between;gap:var(--gap-8)}
 .vcard .hd .k{font-size:15px;font-weight:500}
@@ -342,15 +374,19 @@ h1{margin:5px 0 8px;font-size:26px;line-height:1.15;letter-spacing:-.01em;font-w
 /* ── кнопки (button) ────────────────────────────────────────────────────────
    Главная кнопка приложения в тёмной теме светлая: #f2f3f5 — это
    color-dark-accent-secondary, к которому в дизайн-системе привязан вид primary.
-   Красный остаётся на логотипе пуша, тегах и статусах. Замер 06.09.2026. */
-.btn{display:block;width:100%;border:0;border-radius:var(--border-radius-16);
+   Красный остаётся на логотипе пуша, тегах и статусах.
+   Кнопка 56 идёт радиусом 12; ступень 72 с радиусом 14 — на экране итога приложения,
+   в прототипе её нет. Замер 06.09.2026. */
+.btn{display:block;width:100%;border:0;border-radius:var(--border-radius-12);
   min-height:56px;padding:0 27px;font:inherit;font-size:16px;font-weight:500;line-height:20px;
-  cursor:pointer;text-align:center}
+  letter-spacing:-.05px;cursor:pointer;text-align:center}
 .btn+.btn{margin-top:var(--gap-8)}
 .btn.primary{background:var(--color-accent-secondary);color:var(--color-text-primary-inverted)}
 .btn.primary:active{background:#dcdee2}
-/* Недоступная кнопка приложения — тот же фон под прозрачностью, замер 06.09. */
-.btn:disabled{opacity:.38;cursor:default}
+/* Выключенная кнопка приложения не прозрачная, а перекрашенная: подложка
+   neutral-translucent-100, текст text-tertiary. Замер 06.09. */
+.btn:disabled,.btn.primary:disabled{background:var(--color-specialbg-transparent);
+  color:var(--color-text-tertiary);cursor:default}
 .btn.secondary{background:var(--color-specialbg-transparent);color:var(--color-text-primary)}
 .footnote{margin-top:6px;font-size:11.5px;color:var(--color-text-tertiary);text-align:center;line-height:1.4}
 
@@ -592,9 +628,10 @@ function heading(cls, title, sub){
     (sub ? '<span class="sub">'+sub+'</span>' : '')+'</div>';
 }
 
+/* Радиус поля зависит от типа: у поля ввода 14, у селекта (поле с шевроном) — 12. */
 function field(label, value, opt){
   opt = opt || {};
-  return '<div class="field">'+
+  return '<div class="field'+(opt.chevron ? " sel" : "")+'">'+
     (opt.icon ? '<div class="ic">'+svg(ICO[opt.icon])+'</div>' : '')+
     '<div class="txt"><div class="lb">'+label+'</div>'+
     '<div class="vl'+(opt.placeholder ? ' ph' : '')+'">'+value+'</div></div>'+
@@ -836,7 +873,7 @@ var SCREENS = [
       field("Счёт списания", FORM.account, {chevron:true})+
       field("Номер телефона получателя", FORM.phone, {icon:"user"})+
       field("Банк получателя", FORM.bank, {chevron:true})+
-      '<button class="field" type="button" data-sheet="purpose">'+
+      '<button class="field sel" type="button" data-sheet="purpose">'+
         '<span class="txt"><span class="lb">Назначение перевода</span>'+
         '<span class="vl">'+purposeName()+'</span></span><span class="chev">▾</span></button>'+
       /* Подсказка приложения набрана в будущем времени («его будет знать»); чекер текстов
@@ -939,7 +976,9 @@ var SCREENS = [
     return '<div class="done">'+
       '<div class="ok">'+svg('<path d="M5 12.5 10 17.5 19 7"/>',2.4)+'</div>'+
       '<div class="t">Перевод подтверждён</div>'+
-      '<div class="s">'+num(amt(),0)+' ₽ · '+num(somoni(ctx.rate),2)+' сомони</div>'+
+      /* Сумма перевода — крупная ступень плашки успеха (32/40/700), а не описание. */
+      '<div class="s sum">'+num(amt(),0)+' ₽</div>'+
+      '<div class="s">'+num(somoni(ctx.rate),2)+' сомони по курсу ЦБ</div>'+
       '<div class="demo">Это демонстрация: перевод не сделан, деньги со счёта не списаны.</div>'+
       '</div>'+
       '<div class="card vcard">'+
