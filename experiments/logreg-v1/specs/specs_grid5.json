@@ -1,0 +1,4 @@
+[{"name":"ref_level_only_fpw0.35","model":"level_only","target_fpw":0.35},
+ {"name":"ref_level_only_fpw0.25","model":"level_only","target_fpw":0.25},
+ {"name":"ref_calendar25_pol","model":"calendar"},
+ {"name":"best_gate0.15_fpw2_dump","model":"logreg","extra":["vol","tech","usd","basket","cal"],"gate_rank120":0.15,"target_fpw":2.0,"dump":true}]

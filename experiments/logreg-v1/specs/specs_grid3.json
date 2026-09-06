@@ -1,0 +1,268 @@
+[
+{
+"model": "logreg",
+"extra": [
+"vol",
+"tech",
+"usd",
+"basket",
+"cal"
+],
+"gate_rank120": 0.2,
+"target_fpw": 2.0,
+"name": "BEST_lr_exAll_gate0.2_fpw2_dump",
+"dump": true
+},
+{
+"name": "ref_calendar25_dump",
+"model": "calendar",
+"policy": {
+"cooldown": 1,
+"cap": 5,
+"span": 7
+},
+"dump": true
+},
+{
+"name": "ref_level_only_dump",
+"model": "level_only",
+"dump": true
+},
+{
+"name": "spec_lr_base_dump",
+"model": "logreg",
+"dump": true
+},
+{
+"model": "logreg",
+"extra": [
+"tech",
+"usd",
+"basket",
+"cal"
+],
+"gate_rank120": 0.2,
+"target_fpw": 2.0,
+"name": "abl_drop_vol"
+},
+{
+"model": "logreg",
+"extra": [
+"vol",
+"usd",
+"basket",
+"cal"
+],
+"gate_rank120": 0.2,
+"target_fpw": 2.0,
+"name": "abl_drop_tech"
+},
+{
+"model": "logreg",
+"extra": [
+"vol",
+"tech",
+"basket",
+"cal"
+],
+"gate_rank120": 0.2,
+"target_fpw": 2.0,
+"name": "abl_drop_usd"
+},
+{
+"model": "logreg",
+"extra": [
+"vol",
+"tech",
+"usd",
+"cal"
+],
+"gate_rank120": 0.2,
+"target_fpw": 2.0,
+"name": "abl_drop_basket"
+},
+{
+"model": "logreg",
+"extra": [
+"vol",
+"tech",
+"usd",
+"basket"
+],
+"gate_rank120": 0.2,
+"target_fpw": 2.0,
+"name": "abl_drop_cal"
+},
+{
+"model": "logreg",
+"extra": [
+"vol",
+"tech",
+"usd",
+"basket",
+"cal"
+],
+"gate_rank120": 0.15,
+"target_fpw": 2.0,
+"name": "lr_exAll_gate0.15_fpw2"
+},
+{
+"model": "logreg",
+"extra": [
+"vol",
+"tech",
+"usd",
+"basket",
+"cal"
+],
+"gate_rank120": 0.25,
+"target_fpw": 2.0,
+"name": "lr_exAll_gate0.25_fpw2"
+},
+{
+"model": "logreg",
+"extra": [
+"vol",
+"tech",
+"usd",
+"basket",
+"cal"
+],
+"gate_rank120": 0.2,
+"target_fpw": 2.5,
+"name": "lr_exAll_gate0.2_fpw2.5"
+},
+{
+"model": "logreg",
+"extra": [
+"vol",
+"tech",
+"usd",
+"basket",
+"cal"
+],
+"gate_rank120": 0.2,
+"target_fpw": 2.0,
+"name": "lr_hit10_exAll_decay1_gate0.2_fpw2",
+"target": "hit_mean10",
+"decay": 1
+},
+{
+"model": "logreg",
+"extra": [
+"vol",
+"tech",
+"usd",
+"basket",
+"cal"
+],
+"gate_rank120": 0.2,
+"target_fpw": 3.0,
+"name": "lr_exAll_decay1_gate0.2_fpw3",
+"decay": 1
+},
+{
+"model": "logreg",
+"extra": [
+"vol",
+"tech",
+"usd",
+"basket",
+"cal"
+],
+"gate_rank120": 0.2,
+"target_fpw": 2.0,
+"name": "best_pol_cd2cap3",
+"policy": {
+"cooldown": 2,
+"cap": 3,
+"span": 7
+}
+},
+{
+"model": "logreg",
+"extra": [
+"vol",
+"tech",
+"usd",
+"basket",
+"cal"
+],
+"gate_rank120": 0.2,
+"target_fpw": 2.0,
+"name": "best_pol_cd5cap1",
+"policy": {
+"cooldown": 5,
+"cap": 1,
+"span": 7
+}
+},
+{
+"model": "logreg",
+"extra": [
+"vol",
+"tech",
+"usd",
+"basket",
+"cal"
+],
+"gate_rank120": 0.2,
+"target_fpw": 2.0,
+"name": "best_C0.03",
+"C": 0.03
+},
+{
+"model": "logreg",
+"extra": [
+"vol",
+"tech",
+"usd",
+"basket",
+"cal"
+],
+"gate_rank120": 0.2,
+"target_fpw": 2.0,
+"name": "best_C0.3",
+"C": 0.3
+},
+{
+"model": "blend_lr_rf",
+"extra": [
+"vol",
+"tech",
+"usd",
+"basket",
+"cal"
+],
+"gate_rank120": 0.2,
+"target_fpw": 2.0,
+"name": "blend_lr_rf_exAll_gate0.2_fpw2"
+},
+{
+"model": "rf",
+"extra": [
+"vol",
+"tech",
+"usd",
+"basket",
+"cal"
+],
+"gate_rank120": 0.2,
+"target_fpw": 2.0,
+"name": "rf_exAll_gate0.2_fpw2"
+},
+{
+"model": "logreg",
+"extra": [
+"vol",
+"tech",
+"usd",
+"basket",
+"cal"
+],
+"gate_rank120": 0.2,
+"target_fpw": 2.0,
+"name": "best_dropshock",
+"drop_shock": true
+}
+]
