@@ -1,17 +1,17 @@
 {
- "code": "7280800",
- "built_at_utc": "2026-09-03T21:06:42Z",
+ "code": "32c8677",
+ "built_at_utc": "2026-09-03T23:54:55Z",
  "latest": {
-  "code": "7280800",
-  "built_at_utc": "2026-09-03T21:05:54Z",
+  "code": "c6a7e90",
+  "built_at_utc": "2026-09-03T22:51:23Z",
   "first_test": "2021-01-01",
   "rank_base": "window",
   "ml": "local",
   "extra_indicators": []
  },
  "variant": {
-  "code": "7280800",
-  "built_at_utc": "2026-09-03T21:06:30Z",
+  "code": "32c8677",
+  "built_at_utc": "2026-09-03T23:54:53Z",
   "first_test": "2021-01-01",
   "rank_base": "window",
   "ml": "local",

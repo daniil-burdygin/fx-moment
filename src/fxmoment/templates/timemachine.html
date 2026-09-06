@@ -1,0 +1,213 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Машина времени — сигналы как на дату T</title>
+<style>
+  :root { --red:#EF3124; --ink:#0B1F33; --muted:#6B7A8A; --line:#E3E8EE; --bg:#F6F7F9; --card:#fff; --blue:#2F6FD6; --future:#F29A2E; }
+  * { box-sizing: border-box; }
+  body { margin:0; font: 15px/1.45 -apple-system, "Segoe UI", Roboto, Arial, sans-serif; color:var(--ink); background:var(--bg); }
+  header { padding:16px 24px 6px; }
+  h1 { margin:0 0 4px; font-size:20px; }
+  h2 { margin:0 0 2px; font-size:24px; }
+  .sub { color:var(--muted); font-size:13px; }
+  .bar { display:flex; flex-wrap:wrap; gap:8px 12px; align-items:center; padding:8px 24px 12px; }
+  .chips { display:flex; gap:6px; }
+  .chips button { border:1px solid var(--line); background:var(--card); border-radius:999px; padding:6px 12px; cursor:pointer; font:inherit; }
+  .chips button.on { background:var(--red); color:#fff; border-color:var(--red); }
+  button.act { border:1px solid var(--line); background:var(--card); border-radius:8px; padding:6px 12px; cursor:pointer; font:inherit; }
+  button.act.primary { background:var(--ink); color:#fff; border-color:var(--ink); }
+  button.act.primary.on { background:var(--future); border-color:var(--future); }
+  input[type=date], select { font:inherit; padding:5px 8px; border:1px solid var(--line); border-radius:8px; background:var(--card); }
+  label { font-size:14px; }
+  main { display:grid; grid-template-columns: minmax(0, 2fr) minmax(320px, 1fr); gap:16px; padding:0 24px 16px; }
+  .card { background:var(--card); border:1px solid var(--line); border-radius:12px; padding:14px 16px; }
+  canvas { width:100%; height:440px; display:block; }
+  .legend { color:var(--muted); font-size:12px; margin-top:6px; }
+  .legend span { display:inline-block; margin-right:14px; }
+  .push { border-left:3px solid var(--red); padding:8px 12px; margin:10px 0; background:#FFF6F5; border-radius:0 8px 8px 0; }
+  .push.wc { border-color:var(--blue); background:#F1F6FF; }
+  .push.none { border-color:#B8C2CC; background:#F6F7F9; }
+  .push h3 { margin:0 0 4px; font-size:15px; }
+  .push p { margin:0; }
+  .meta { color:var(--muted); font-size:12px; margin-top:4px; }
+  .held { color:var(--muted); font-size:13px; margin:3px 0; }
+  .verdict { margin-top:8px; padding:8px 10px; border-radius:8px; background:#F3F5F8; font-size:14px; }
+  .verdict.ok { background:#E8F5EC; } .verdict.bad { background:#FDECEC; }
+  .ledger { display:flex; gap:20px; margin-top:8px; flex-wrap:wrap; }
+  .ledger div { font-size:12px; color:var(--muted); }
+  .ledger div b { display:block; font-size:22px; color:var(--ink); }
+  footer { padding:0 24px 24px; color:var(--muted); font-size:12px; }
+  kbd { border:1px solid var(--line); border-radius:4px; padding:0 4px; font-size:12px; background:#fff; }
+  @media (max-width: 900px) { main { grid-template-columns: 1fr; } canvas { height:320px; } }
+</style>
+</head>
+<body>
+<header>
+  <h1>Машина времени: сигналы как на дату T</h1>
+  <div class="sub">На экране только то, что ЦБ опубликовал не позже T, и пуши, которые политика отправила по этим данным. Следующие 20 дней публикации раскрываются кнопкой. Ряды, решения и тексты — из отчёта бэктеста, вердикты — теми же функциями разметки.</div>
+</header>
+<div class="bar">
+  <div class="chips" id="corridors"></div>
+  <button class="act" id="prev" title="день публикации назад (←)">←</button>
+  <input type="date" id="date">
+  <button class="act" id="next" title="день публикации вперёд (→)">→</button>
+  <button class="act" id="random">Случайный пуш</button>
+  <button class="act" id="lastpush">Последний пуш</button>
+  <select id="span" title="глубина истории на графике"><option value="130">полгода</option><option value="260" selected>год</option><option value="520">два года</option></select>
+  <label><input type="checkbox" id="held" checked> удержанные политикой</label>
+  <button class="act primary" id="reveal">Раскрыть 20 дней</button>
+</div>
+<main>
+  <div class="card"><canvas id="chart"></canvas><div class="legend" id="legend"></div></div>
+  <div class="card" id="panel"></div>
+</main>
+<footer id="foot"></footer>
+<script>
+const D = __PAYLOAD__;
+const CORR = ["TJS", "UZS", "KGS", "AMD", "KZT"];
+const NAME = {TJS: "сомони", UZS: "сума", KGS: "сома", AMD: "драма", KZT: "тенге"};
+const SCEN = {BUY_NOW: "сейчас выгодно", WINDOW_CLOSING: "окно закрывается"};
+const WHY = {muted: "заглушён по прошлым окнам", cooldown: "охлаждение после пуша", thinned: "прорежен", storm: "шторм: поток молчит"};
+const H = D.meta.h, TOL = D.meta.tol_bps, N = D.dates.length;
+const pushesBy = {}, heldBy = {};
+CORR.forEach(c => { pushesBy[c] = []; heldBy[c] = []; });
+D.pushes.forEach(p => pushesBy[p.c].push(p));
+D.held.forEach(e => heldBy[e.c].push(e));
+const S = {c: "TJS", t: 0, reveal: false, span: 260, held: true};
+
+function esc(s) { return String(s).replace(/[&<>"]/g, ch => ({"&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;"}[ch])); }
+function fmtDate(i) { const [y, m, d] = D.dates[i].split("-"); return `${d}.${m}.${y}`; }
+function fmtRate(v) {
+  if (v == null) return "—";
+  const dec = v >= 1 ? 3 : Math.min(7, Math.ceil(-Math.log10(v)) + 3);
+  return v.toFixed(dec).replace(".", ",");
+}
+function lastPushIdx(c) { const ps = pushesBy[c]; return ps.length ? ps[ps.length - 1].i : N - 1; }
+function windowOf(i) { const d = D.dates[i]; return D.windows.find(w => d >= w.start && d <= w.end) || null; }
+function snap(dateStr) { let lo = 0, hi = N - 1; while (lo < hi) { const mid = (lo + hi + 1) >> 1; if (D.dates[mid] <= dateStr) lo = mid; else hi = mid - 1; } return lo; }
+
+function draw() {
+  const cv = document.getElementById("chart"), dpr = window.devicePixelRatio || 1;
+  const W = cv.clientWidth, Hh = cv.clientHeight;
+  cv.width = W * dpr; cv.height = Hh * dpr;
+  const ctx = cv.getContext("2d"); ctx.setTransform(dpr, 0, 0, dpr, 0, 0); ctx.clearRect(0, 0, W, Hh);
+  const ser = D.series[S.c], t = S.t;
+  const i0 = Math.max(0, t - S.span + 1), i1 = S.reveal ? Math.min(N - 1, t + H) : t;
+  let lo = Infinity, hi = -Infinity;
+  for (let i = i0; i <= i1; i++) { const v = ser[i]; if (v == null) continue; if (v < lo) lo = v; if (v > hi) hi = v; }
+  if (!isFinite(lo)) return;
+  const pad = (hi - lo) * 0.1 || lo * 0.01; lo -= pad; hi += pad;
+  const L = 64, R = 16, T = 14, B = 30;
+  const x = i => L + (i - i0) / Math.max(1, i1 - i0) * (W - L - R);
+  const y = v => T + (hi - v) / (hi - lo) * (Hh - T - B);
+  ctx.strokeStyle = "#E3E8EE"; ctx.fillStyle = "#6B7A8A"; ctx.font = "11px sans-serif"; ctx.textAlign = "right"; ctx.lineWidth = 1;
+  for (let k = 0; k <= 4; k++) { const v = lo + (hi - lo) * k / 4; ctx.beginPath(); ctx.moveTo(L, y(v)); ctx.lineTo(W - R, y(v)); ctx.stroke(); ctx.fillText(fmtRate(v), L - 6, y(v) + 4); }
+  ctx.textAlign = "center";
+  for (let k = 0; k <= 6; k++) { const i = i0 + Math.round((i1 - i0) * k / 6); const [yy, mm] = D.dates[i].split("-"); ctx.fillText(`${mm}.${yy.slice(2)}`, x(i), Hh - 10); }
+  ctx.strokeStyle = "#0B1F33"; ctx.lineWidth = 1.6; ctx.beginPath(); let on = false;
+  for (let i = i0; i <= t; i++) { const v = ser[i]; if (v == null) continue; if (!on) { ctx.moveTo(x(i), y(v)); on = true; } else ctx.lineTo(x(i), y(v)); }
+  ctx.stroke();
+  if (S.reveal) {
+    ctx.strokeStyle = "#F29A2E"; ctx.setLineDash([5, 4]); ctx.beginPath(); on = false;
+    for (let i = t; i <= i1; i++) { const v = ser[i]; if (v == null) continue; if (!on) { ctx.moveTo(x(i), y(v)); on = true; } else ctx.lineTo(x(i), y(v)); }
+    ctx.stroke(); ctx.setLineDash([]);
+    const a = ser[t];
+    if (a != null && pushesBy[S.c].some(p => p.i === t && p.sc === "BUY_NOW")) {
+      const thr = a * (1 - TOL / 1e4);
+      ctx.strokeStyle = "#C62828"; ctx.setLineDash([2, 3]); ctx.beginPath(); ctx.moveTo(x(t), y(thr)); ctx.lineTo(x(i1), y(thr)); ctx.stroke(); ctx.setLineDash([]);
+    }
+  }
+  ctx.strokeStyle = "#EF3124"; ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(x(t), T); ctx.lineTo(x(t), Hh - B); ctx.stroke();
+  if (S.held) {
+    ctx.fillStyle = "#B8C2CC";
+    heldBy[S.c].forEach(e => { if (e.i < i0 || e.i > t || ser[e.i] == null) return; ctx.beginPath(); ctx.arc(x(e.i), y(ser[e.i]), 2.5, 0, 7); ctx.fill(); });
+  }
+  pushesBy[S.c].forEach(p => {
+    if (p.i < i0 || p.i > t) return; const v = ser[p.i]; if (v == null) return;
+    const px = x(p.i), py = y(v);
+    ctx.fillStyle = p.sc === "BUY_NOW" ? "#EF3124" : "#2F6FD6"; ctx.beginPath();
+    if (p.sc === "BUY_NOW") { ctx.moveTo(px, py + 12); ctx.lineTo(px - 6, py + 22); ctx.lineTo(px + 6, py + 22); }
+    else { ctx.moveTo(px, py - 12); ctx.lineTo(px - 6, py - 22); ctx.lineTo(px + 6, py - 22); }
+    ctx.closePath(); ctx.fill();
+  });
+  document.getElementById("legend").innerHTML =
+    `<span style="color:#EF3124">▲ пуш «сейчас выгодно»</span><span style="color:#2F6FD6">▼ пуш «окно закрывается»</span>` +
+    `<span style="color:#B8C2CC">● событие, удержанное политикой</span><span style="color:#F29A2E">╌ следующие ${H} дней публикации (после раскрытия)</span>` +
+    `<span style="color:#C62828">┈ курс пуша с допуском ${TOL} бп</span>`;
+}
+
+function verdictHtml(p) {
+  if (p.hit === null) return `<div class="verdict">Горизонт ещё не закрыт: снимок кончается ${fmtDate(N - 1)}.</div>`;
+  const w = windowOf(p.i), base = w && w.base[p.c] ? w.base[p.c][p.sc] : null, ok = p.hit;
+  const what = p.sc === "BUY_NOW"
+    ? `средний курс следующих ${H} дней публикации ${fmtRate(p.fmean)} ₽ ${ok ? "не хуже" : "хуже"} курса пуша с допуском ${TOL} бп`
+    : `курс через ${H} дней публикации ${ok ? "не ниже" : "ниже"} курса пуша`;
+  const ben = p.benefit == null ? "" : `; выгода вперёд ${p.benefit >= 0 ? "+" : "−"}${Math.abs(Math.round(p.benefit))} бп`;
+  const bs = base == null ? "" : `; случайный день этого окна попадал в ${Math.round(100 * base)} % случаев`;
+  return `<div class="verdict ${ok ? "ok" : "bad"}">${ok ? "✓ Подтвердилось" : "✗ Не подтвердилось"}: ${what}${ben}${bs}.</div>`;
+}
+
+function panel() {
+  const t = S.t, c = S.c, el = document.getElementById("panel");
+  const today = pushesBy[c].filter(p => p.i === t), heldToday = heldBy[c].filter(e => e.i === t);
+  const others = CORR.filter(k => k !== c && pushesBy[k].some(p => p.i === t));
+  let html = `<div class="sub">Дата публикации ЦБ</div><h2>${fmtDate(t)}</h2>` +
+    `<div class="meta">курс ${NAME[c]} ${fmtRate(D.series[c][t])} ₽, действует со следующего дня` +
+    (others.length ? `; пуши в этот день ещё по ${others.join(", ")}` : "") + `</div>`;
+  if (today.length) {
+    today.forEach(p => {
+      html += `<div class="push ${p.sc === "WINDOW_CLOSING" ? "wc" : ""}"><h3>${esc(p.title)}</h3><p>${esc(p.body)}</p>` +
+        `<div class="meta">${SCEN[p.sc] || p.sc} · индикатор ${esc(p.ind)} · сила ${p.strength} · ${esc(p.speed)} · окно ${p.split}</div>` +
+        (S.reveal ? verdictHtml(p) : "") + `</div>`;
+    });
+  } else {
+    html += `<div class="push none"><h3>Пуша нет</h3><p>${heldToday.length ? "Индикаторы сработали, политика их удержала:" : "Ни один индикатор не сработал — молчим."}</p></div>`;
+  }
+  heldToday.forEach(e => { html += `<div class="held">· ${esc(e.ind)}, ${SCEN[e.sc] || e.sc} — ${WHY[e.why] || esc(e.why)}</div>`; });
+  const known = pushesBy[c].filter(p => p.i + H <= t && p.hit !== null), hits = known.filter(p => p.hit).length;
+  const w = windowOf(t), base = w && w.base[c] ? w.base[c].BUY_NOW : null;
+  html += `<h3 style="margin:16px 0 2px">Журнал попаданий на ${fmtDate(t)}</h3>` +
+    `<div class="meta">пуши по ${NAME[c]}, чей горизонт ${H} дней публикации закрылся не позже T; попадание «сейчас выгодно» — средний курс следующих ${H} дней не хуже курса пуша с допуском ${TOL} бп, «окно закрывается» — курс через ${H} дней не ниже</div>` +
+    `<div class="ledger"><div><b>${known.length}</b>пушей проверено</div><div><b>${hits}</b>подтвердилось</div>` +
+    `<div><b>${known.length ? Math.round(100 * hits / known.length) + " %" : "—"}</b>доля</div>` +
+    `<div><b>${base != null ? Math.round(100 * base) + " %" : "—"}</b>случайный день окна${w ? " " + w.label : ""}</div></div>`;
+  el.innerHTML = html;
+}
+
+function setDate(i, keepReveal) {
+  S.t = Math.max(0, Math.min(N - 1, i));
+  if (!keepReveal) S.reveal = false;
+  document.getElementById("date").value = D.dates[S.t];
+  const b = document.getElementById("reveal");
+  b.textContent = S.reveal ? "Скрыть будущее" : `Раскрыть ${H} дней`;
+  b.classList.toggle("on", S.reveal);
+  draw(); panel();
+}
+function setCorridor(c) {
+  S.c = c;
+  document.querySelectorAll("#corridors button").forEach(b => b.classList.toggle("on", b.dataset.c === c));
+  setDate(S.t, false);
+}
+
+const chips = document.getElementById("corridors");
+CORR.forEach(c => { const b = document.createElement("button"); b.dataset.c = c; b.textContent = c; b.onclick = () => setCorridor(c); chips.appendChild(b); });
+const dateEl = document.getElementById("date"); dateEl.min = D.dates[0]; dateEl.max = D.dates[N - 1];
+dateEl.onchange = () => setDate(snap(dateEl.value), false);
+document.getElementById("prev").onclick = () => setDate(S.t - 1, false);
+document.getElementById("next").onclick = () => setDate(S.t + 1, false);
+document.getElementById("random").onclick = () => { const ps = pushesBy[S.c]; if (ps.length) setDate(ps[Math.floor(Math.random() * ps.length)].i, false); };
+document.getElementById("lastpush").onclick = () => setDate(lastPushIdx(S.c), false);
+document.getElementById("span").onchange = e => { S.span = +e.target.value; draw(); };
+document.getElementById("held").onchange = e => { S.held = e.target.checked; draw(); };
+document.getElementById("reveal").onclick = () => { S.reveal = !S.reveal; setDate(S.t, true); };
+document.addEventListener("keydown", e => { if (e.key === "ArrowLeft") setDate(S.t - 1, false); if (e.key === "ArrowRight") setDate(S.t + 1, false); });
+window.addEventListener("resize", draw);
+document.getElementById("foot").textContent =
+  `Отчёт reports/${D.meta.run}, код ${D.meta.code}, снимок ЦБ до ${D.meta.last_eff_date}, бэктест собран ${D.meta.built_at_utc}; страница собрана ${D.meta.generated_at_utc}. ` +
+  `Пушей ${D.meta.n_pushes} (${D.meta.first_push} … ${D.meta.last_push}), удержанных политикой событий ${D.meta.n_held}. Клавиши ← → листают даты публикации.`;
+setCorridor("TJS"); setDate(lastPushIdx("TJS"), false);
+</script>
+</body>
+</html>

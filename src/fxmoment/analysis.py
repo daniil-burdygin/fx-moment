@@ -1134,7 +1134,18 @@ def _final_analyses(
     survival.to_csv(out / "execution_survival.csv", index=False)
     regret = reversal_regret_table(result.signals, decided, panel, result.splits)
     regret.to_csv(out / "reversal_regret.csv", index=False)
-    return {"calendar": cal_sum, "calendar_vs_stack": cal_cmp, "survival": survival, "regret": regret}
+    from fxmoment.client_window import client_window_tables
+
+    cw_windows, cw_summary = client_window_tables(panel, result.splits, decided, corridors=ran)
+    cw_windows.to_csv(out / "client_window_windows.csv", index=False)
+    cw_summary.to_csv(out / "client_window.csv", index=False)
+    return {
+        "calendar": cal_sum,
+        "calendar_vs_stack": cal_cmp,
+        "survival": survival,
+        "regret": regret,
+        "client_window": cw_summary,
+    }
 
 
 def _py(v: Any) -> Any:
@@ -1234,6 +1245,28 @@ def _analysis_readme(
     cal_first = cal[cal["indicator"].str.endswith(":first")] if len(cal) else cal
     cal_all = cal[cal["indicator"].str.endswith(":all") & (cal["corridor"] == "all")] if len(cal) else cal
     cal_cmp = extra.get("calendar_vs_stack", pd.DataFrame())
+    cwin = extra.get("client_window", pd.DataFrame())
+    cw_cols = [
+        "strategy",
+        "windows",
+        "benefit_vs_habit_bps",
+        "benefit_vs_habit_ci_lo",
+        "benefit_vs_habit_ci_hi",
+        "benefit_vs_random_bps",
+        "oracle_share",
+        "share_shifted",
+        "benefit_when_shifted_bps",
+        "regret_share",
+        "rub_per_transfer",
+    ]
+    cw_all = (
+        cwin[(cwin["corridor"] == "all") & (cwin["persona"] == "all")][cw_cols] if len(cwin) else cwin
+    )
+    cw_push = (
+        cwin[(cwin["strategy"] == "push") & (cwin["persona"] == "all")][["corridor", *cw_cols[1:]]]
+        if len(cwin)
+        else cwin
+    )
     cmp_show = [
         "rule",
         "stack",
@@ -1485,6 +1518,31 @@ def _analysis_readme(
         "Все столбцы — `calendar_vs_stack.csv`.",
         "",
         _md(cal_cmp[[c for c in cmp_show if c in cal_cmp.columns]]) if len(cal_cmp) else "нет данных",
+        "",
+        "## Окно клиента: решение клиента, а не индикатора",
+        "",
+        "Клиент переводит раз в месяц: деньги пришли в день s (5, 10, 15, 20 или 25-е), семье они нужны не "
+        "позже чем через k дней публикации (5, 10 или 15). В этом окне он выбирает один день, и все "
+        "стратегии сравниваются на одном и том же окне. `habit` — первый день окна; `deadline` — срок; "
+        "`random` — средний курс окна; `calendar25` — первый день с 25-го, иначе срок; `screen` — первый "
+        "день, когда факт экрана истинен (курс ниже, чем в 80 % дней за полгода), иначе срок; `push` — "
+        "первый пуш `BUY_NOW` итогового потока внутри окна, иначе срок; `push_or_calendar` — пуш, иначе "
+        "календарь, иначе срок; `oracle` — лучший день окна. `benefit_vs_habit_bps` — насколько курс "
+        "стратегии ниже курса привычки, интервал — блочный бутстреп по месяцам (все коридоры месяца в одном "
+        "блоке); `oracle_share` — доля выигрыша оракула над случайным днём, взятая стратегией; "
+        "`share_shifted` — доля окон, где перевод сдвинулся (у пуша — пуш пришёл в окно); "
+        "`benefit_when_shifted_bps` — выгода против привычки в этих окнах; `regret_share` — доля окон, где "
+        "стратегия хуже привычки больше чем на допуск; `rub_per_transfer` — выгода против привычки на "
+        "перевод 30 000 ₽. Период — тестовые окна walk-forward. По окнам — `client_window_windows.csv`, "
+        "все строки (коридор × портрет × стратегия) — `client_window.csv`.",
+        "",
+        "Все коридоры, все портреты:",
+        "",
+        _md(cw_all) if len(cw_all) else "нет данных",
+        "",
+        "Стратегия `push` по коридорам, все портреты:",
+        "",
+        _md(cw_push) if len(cw_push) else "нет данных",
         "",
         "## Выживаемость сигнала до исполнения",
         "",

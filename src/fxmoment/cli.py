@@ -7,11 +7,12 @@ import argparse
 import json
 import sys
 from datetime import date
+from pathlib import Path
 from typing import Any
 
 import pandas as pd
 
-from fxmoment.config import ALL_CURRENCIES, ANALYSIS_START, FIRST_TEST, MOEX_RAW_START, RAW_START
+from fxmoment.config import ALL_CURRENCIES, ANALYSIS_START, CORRIDORS, FIRST_TEST, MOEX_RAW_START, RAW_START
 
 PROTECTED_RUNS = ("latest", "fixed", "intraday")  # каталоги основных отчётов: варианты сюда не пишутся
 
@@ -339,6 +340,57 @@ def cmd_check_texts(args: argparse.Namespace) -> int:
     return 2 if bad else 0
 
 
+def cmd_timemachine(args: argparse.Namespace) -> int:
+    """Страница «сигналы как на дату T» из готового прогона (строка Ш9 плана): офлайн, без пересчёта."""
+    from fxmoment.data.store import load_panel, repo_root
+    from fxmoment.demo import write_timemachine
+
+    root = repo_root()
+    out_dir = root / "reports" / args.run
+    path = Path(args.out) if args.out else root / "prototype" / "timemachine.html"
+    meta = write_timemachine(load_panel(), out_dir, path, run=args.run)
+    print(
+        f"машина времени → {path}: {meta['n_pushes']} пушей ({meta['first_push']} … {meta['last_push']}), "
+        f"{meta['n_held']} удержанных событий, код прогона {meta['code']}"
+    )
+    return 0
+
+
+def cmd_client_window(args: argparse.Namespace) -> int:
+    """Окно клиента (строка Ш5 плана) поверх готового прогона: две таблицы в reports/<прогон>/analysis/."""
+    from fxmoment.analysis import load_result
+    from fxmoment.client_window import client_window_tables
+    from fxmoment.data.store import load_panel, repo_root
+
+    panel = load_panel()
+    out_dir = repo_root() / "reports" / args.run
+    result = load_result(panel, out_dir)
+    dec_path = out_dir / "stream_decisions.csv"
+    decided = pd.read_csv(dec_path, parse_dates=["date"]) if dec_path.exists() else None
+    ran = tuple(c for c in CORRIDORS if c in result.signals["corridor"].unique())
+    windows, summary = client_window_tables(panel, result.splits, decided, corridors=ran)
+    out = out_dir / "analysis"
+    out.mkdir(parents=True, exist_ok=True)
+    windows.to_csv(out / "client_window_windows.csv", index=False)
+    summary.to_csv(out / "client_window.csv", index=False)
+    pd.set_option("display.width", 250)
+    show = summary[(summary["corridor"] == "all") & (summary["persona"] == "all")]
+    cols = [
+        "strategy",
+        "windows",
+        "benefit_vs_habit_bps",
+        "benefit_vs_habit_ci_lo",
+        "benefit_vs_habit_ci_hi",
+        "oracle_share",
+        "share_shifted",
+        "regret_share",
+        "rub_per_transfer",
+    ]
+    print(show[cols].round(3).to_string(index=False))
+    print(f"\nокно клиента → {out}: {len(windows)} окон, {len(summary)} строк сводки")
+    return 0
+
+
 def main(argv: list[str] | None = None) -> int:
     p = argparse.ArgumentParser(prog="fxmoment", description="Сигнальный слой «выгодный момент для перевода»")
     sub = p.add_subparsers(dest="cmd", required=True)
@@ -426,6 +478,15 @@ def main(argv: list[str] | None = None) -> int:
     s.add_argument("--decide", action="store_true", help="применить политику потока и показать решение")
     s.add_argument("--no-ml", action="store_true")
     s.set_defaults(func=cmd_signals)
+
+    tm = sub.add_parser("timemachine", help="страница «сигналы как на дату T» из reports/<прогон>")
+    tm.add_argument("--run", default="latest", help="каталог прогона в reports/ (по умолчанию latest)")
+    tm.add_argument("--out", default=None, help="куда писать HTML (по умолчанию prototype/timemachine.html)")
+    tm.set_defaults(func=cmd_timemachine)
+
+    cwp = sub.add_parser("client-window", help="окно клиента поверх reports/<прогон> → analysis/")
+    cwp.add_argument("--run", default="latest", help="каталог прогона в reports/ (по умолчанию latest)")
+    cwp.set_defaults(func=cmd_client_window)
 
     c = sub.add_parser("check-texts", help="прогнать библиотеку текстов и (опц.) свой текст через чекер")
     c.add_argument("--text", default="", help="проверить одну строку")
