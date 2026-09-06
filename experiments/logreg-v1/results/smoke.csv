@@ -1,0 +1,2 @@
+name,lift_med_corr_median,lift_med_corr_min,lift_pooled,lift_win_median_all,share_windows_lift_gt1,benefit_excess_med,fpw,n_events,clump_share,empty_month_share,longest_gap,sec,spec,per_corr_lift
+lr_base,0.9060881928528988,0.7477305937162677,0.9143146763596549,0.9413793103448277,0.34545454545454546,4.197174513303146,0.4928314539172094,707,0.7012525779939208,0.603030303030303,121.0,0.6,"{""name"": ""lr_base"", ""model"": ""logreg""}","{""AMD"": 1.051, ""KGS"": 0.905, ""KZT"": 0.748, ""TJS"": 0.906, ""UZS"": 1.17}"

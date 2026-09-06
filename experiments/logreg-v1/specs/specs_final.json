@@ -1,0 +1,1 @@
+[{"name": "FINAL_lr_exAll_gate0.3_fpw2", "model": "logreg", "extra": ["vol", "tech", "usd", "basket", "cal"], "gate_rank120": 0.3, "target_fpw": 2.0, "dump": true, "dump_events": true}]

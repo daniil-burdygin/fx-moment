@@ -1,0 +1,248 @@
+[
+{
+"name": "ref_calendar25",
+"model": "calendar",
+"policy": {
+"cooldown": 1,
+"cap": 5,
+"span": 7
+}
+},
+{
+"name": "ref_level_only",
+"model": "level_only"
+},
+{
+"name": "lr_hit_mean20",
+"model": "logreg",
+"target": "hit_mean20"
+},
+{
+"name": "lr_hit_mean10",
+"model": "logreg",
+"target": "hit_mean10"
+},
+{
+"name": "lr_hit_min20",
+"model": "logreg",
+"target": "hit_min20"
+},
+{
+"name": "lr_localmin20",
+"model": "logreg",
+"target": "localmin20"
+},
+{
+"name": "lr_benefit_pos",
+"model": "logreg",
+"target": "benefit_pos"
+},
+{
+"name": "lr_benefit_top",
+"model": "logreg",
+"target": "benefit_top"
+},
+{
+"name": "lr_ex_vol",
+"model": "logreg",
+"extra": [
+"vol"
+]
+},
+{
+"name": "lr_ex_tech",
+"model": "logreg",
+"extra": [
+"tech"
+]
+},
+{
+"name": "lr_ex_usd",
+"model": "logreg",
+"extra": [
+"usd"
+]
+},
+{
+"name": "lr_ex_basket",
+"model": "logreg",
+"extra": [
+"basket"
+]
+},
+{
+"name": "lr_ex_cal",
+"model": "logreg",
+"extra": [
+"cal"
+]
+},
+{
+"name": "lr_ex_vol+tech",
+"model": "logreg",
+"extra": [
+"vol",
+"tech"
+]
+},
+{
+"name": "lr_ex_vol+tech+usd",
+"model": "logreg",
+"extra": [
+"vol",
+"tech",
+"usd"
+]
+},
+{
+"name": "lr_ex_vol+tech+usd+basket+cal",
+"model": "logreg",
+"extra": [
+"vol",
+"tech",
+"usd",
+"basket",
+"cal"
+]
+},
+{
+"name": "lr_C0.01",
+"model": "logreg",
+"C": 0.01
+},
+{
+"name": "lr_C1.0",
+"model": "logreg",
+"C": 1.0
+},
+{
+"name": "lr_balanced",
+"model": "logreg",
+"cw": "balanced"
+},
+{
+"name": "lr_decay1",
+"model": "logreg",
+"decay": 1
+},
+{
+"name": "lr_decay2",
+"model": "logreg",
+"decay": 2
+},
+{
+"name": "lr_decay4",
+"model": "logreg",
+"decay": 4
+},
+{
+"name": "lr_recent3",
+"model": "logreg",
+"recent_years": 3
+},
+{
+"name": "lr_recent5",
+"model": "logreg",
+"recent_years": 5
+},
+{
+"name": "lr_dropshock",
+"model": "logreg",
+"drop_shock": true
+},
+{
+"name": "lr_gate0.2",
+"model": "logreg",
+"gate_rank120": 0.2
+},
+{
+"name": "lr_gate0.35",
+"model": "logreg",
+"gate_rank120": 0.35
+},
+{
+"name": "lr_fpw0.5",
+"model": "logreg",
+"target_fpw": 0.5
+},
+{
+"name": "lr_fpw2.0",
+"model": "logreg",
+"target_fpw": 2.0
+},
+{
+"name": "hgb",
+"model": "hgb"
+},
+{
+"name": "hgb_exAll",
+"model": "hgb",
+"extra": [
+"vol",
+"tech",
+"usd",
+"basket",
+"cal"
+]
+},
+{
+"name": "rf",
+"model": "rf"
+},
+{
+"name": "rf_exAll",
+"model": "rf",
+"extra": [
+"vol",
+"tech",
+"usd",
+"basket",
+"cal"
+]
+},
+{
+"name": "blend_lr_hgb",
+"model": "blend_lr_hgb"
+},
+{
+"name": "blend_lr_hgb_exAll",
+"model": "blend_lr_hgb",
+"extra": [
+"vol",
+"tech",
+"usd",
+"basket",
+"cal"
+]
+},
+{
+"name": "blend_lr_rf",
+"model": "blend_lr_rf"
+},
+{
+"name": "blend_lr_rf_exAll",
+"model": "blend_lr_rf",
+"extra": [
+"vol",
+"tech",
+"usd",
+"basket",
+"cal"
+]
+},
+{
+"name": "stack_hgb_lr",
+"model": "stack_hgb_lr"
+},
+{
+"name": "stack_hgb_lr_exAll",
+"model": "stack_hgb_lr",
+"extra": [
+"vol",
+"tech",
+"usd",
+"basket",
+"cal"
+]
+}
+]

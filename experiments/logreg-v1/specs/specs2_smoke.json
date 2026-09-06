@@ -1,0 +1,2 @@
+[{"name":"s_lr_fixed_only","model":"lr","lr_inputs":"fixed","thr":["fpw",2.0]},
+ {"name":"s_stack_hgb_fixed","bases":["hgb"],"lr_inputs":"fixed","extra":["vol","tech","usd","basket","cal"],"thr":["fpw",2.0]}]

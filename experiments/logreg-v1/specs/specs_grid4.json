@@ -1,0 +1,6 @@
+[{"name":"ref_level_only_fpw1","model":"level_only","target_fpw":1.0,"dump":true},
+ {"name":"ref_level_only_fpw0.5","model":"level_only","target_fpw":0.5},
+ {"name":"ref_level_only_gate0.2_fpw2","model":"level_only","gate_rank120":0.2,"target_fpw":2.0},
+ {"name":"lr_base_gate0.2_fpw2_dump","model":"logreg","gate_rank120":0.2,"target_fpw":2.0,"dump":true},
+ {"name":"best_gate0.15_pol_cd2cap3","model":"logreg","extra":["vol","tech","usd","basket","cal"],"gate_rank120":0.15,"target_fpw":2.0,"policy":{"cooldown":2,"cap":3,"span":7}},
+ {"name":"best_no_gate_fpw1","model":"logreg","extra":["vol","tech","usd","basket","cal"],"target_fpw":1.0,"dump":true}]

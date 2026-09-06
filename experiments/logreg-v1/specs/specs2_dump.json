@@ -1,0 +1,1 @@
+[{"name": "s_stack_hgb_fixed_dump", "bases": ["hgb"], "lr_inputs": "fixed", "extra": ["vol", "tech", "usd", "basket", "cal"], "thr": ["fpw", 2.0], "dump": true}]
