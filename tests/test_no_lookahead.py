@@ -125,3 +125,27 @@ def test_live_split_after_last_window(panel):
         panel, date, corridors=("TJS",), indicators=(Level,), analysis_start="2017-03-01", splits=splits
     )
     assert (state["split"] == live.id).all()
+
+
+def test_signals_as_of_equals_full_run_with_signal_source(panel):
+    """Тот же шов для варианта «один сигнал по рублю»: срез на дату обязан дать то же, что полный
+    прогон, — иначе общий ряд протащил бы в срез данные, которых на T ещё нет."""
+    splits = make_splits(panel.index, first_test="2019-07-01", test_months=6, purge_days=20)
+    kw = dict(corridors=CORRIDORS, indicators=ALL_INDICATORS, analysis_start="2017-03-01", splits=splits)
+    full = run_backtest(panel, horizons=(5,), signal_source="USD", **kw)
+    assert len(full.signals)
+    for t in (splits[1].test_start, splits[2].test_end, panel.index[-40]):
+        t = panel.index[panel.index.searchsorted(pd.Timestamp(t))]
+        state = signals_as_of(panel, t, signal_source="USD", **kw)
+        fired = state[state["signal"]]
+        expect = full.signals[full.signals["date"] == t]
+        got = {(r.corridor, r.indicator, round(r.strength, 9), r.facts) for r in fired.itertuples()}
+        want = {(r.corridor, r.indicator, round(r.strength, 9), r.facts) for r in expect.itertuples()}
+        assert got == want, f"расхождение на {t.date()}: {got ^ want}"
+        for r in state.itertuples():
+            cal = full.calibration[
+                (full.calibration["corridor"] == r.corridor)
+                & (full.calibration["indicator"] == r.indicator)
+                & (full.calibration["split"] == r.split)
+            ]
+            assert json.loads(cal["params"].iloc[0]) == json.loads(r.params)
