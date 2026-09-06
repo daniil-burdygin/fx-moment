@@ -1,25 +1,29 @@
 {
- "code": "629e98a",
- "built_at_utc": "2026-09-06T16:42:01Z",
+ "code": "bd44482",
+ "built_at_utc": "2026-09-06T17:27:37Z",
  "latest": {
-  "code": "c6a7e90",
-  "built_at_utc": "2026-09-03T22:51:23Z",
+  "code": "bd44482",
+  "built_at_utc": "2026-09-06T17:00:03Z",
   "first_test": "2021-01-01",
   "rank_base": "window",
   "ml": "local",
-  "ml_features": null,
-  "extra_indicators": []
+  "ml_features": [],
+  "extra_indicators": [],
+  "signal_source": null,
+  "bounds": null
  },
  "variant": {
-  "code": "629e98a",
-  "built_at_utc": "2026-09-06T16:41:54Z",
+  "code": "bd44482",
+  "built_at_utc": "2026-09-06T17:27:35Z",
   "first_test": "2021-01-01",
   "rank_base": "window",
   "ml": "pooled",
   "ml_features": [
    "eurusd"
   ],
-  "extra_indicators": []
+  "extra_indicators": [],
+  "signal_source": null,
+  "bounds": null
  },
  "common_windows": [
   "2021-01…2021-06",

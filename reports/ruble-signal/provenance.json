@@ -1,8 +1,8 @@
 {
- "code": "972ae6a",
+ "code": "bd44482",
  "fetched_at_utc": "2026-09-03T00:04:48+00:00",
  "last_eff_date": "2026-09-03",
- "built_at_utc": "2026-09-06T16:22:20Z",
+ "built_at_utc": "2026-09-06T17:19:38Z",
  "windows": [
   "2021-01…2021-06",
   "2021-07…2021-12",
@@ -19,6 +19,8 @@
  "first_test": "2021-01-01",
  "rank_base": "window",
  "ml": "local",
+ "ml_features": [],
  "extra_indicators": [],
+ "bounds": null,
  "signal_source": "USD"
 }

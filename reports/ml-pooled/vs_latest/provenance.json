@@ -1,21 +1,27 @@
 {
- "code": "32c8677",
- "built_at_utc": "2026-09-03T23:52:02Z",
+ "code": "bd44482",
+ "built_at_utc": "2026-09-06T17:12:43Z",
  "latest": {
-  "code": "c6a7e90",
-  "built_at_utc": "2026-09-03T22:51:23Z",
+  "code": "bd44482",
+  "built_at_utc": "2026-09-06T17:00:03Z",
   "first_test": "2021-01-01",
   "rank_base": "window",
   "ml": "local",
-  "extra_indicators": []
+  "ml_features": [],
+  "extra_indicators": [],
+  "signal_source": null,
+  "bounds": null
  },
  "variant": {
-  "code": "32c8677",
-  "built_at_utc": "2026-09-03T23:52:00Z",
+  "code": "bd44482",
+  "built_at_utc": "2026-09-06T17:12:41Z",
   "first_test": "2021-01-01",
   "rank_base": "window",
   "ml": "pooled",
-  "extra_indicators": []
+  "ml_features": [],
+  "extra_indicators": [],
+  "signal_source": null,
+  "bounds": null
  },
  "common_windows": [
   "2021-01…2021-06",

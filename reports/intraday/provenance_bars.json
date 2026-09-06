@@ -1,14 +1,14 @@
 {
- "code": "a636bdb",
+ "code": "bd44482",
  "fetched_at_utc": "2026-09-03T02:30:05+00:00",
  "interval_length": null,
  "profile": "intraday",
  "bars_per_day": 9,
  "daily_report": {
-  "code": "c6a7e90",
+  "code": "bd44482",
   "fetched_at_utc": "2026-09-03T00:04:48+00:00",
   "last_eff_date": "2026-09-03",
-  "built_at_utc": "2026-09-03T22:51:23Z",
+  "built_at_utc": "2026-09-06T17:00:03Z",
   "windows": [
    "2021-01…2021-06",
    "2021-07…2021-12",
@@ -25,9 +25,11 @@
   "first_test": "2021-01-01",
   "rank_base": "window",
   "ml": "local",
-  "extra_indicators": []
+  "ml_features": [],
+  "extra_indicators": [],
+  "bounds": null
  },
- "built_at_utc": "2026-09-03T23:22:32Z",
+ "built_at_utc": "2026-09-06T17:04:09Z",
  "windows": {
   "KZT": [
    "2022-12…2023-05",

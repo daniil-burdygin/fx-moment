@@ -1,8 +1,8 @@
 {
- "code": "a636bdb",
+ "code": "bd44482",
  "fetched_at_utc": "2026-09-03T00:04:48+00:00",
  "last_eff_date": "2026-09-03",
- "built_at_utc": "2026-09-03T23:28:27Z",
+ "built_at_utc": "2026-09-06T17:10:02Z",
  "windows": [
   "2019-01…2019-06",
   "2019-07…2019-12",
@@ -23,5 +23,7 @@
  "first_test": "2019-01-01",
  "rank_base": "window",
  "ml": "local",
- "extra_indicators": []
+ "ml_features": [],
+ "extra_indicators": [],
+ "bounds": null
 }
