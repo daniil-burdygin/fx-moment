@@ -1,0 +1,163 @@
+<title>Момент · слайд 0 · продукт</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;700&family=Golos+Text:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+:root{--ink:#0B1F35;--paper:#FFFFFF;--paper2:#F3F4F5;--red:#EF3124;--orange:#F85010;--lav:#B8A8E0;--black:#0B0B0F;--muted:#5B6875;--line:#D5D6DC}
+*{box-sizing:border-box}
+html,body{margin:0;background:#1a1a1d;color-scheme:light}
+body{font-family:"Golos Text",system-ui,-apple-system,"Segoe UI",Arial,Helvetica,sans-serif;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+.deck{display:flex;flex-direction:column;align-items:center;gap:28px;padding:28px 0}
+.slide{width:1280px;height:720px;position:relative;overflow:hidden;background:var(--paper);color:var(--ink);padding:46px 64px 66px;break-after:page;page-break-after:always;box-shadow:0 8px 30px rgba(0,0,0,.35)}
+.slide.dark{background:var(--black);color:#fff}
+.slide:last-child{break-after:auto;page-break-after:auto}
+@media print{html,body{background:#fff}.deck{display:block;padding:0;gap:0}.slide{box-shadow:none;margin:0}@page{size:1280px 720px;margin:0}}
+.eyebrow{font-family:"JetBrains Mono",ui-monospace,Menlo,monospace;font-size:13px;letter-spacing:.12em;text-transform:uppercase;color:var(--red);font-weight:600;margin:0 0 10px}
+.dark .eyebrow{color:var(--lav)}
+h2{font-family:"Oswald",Impact,"Arial Narrow",sans-serif;font-weight:700;text-transform:uppercase;font-size:35px;line-height:1.04;margin:0 0 14px;letter-spacing:.005em;max-width:1140px}
+h2 .l{color:var(--lav);display:block}
+h3{font-family:"Golos Text",Arial,sans-serif;font-weight:800;font-size:18px;margin:0 0 6px;letter-spacing:-.005em}
+p{margin:0 0 6px;font-size:17px;line-height:1.32}
+.small{font-size:13.5px;color:var(--muted);line-height:1.3}
+.dark .small{color:#B7BEC8}
+.mono{font-family:"JetBrains Mono",ui-monospace,Menlo,monospace}
+.num{font-family:"Oswald",Impact,"Arial Narrow",sans-serif;font-weight:700;font-size:44px;line-height:1;letter-spacing:-.01em}
+.big{font-family:"Oswald",Impact,"Arial Narrow",sans-serif;font-weight:700;font-size:76px;line-height:.95}
+.cols{display:grid;gap:15px}
+.c2{grid-template-columns:1fr 1fr}.c3{grid-template-columns:1fr 1fr 1fr}.c21{grid-template-columns:1.32fr 1fr}
+.card{background:var(--paper2);border-radius:14px;padding:13px 17px}
+.dark .card{background:#17171C;color:#fff}
+.card.red{background:var(--red);color:#fff}
+.card.lav{background:var(--lav);color:var(--black)}
+.lab{font-family:"JetBrains Mono",ui-monospace,Menlo,monospace;font-size:11.5px;letter-spacing:.07em;text-transform:uppercase;font-weight:600;color:#8E96A2}
+.card.lav .lab,.card.red .lab{color:rgba(11,11,15,.62)}
+.card.red .lab{color:rgba(255,255,255,.72)}
+table{border-collapse:collapse;width:100%;font-size:14.5px;line-height:1.22}
+th{font-family:"JetBrains Mono",ui-monospace,Menlo,monospace;font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:#8E96A2;text-align:left;padding:0 8px 6px;border-bottom:2px solid #33333D;font-weight:600}
+th.n,td.n{text-align:right}
+td{padding:5px 8px;border-bottom:1px solid #26262E;vertical-align:middle}
+td.n{font-family:"JetBrains Mono",ui-monospace,Menlo,monospace;white-space:nowrap;font-size:14.5px}
+tr.hi td{color:#fff;font-weight:700}
+tr.dim td{color:#9AA3AE}
+.footer{position:absolute;left:64px;right:64px;bottom:20px;display:flex;align-items:flex-end;justify-content:space-between;font-size:12px;color:var(--muted);font-family:"JetBrains Mono",ui-monospace,Menlo,monospace;letter-spacing:.04em;gap:24px}
+.dark .footer{color:#8E96A2}
+.footer .logos{font-weight:600;letter-spacing:.1em;white-space:nowrap}
+.src{font-family:"JetBrains Mono",ui-monospace,Menlo,monospace;font-size:11.5px;line-height:1.4;color:#767E8A;letter-spacing:.01em}
+.step{position:relative;padding-top:16px}
+.step:before{content:"";position:absolute;left:0;top:0;width:100%;height:5px;background:#2A2A33;border-radius:3px}
+.step.on:before{background:var(--red)}
+.step.lv:before{background:var(--lav)}
+.when{font-family:"JetBrains Mono",ui-monospace,Menlo,monospace;font-size:11.5px;color:var(--lav);font-weight:600;margin-bottom:5px;letter-spacing:.06em;text-transform:uppercase}
+.tl{display:grid;grid-template-columns:repeat(5,1fr);gap:14px}
+.tl p{font-size:14.5px;line-height:1.3;margin:0 0 4px}
+.tl .num{font-size:34px;margin:2px 0 4px}
+ul{margin:0;padding-left:17px}li{margin:0 0 4px;font-size:15px;line-height:1.3}
+b.r{color:#FF8A7A}
+.dark .card b{color:#fff}
+</style>
+
+<div class="deck">
+
+<!-- 0a · ЦЕННОСТЬ И ЮНИТ-ЭКОНОМИКА -->
+<section class="slide dark">
+  <div class="eyebrow">Слайд 0 · ценность</div>
+  <h2>Цена вопроса задана размахом месяца,<span class="l">а мы продаём день внутри окна</span></h2>
+
+  <div class="cols c3" style="margin-bottom:13px">
+    <div class="card"><div class="lab">Переводят семье ежемесячно</div><div class="num">88 %</div><p class="small" style="margin-top:4px">опрос мигрантов, n = 687 · 12 попыток в год на клиента, промах стоит месяц</p></div>
+    <div class="card"><div class="lab">Средний перевод — портрет</div><div class="num">30 000 ₽</div><p class="small" style="margin-top:4px">273 $ по ЦБ РФ и 24–31 тыс. сомов по НБКР — это 23,9–30,8 тыс. ₽</p></div>
+    <div class="card"><div class="lab">Ход курса внутри месяца</div><div class="num">5,5 %</div><p class="small" style="margin-top:4px">медиана размаха месяца RUB→TJS, максимум 9,4 % — цена вопроса, а не прогноз</p></div>
+  </div>
+
+  <div class="cols c21">
+    <div>
+      <div class="lab" style="margin-bottom:9px">Юнит-экономика клиента · перевод 30 000 ₽ · выгода к его привычке</div>
+      <table>
+        <tr><th>Стратегия</th><th class="n">бп</th><th class="n">₽ с перевода</th><th class="n">₽ в год · 12</th></tr>
+        <tr class="dim"><td>Оракул: знает месяц вперёд</td><td class="n">+232</td><td class="n">695</td><td class="n">8 338</td></tr>
+        <tr class="hi"><td>Календарь «первый день с 25-го»</td><td class="n">+55</td><td class="n">165</td><td class="n">1 976</td></tr>
+        <tr><td>Пуш, иначе календарь, иначе срок</td><td class="n">+38,5</td><td class="n">116</td><td class="n">1 386</td></tr>
+        <tr><td>Пуш в окне, куда он пришёл</td><td class="n">+85</td><td class="n">255</td><td class="n">395*</td></tr>
+      </table>
+      <p class="small" style="margin-top:6px">* +85 бп — только окна с пушем; в окнах без пуша клиент ждёт до срока, поэтому годовое число стратегии «пуш» — 395 ₽, а не 12 × 255 ₽. Оракул — верхняя граница, наш слой берёт от неё доли.</p>
+    </div>
+    <div class="card" style="padding:13px 17px;display:flex;flex-direction:column;justify-content:space-between">
+      <div>
+        <div class="lab">День стоит как вся комиссия</div>
+        <p style="font-size:14.5px;margin:4px 0 0"><b>0,84–0,92 %</b> — вся стоимость перевода 200 $ в Таджикистан и Кыргызстан. <b>0,34–0,85 %</b> — выигрыш от выбора дня.</p>
+      </div>
+      <div style="border-top:1px solid #2A2A33;padding-top:9px;margin-top:9px">
+        <div class="lab">Сегмент сужен измерением</div>
+        <p style="font-size:14.5px;margin:4px 0 0">Клиенту с привычкой переводить 20–25-го пуш <b class="r">вредит: −38 бп, −1 353 ₽ в год</b>. Пилот — только первая половина месяца.</p>
+      </div>
+      <div style="border-top:1px solid #2A2A33;padding-top:9px;margin-top:9px">
+        <div class="lab">Рынок</div>
+        <p style="font-size:14.5px;margin:4px 0 0"><b>1 777,5 млрд ₽</b> переводов в пять коридоров за год; при 5–20 % сдвинутых — <b>302–2 524 млн ₽ в год</b>. Доля Альфа-Банка неизвестна: потенциал = число × доля.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="card red" style="margin-top:13px;padding:11px 20px">
+    <p style="font-size:17.5px;margin:0;font-weight:600">Ценность одной строкой: не угадываем курс — выбираем день внутри окна, которое у клиента уже есть. <span style="opacity:.8;font-weight:400">Формулировка команды, не кейсодателя.</span></p>
+  </div>
+
+  <div class="footer">
+    <div class="src">IOM, опрос кыргызской диаспоры 2021 (n = 687) · ЦБ РФ, обзор трансграничных переводов 2021 · НБКР, кварталы 2023–2025 · Всемирный банк RPW, II кв. 2024 · наш бэктест 4 915 окон за 66 месяцев, reports/latest/analysis/client_window.csv</div>
+    <div style="text-align:right"><div class="logos">AI TALENT HUB · ИТМО · АЛЬФА-БАНК</div><div style="margin-top:5px">Момент · команда 9 · ценность</div></div>
+  </div>
+</section>
+
+<!-- 0b · ПУТЬ ПЕРЕВОДА -->
+<section class="slide dark">
+  <div class="eyebrow">Слайд 0 · путь перевода</div>
+  <h2>Триггер задаёт срок, мы выбираем день<span class="l">и отсюда — горизонты метрик</span></h2>
+
+  <div class="tl" style="margin-bottom:16px">
+    <div class="step on">
+      <div class="when">01 · Деньги приходят</div>
+      <div class="num">2 раза</div>
+      <p>в месяц по ст. 136 ТК РФ: за первую половину — до 30-го, за вторую — до 15-го.</p>
+      <p class="small">Два входа в решение о переводе, в разных половинах месяца.</p>
+    </div>
+    <div class="step on">
+      <div class="when">02 · Триггер</div>
+      <div class="num">дату<br>задаёт<br>семья</div>
+      <p class="small" style="margin-top:2px">Стройка 12,6 % · обучение 12,3 % · лечение 11,0 % · помощь родне 10,4 % · кредит 7,0 %. Пуш не создаёт перевод, а выбирает день внутри срока.</p>
+    </div>
+    <div class="step on">
+      <div class="when">03 · Окно</div>
+      <div class="num">5–15</div>
+      <p>дней публикации между приходом денег и сроком, к которому они нужны семье.</p>
+      <p class="small">На этом окне и считался бэктест.</p>
+    </div>
+    <div class="step lv">
+      <div class="when">04 · Смотрит курс снова</div>
+      <div class="num">≈ месяц</div>
+      <p class="small" style="margin-top:2px">Внешних данных нет — гипотеза: вместе со следующим приходом денег. В пилоте меряется событиями: вход за 24 ч после пуша, перевод за 48 ч, отзывы «сигнал устарел» ≤ 7 %.</p>
+    </div>
+    <div class="step lv">
+      <div class="when">05 · Горизонты метрик</div>
+      <div class="num">1 · 10 · 20</div>
+      <p class="small" style="margin-top:2px">1 день — доживает ли факт до исполнения (93 % пушей). 10 дней — полмесяца между выплатами. 20 дней — месячный цикл: 88 % отправляют ежемесячно.</p>
+    </div>
+  </div>
+
+  <div class="cols c2">
+    <div class="card">
+      <div class="lab">Форма месяца — самый сильный рычаг</div>
+      <p style="font-size:16px;margin:6px 0 0">Курс валюты получателя в окне <b>20–28 числа ниже среднего за свой месяц на 8–44 бп</b>; после снятия тренда внутри месяца — на 2,7–17 бп, знак держится на всех пяти коридорах.</p>
+      <p class="small" style="margin-top:6px">Клиент, переводящий сразу после расчёта в начале месяца, попадает в дорогую часть; переводящий ближе к 25-му уже стоит рядом с минимумом. По отдельным числам интервалы проходят через ноль — поэтому окно, а не дата.</p>
+    </div>
+    <div class="card">
+      <div class="lab">Сезонность года — и чего в ней нет</div>
+      <p style="font-size:16px;margin:6px 0 0">Пик потока: <b>сентябрь–октябрь</b> в Кыргызстане, <b>июнь–август</b> в Армении. Провал — <b>январь–февраль</b> в обоих коридорах.</p>
+      <p class="small" style="margin-top:6px">Праздники пика не дают: март с Наврузом держится ниже нормы месяца в обоих коридорах. Это анти-сигнал, а не сигнал — форму года лучше объясняет сезон работ, а не календарь праздников.</p>
+    </div>
+  </div>
+
+  <div class="footer">
+    <div class="src">ст. 136 ТК РФ · IOM, опрос кыргызской диаспоры 2021, на что тратятся присланные деньги (n = 608) · помесячные ряды НБ КР и ЦБ Армении, наш разбор · reports/latest/analysis: day_of_month.csv, execution_survival.csv, client_window.csv · docs/product/pilot.md</div>
+    <div style="text-align:right"><div class="logos">AI TALENT HUB · ИТМО · АЛЬФА-БАНК</div><div style="margin-top:5px">Момент · команда 9 · путь перевода</div></div>
+  </div>
+</section>
+
+</div>
