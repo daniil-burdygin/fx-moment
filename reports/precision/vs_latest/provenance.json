@@ -1,6 +1,6 @@
 {
- "code": "f144bdc",
- "built_at_utc": "2026-09-06T16:38:09Z",
+ "code": "98542be",
+ "built_at_utc": "2026-09-06T16:38:56Z",
  "latest": {
   "code": "c6a7e90",
   "built_at_utc": "2026-09-03T22:51:23Z",
@@ -41,7 +41,10 @@
  "pairs": {
   "level": "level",
   "ml_localmin": "ml_localmin",
-  "dip_vs_trend": "dip_vs_trend"
+  "dip_vs_trend": "dip_vs_trend",
+  "reversal": "reversal",
+  "momentum": "momentum",
+  "seasonality": "seasonality"
  },
  "matrix_rows_compared": 6600,
  "matrix_columns_differ": [
