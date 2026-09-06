@@ -272,7 +272,7 @@ var PUSH = {
   window: 120,
   pctRank: 0.041666666666666664,
   daysSinceMin: 14,
-  title: "Курс сомони остановился на низком уровне",
+  title: "Курс сомони не снижается 14-й день: 7,67 ₽ за 1 сомони",
   body: "7,67 ₽ за 1 сомони — ниже, чем в 96 % дней за 6 мес. Снижение остановилось 14 дн. назад."
 };
 
@@ -510,9 +510,9 @@ var SCREENS = {
         '<div><div class="n">' + miss + '</div><div class="k">не сбылось</div></div>' +
         '<div><div class="n" style="color:var(--amber)">' + open + '</div><div class="k">ещё идёт</div></div>' +
         '</div>';
-      out += '<div class="jrule"><b>Сбылось</b> — средний курс следующих ' + HORIZON +
-        ' дней публикации не ниже курса пуша больше чем на ' + TOL_BPS +
-        ' бп. Ниже курс — лучше для отправителя.</div>';
+      out += '<div class="jrule"><b>Сбылось</b> — за следующие ' + HORIZON +
+        ' дней публикации средний курс оказался не ниже курса из уведомления; допуск ' + TOL_BPS +
+        ' бп, это ' + num(TOL_BPS / 100, 2) + ' %. Чем ниже курс, тем больше сомони получит получатель.</div>';
       for (i = JOURNAL.length - 1; i >= 0; i--) {
         it = JOURNAL[i]; v = verdict(it);
         out += '<div class="jitem"><div class="top">' +
