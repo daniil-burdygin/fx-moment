@@ -17,7 +17,7 @@ import pandas as pd
 
 from fxmoment.analysis import paired_pooled_both, read_interval
 from fxmoment.config import CALIBRATION_H, PRIMARY_TOL_BPS
-from fxmoment.report import _md_table, git_hash
+from fxmoment.report import _md_table, git_hash, write_provenance
 
 MATRIX_KEYS: tuple[str, ...] = ("indicator", "corridor", "window", "h", "tol_bps")
 RUN_LOCAL: tuple[str, ...] = ("split",)  # номер окна свой у каждого прогона, сравнивать нечего
@@ -430,20 +430,16 @@ def compare_runs(
     pcmp.to_csv(out / "pairs_compare.csv", index=False)
     bad = overlap[overlap["rows_differ"] > 0]
     common_n = int(overlap["rows"].iloc[0]) if len(overlap) else 0
-    provenance = {
-        "code": git_hash(),
-        "built_at_utc": f"{datetime.now(UTC):%Y-%m-%dT%H:%M:%SZ}",
-        "latest": {k: pa.get(k) for k in RUN_KEYS},
-        "variant": {k: pb.get(k) for k in RUN_KEYS},
-        "common_windows": sorted(set(la) & set(lb)),
-        "variant_only_windows": [w for w in lb if w not in set(la)],
-        "variant_only_indicators": sorted(set(mb["indicator"]) - latest_indicators) if len(mb) else [],
-        "pairs": pairs,
-        "matrix_rows_compared": common_n,
-        "matrix_columns_differ": bad["column"].tolist(),
-    }
-    (out / "provenance.json").write_text(
-        json.dumps(provenance, ensure_ascii=False, indent=1), encoding="utf-8"
+    provenance = write_provenance(
+        out,
+        latest={k: pa.get(k) for k in RUN_KEYS},
+        variant={k: pb.get(k) for k in RUN_KEYS},
+        common_windows=sorted(set(la) & set(lb)),
+        variant_only_windows=[w for w in lb if w not in set(la)],
+        variant_only_indicators=sorted(set(mb["indicator"]) - latest_indicators) if len(mb) else [],
+        pairs=pairs,
+        matrix_rows_compared=common_n,
+        matrix_columns_differ=bad["column"].tolist(),
     )
     show = [
         c

@@ -11,7 +11,6 @@
 
 from __future__ import annotations
 
-import json
 from datetime import UTC, datetime
 from pathlib import Path
 
@@ -172,7 +171,7 @@ def write_intraday_report(
 ) -> Path:
     from fxmoment.analysis import backtest_provenance
     from fxmoment.data.store import load_moex_meta
-    from fxmoment.report import _md_table, git_hash
+    from fxmoment.report import _md_table, git_hash, write_provenance
 
     out_dir.mkdir(parents=True, exist_ok=True)
     def merge(attr: str) -> pd.DataFrame:
@@ -235,22 +234,14 @@ def write_intraday_report(
     # чужие числа — чужой провенанс: сравнение осей считается по матрице ДНЕВНОГО отчёта, и без
     # его штампа свежий хеш кода выдавался бы за происхождение этих строк (аудит 03.09)
     daily_prov = backtest_provenance(daily_dir) if (has_daily and daily_dir is not None) else None
-    (out_dir / "provenance_bars.json").write_text(
-        json.dumps(
-            {
-                "code": git_hash(),
-                "fetched_at_utc": meta.get("fetched_at_utc"),
-                "interval_length": meta.get("interval_length"),
-                "profile": profile.name,
-                "bars_per_day": profile.step_scale,
-                "daily_report": daily_prov or None,
-                "built_at_utc": f"{datetime.now(UTC):%Y-%m-%dT%H:%M:%SZ}",
-                "windows": {c: [s.label() for s in r.splits] for c, r in results.items()},
-            },
-            ensure_ascii=False,
-            indent=1,
-        ),
-        encoding="utf-8",
+    write_provenance(
+        out_dir,
+        fetched_at_utc=meta.get("fetched_at_utc"),
+        interval_length=meta.get("interval_length"),
+        profile=profile.name,
+        bars_per_day=profile.step_scale,
+        daily_report=daily_prov or None,
+        windows={c: [s.label() for s in r.splits] for c, r in results.items()},
     )
 
     skipped = skipped_corridors(panel, profile)
