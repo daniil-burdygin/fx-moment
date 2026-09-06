@@ -30,6 +30,7 @@ RUN_KEYS: tuple[str, ...] = (
     "first_test",
     "rank_base",
     "ml",
+    "ml_features",
     "extra_indicators",
     "signal_source",
     "bounds",  # полоса допустимости калибровки: (частота от, частота до, минимум событий)
@@ -476,7 +477,9 @@ def compare_runs(
         f"latest: код `{pa.get('code', '?')}`, первое окно {pa.get('first_test', '?')}, база ранга "
         f"{pa.get('rank_base', 'window')}. Вариант: код `{pb.get('code', '?')}`, первое окно "
         f"{pb.get('first_test', '?')}, база ранга {pb.get('rank_base', 'window')}, обучаемый "
-        f"{pb.get('ml') or 'local'}, сигнал по {pb.get('signal_source') or 'своему коридору'}, "
+        f"{pb.get('ml') or 'local'}, наборы признаков: "
+        f"{', '.join(pb.get('ml_features') or []) or 'нет'}, "
+        f"сигнал по {pb.get('signal_source') or 'своему коридору'}, "
         f"полоса калибровки {_band(pb)}, добавлены индикаторы: "
         f"{', '.join(provenance['variant_only_indicators']) or 'нет'}. Сравнение: код "
         f"`{git_hash()}`, {datetime.now(UTC):%Y-%m-%d %H:%M} UTC. Общих окон "

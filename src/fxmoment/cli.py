@@ -1,5 +1,5 @@
-"""CLI: fetch / fetch-moex / fetch-forts / compare-sources / backtest / intraday / analyze /
-signals --as-of [--decide] / check-texts."""
+"""CLI: fetch / fetch-moex / fetch-forts / fetch-forecast / compare-sources / backtest / intraday /
+analyze / signals --as-of [--decide] / check-texts / compare-runs."""
 
 from __future__ import annotations
 
@@ -24,6 +24,7 @@ from fxmoment.config import (
     RAW_START,
     SLOW_MIN_CALIBRATION_EVENTS,
 )
+from fxmoment.data.forecast import FORECAST_START
 
 FORTS_URL_FOR_META = "https://iss.moex.com/iss/engines/futures/markets/forts/securities"
 PROTECTED_RUNS = ("latest", "fixed", "intraday")  # каталоги основных отчётов: варианты сюда не пишутся
@@ -153,12 +154,18 @@ def cmd_backtest(args: argparse.Namespace) -> int:
     from fxmoment.combine import PolicyParams
     from fxmoment.data.store import load_panel, repo_root
     from fxmoment.indicators import BASE_INDICATORS, LearnedMinimum, LearnedMinimumPooled, LevelDrift
+    from fxmoment.indicators.features import ML_FEATURE_SETS
     from fxmoment.report import write_report
 
     try:
         bounds = calibration_bounds_arg(args.freq_band, args.min_events)
     except ValueError as e:
         print(str(e))
+        return 2
+    ml_features = tuple(f.strip() for f in args.ml_features.split(",") if f.strip())
+    unknown = [f for f in ml_features if f not in ML_FEATURE_SETS]
+    if unknown:
+        print(f"--ml-features {', '.join(unknown)}: допустимы {', '.join(ML_FEATURE_SETS)}")
         return 2
     variant = (
         args.first_test != FIRST_TEST
@@ -167,11 +174,12 @@ def cmd_backtest(args: argparse.Namespace) -> int:
         or args.with_level_drift
         or bool(args.signal_source)
         or bounds is not None
+        or bool(ml_features)
     )
     if variant and not args.out:
         print(
-            "вариантный прогон (--first-test, --rank-base, --ml pooled, --with-level-drift, "
-            "--signal-source, --freq-band) пишется только в свой каталог: укажите --out"
+            "вариантный прогон (--first-test, --rank-base, --ml pooled, --ml-features, "
+            "--with-level-drift, --signal-source, --freq-band) пишется только в свой каталог: укажите --out"
         )
         return 2
     if args.signal_source and args.ml == "pooled":
@@ -184,6 +192,10 @@ def cmd_backtest(args: argparse.Namespace) -> int:
         print(f"--out {args.out!r}: имя каталога варианта не может совпадать с основными отчётами")
         return 2
     panel = load_panel()
+    if "timesfm" in ml_features:
+        from fxmoment.data.forecast import attach_forecast
+
+        panel = attach_forecast(panel)  # столбцы `<валюта>_fc_<признак>` из снимка data/derived/
     ml = LearnedMinimumPooled if args.ml == "pooled" else LearnedMinimum
     inds = tuple(BASE_INDICATORS) if args.no_ml else (*BASE_INDICATORS, ml)
     if args.with_level_drift:
@@ -198,12 +210,14 @@ def cmd_backtest(args: argparse.Namespace) -> int:
         first_test=args.first_test,
         signal_source=args.signal_source or None,
         bounds=bounds,
+        ml_features=ml_features,
         **kwargs,
     )
     name = args.out or ("fixed" if args.fixed_params else "latest")
     out_dir = repo_root() / "reports" / name
     notes = {
         "ml": args.ml,
+        "ml_features": list(ml_features),
         "extra_indicators": ["level_drift"] if args.with_level_drift else [],
         "bounds": list(bounds) if bounds else None,
     }
@@ -224,6 +238,35 @@ def cmd_backtest(args: argparse.Namespace) -> int:
             print(pd.read_csv(path).round(3).to_string(index=False))
     print(f"\nотчёт → {out}")
     return 0
+
+
+def cmd_fetch_forecast(args: argparse.Namespace) -> int:
+    """Снимок прогнозов TimesFM 3 → data/derived/ (замер, `--ml-features timesfm`). Код 1 —
+    самопроверка не сошлась, снимок не записан: вердикту такого прогона верить нельзя."""
+    from fxmoment.data import forecast as fc
+    from fxmoment.data.store import load_panel
+
+    panel = load_panel()
+    currencies = tuple(args.currencies.split(",")) if args.currencies else fc.FORECAST_CURRENCIES
+    model = fc.load_model(args.device or None, batch_size=args.batch)
+    print(f"модель {fc.MODEL_ID}@{fc.MODEL_REVISION[:8]} на {model.device}")
+    snap = fc.build_snapshot(
+        panel, model, currencies, start=args.start, batch=max(args.batch, 1) * 4, log=print
+    )
+    check = fc.self_check(model, panel, snap, n=args.check)
+    worst = float(check["diff_bps"].max())
+    ok = worst <= fc.SELF_CHECK_TOL_BPS
+    pd.set_option("display.width", 250)
+    print(check.round(4).to_string(index=False))
+    verdict = "ок" if ok else "НЕ СОШЛОСЬ"
+    print(f"самопроверка: {args.check} строк поодиночке, наибольшее расхождение {worst:.4f} бп → {verdict}")
+    path = fc.save_snapshot(
+        snap,
+        {"device": str(model.device), "self_check_rows": int(args.check), "self_check_max_diff_bps": worst},
+        verified=ok,
+    )
+    print(f"снимок → {path} ({len(snap)} строк)")
+    return 0 if ok else 1
 
 
 def cmd_compare_runs(args: argparse.Namespace) -> int:
@@ -556,22 +599,49 @@ def main(argv: list[str] | None = None) -> int:
         help="обучаемый индикатор: на своём коридоре или один на все коридоры прогона с признаком коридора",
     )
     b.add_argument(
+        "--ml-features",
+        default="",
+        help="наборы признаков обучаемого через запятую: eurusd (EUR/RUB ÷ USD/RUB), "
+        "timesfm (снимок прогнозов, data/derived/); по умолчанию ни одного",
+    )
+    b.add_argument(
         "--with-level-drift",
         action="store_true",
         help="добавить `level_drift`: уровень на ряде с вычтенным дрейфом локальной ноги rate / usd",
     )
     b.add_argument(
-    CALIBRATION_FREQ_RANGE,
-    CONTEXT,
-    CORRIDORS,
-    FIRST_TEST,
-    MIN_CALIBRATION_EVENTS,
-    MOEX_RAW_START,
-    RAW_START,
-    SLOW_MIN_CALIBRATION_EVENTS,
+        "--signal-source",
+        choices=CONTEXT,
+        default="",
+        help="считать индикаторы по этому курсу (один сигнал на все коридоры), попадания — по коридору",
+    )
+    b.add_argument(
+        "--freq-band",
+        nargs=2,
+        type=float,
+        metavar=("LO", "HI"),
+        default=None,
+        help="полоса допустимости калибровки, сигналов в неделю: одна на все правила вместо "
+        "класс-специфичных границ (режим точности, `--freq-band 0.1 0.3`)",
+    )
+    b.add_argument(
+        "--min-events",
+        type=int,
+        default=0,
+        help="минимум событий на обучении для допустимой точки; только с --freq-band, "
+        f"0 — по полосе ({SLOW_MIN_CALIBRATION_EVENTS} ниже {CALIBRATION_FREQ_RANGE[0]:g} в неделю, "
+        f"иначе {MIN_CALIBRATION_EVENTS})",
     )
     b.add_argument("--out", default="", help="каталог варианта внутри reports/ (обязателен для вариантов)")
     b.set_defaults(func=cmd_backtest)
+
+    ff = sub.add_parser("fetch-forecast", help="снимок прогнозов TimesFM 3 → data/derived/ (замер)")
+    ff.add_argument("--start", default=FORECAST_START, help="первая дата публикации прогноза")
+    ff.add_argument("--currencies", default="", help="через запятую, по умолчанию пять коридоров и USD")
+    ff.add_argument("--device", default="", help="mps / cpu, по умолчанию mps при наличии")
+    ff.add_argument("--batch", type=int, default=64, help="рядов на проход модели")
+    ff.add_argument("--check", type=int, default=8, help="строк самопроверки поодиночке")
+    ff.set_defaults(func=cmd_fetch_forecast)
 
     cr = sub.add_parser(
         "compare-runs", help="вариантный прогон против reports/latest → reports/<вариант>/vs_latest/"

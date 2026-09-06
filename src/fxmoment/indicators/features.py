@@ -1,9 +1,16 @@
-"""Каузальные признаки для обучаемого индикатора: производные базовых индикаторов и контекст USD."""
+"""Каузальные признаки для обучаемого индикатора: производные базовых индикаторов и контекст USD.
+
+Наборы `ML_FEATURE_SETS` по умолчанию выключены (`backtest --ml-features …`): прогон без флага
+обязан дать те же признаки и те же байты матрицы, что и прежде. Включённый набор виден по
+производному столбцу контекста (`_eurusd`, `_fc_*`), а не по параметру индикатора: тогда
+`build_features` остаётся чистой функцией ряда и контекста, а состав признаков — свойством прогона.
+"""
 
 from __future__ import annotations
 
 import pandas as pd
 
+from fxmoment.data.forecast import ML_FEATURES, USD_FEATURE, is_forecast_column, split_column
 from fxmoment.indicators.base import down_streak, rolling_pct_rank, up_streak
 
 RANK_WINDOWS = (20, 60, 120, 250)
@@ -11,13 +18,23 @@ RANK_WINDOWS = (20, 60, 120, 250)
 
 CACHED_WINDOWS = (60, 120, 250)  # окна сеток `level` и `reversal`, в шагах дневного ряда
 
+# наборы ML-признаков за флагом; в продукт по умолчанию не входит ни один
+ML_FEATURE_SETS: tuple[str, ...] = ("eurusd", "timesfm")
+EURUSD_KEY = "_eurusd"  # производный столбец контекста: включён набор `eurusd`
 
-def enrich_context(rate: pd.Series, context: pd.DataFrame | None, scale: int = 1) -> pd.DataFrame:
+
+def enrich_context(
+    rate: pd.Series,
+    context: pd.DataFrame | None,
+    scale: int = 1,
+    ml_features: tuple[str, ...] = (),
+) -> pd.DataFrame:
     """Добавляет в контекст предвычисленные каузальные ряды (`_rank_w`, `_dsm_w`) для скорости.
 
     Значения не зависят от будущего, поэтому предвычисление на полном ряду и на срезе совпадают.
     `scale` — масштаб шага ряда (ADR-0010): кэш обязан совпасть с окнами масштабированной сетки,
-    иначе индикатор молча пересчитает их заново и прогон замедлится в разы."""
+    иначе индикатор молча пересчитает их заново и прогон замедлится в разы.
+    `ml_features` — включённые наборы ML-признаков; пустой набор оставляет контекст прежним."""
     from fxmoment.indicators.base import _scale_step, rolling_days_since_min
 
     ctx = context.copy() if context is not None else pd.DataFrame(index=rate.index)
@@ -26,6 +43,32 @@ def enrich_context(rate: pd.Series, context: pd.DataFrame | None, scale: int = 1
         w = _scale_step(w0, scale)
         ctx[f"_rank_{w}"] = rolling_pct_rank(rate, w)
         ctx[f"_dsm_{w}"] = rolling_days_since_min(rate, w)
+    return attach_ml_context(rate, ctx, ml_features)
+
+
+def attach_ml_context(
+    rate: pd.Series, ctx: pd.DataFrame, ml_features: tuple[str, ...] = ()
+) -> pd.DataFrame:
+    """Производные столбцы включённых наборов ML-признаков. Привязаны к ряду `rate`: у объединённого
+    обучаемого чужой коридор получает прогноз своего ряда, а не чужого.
+
+    `eurusd` — EUR/RUB, делённый на USD/RUB: рублёвая сторона сокращается, остаётся мировой курс.
+    У остальных признаков рубль стоит в обеих частях, поэтому движение своей валюты они не отличают
+    от общего движения к доллару.
+    `timesfm` — прогнозные столбцы снимка (`<валюта>_fc_<признак>`): свой коридор → `_fc_<признак>`,
+    доллар → один признак. Чужие коридоры в признаки не идут: пять коридоров — почти один фактор."""
+    unknown = [f for f in ml_features if f not in ML_FEATURE_SETS]
+    if unknown:
+        raise ValueError(f"неизвестный набор признаков {unknown}; допустимы {ML_FEATURE_SETS}")
+    if "eurusd" in ml_features and {"USD", "EUR"} <= set(ctx.columns):
+        ctx[EURUSD_KEY] = ctx["EUR"] / ctx["USD"]
+    if "timesfm" in ml_features:
+        for col in [c for c in ctx.columns if is_forecast_column(c)]:
+            ccy, feat = split_column(str(col))
+            if ccy == rate.name:
+                ctx[f"_fc_{feat}"] = ctx[col]
+            elif ccy == "USD" and feat == USD_FEATURE:
+                ctx[f"_usd_fc_{feat}"] = ctx[col]
     return ctx
 
 
@@ -58,4 +101,18 @@ def build_features(rate: pd.Series, context: pd.DataFrame | None = None) -> pd.D
         local = rate / usd
         f["local_ret5"] = local.pct_change(5)
         f["local_rank60"] = rolling_pct_rank(local, 60)
+    if context is not None and EURUSD_KEY in context.columns:
+        eurusd = context[EURUSD_KEY].reindex(rate.index)
+        f["eurusd_ret5"] = eurusd.pct_change(5)
+        f["eurusd_ret20"] = eurusd.pct_change(20)
+        f["eurusd_rank250"] = rolling_pct_rank(eurusd, 250)
+    if context is not None:
+        # прогноз TimesFM на дату T (снимок `data/derived/`, замер): в бп к курсу действия
+        for feat in ML_FEATURES:
+            key = f"_fc_{feat}"
+            if key in context.columns:
+                f[f"fc_{feat.removesuffix('_bps')}"] = context[key].reindex(rate.index)
+        key = f"_usd_fc_{USD_FEATURE}"
+        if key in context.columns:
+            f[f"usd_fc_{USD_FEATURE.removesuffix('_bps')}"] = context[key].reindex(rate.index)
     return f
