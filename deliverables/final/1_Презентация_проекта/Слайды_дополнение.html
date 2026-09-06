@@ -1,0 +1,229 @@
+<title>Момент · дополнение · цена ожидания, отрицательные результаты, финал</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;700&family=Golos+Text:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+:root{--ink:#0B1F35;--paper:#FFFFFF;--paper2:#F3F4F5;--red:#EF3124;--orange:#F85010;--lav:#B8A8E0;--black:#0B0B0F;--card:#17171C;--card2:#1F1F26;--muted:#5B6875;--line:#2A2A33}
+*{box-sizing:border-box}
+html,body{margin:0;background:#1a1a1d;color-scheme:light}
+body{font-family:"Golos Text",system-ui,-apple-system,"Segoe UI",Arial,Helvetica,sans-serif;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+.deck{display:flex;flex-direction:column;align-items:center;gap:28px;padding:28px 0}
+.slide{width:1280px;height:720px;position:relative;overflow:hidden;background:var(--black);color:#fff;padding:46px 64px 66px;break-after:page;page-break-after:always;box-shadow:0 8px 30px rgba(0,0,0,.35)}
+.slide:last-child{break-after:auto;page-break-after:auto}
+@media print{html,body{background:#fff}.deck{display:block;padding:0;gap:0}.slide{box-shadow:none;margin:0}@page{size:1280px 720px;margin:0}}
+.eyebrow{font-family:"JetBrains Mono",ui-monospace,Menlo,monospace;font-size:13px;letter-spacing:.12em;text-transform:uppercase;color:var(--lav);font-weight:600;margin:0 0 10px}
+h2{font-family:"Oswald",Impact,"Arial Narrow",sans-serif;font-weight:700;text-transform:uppercase;font-size:35px;line-height:1.04;margin:0 0 14px;letter-spacing:.005em;max-width:1140px}
+h2 .l{color:var(--lav);display:block}
+h3{font-family:"Golos Text",Arial,sans-serif;font-weight:800;font-size:18px;margin:0 0 6px;letter-spacing:-.005em}
+p{margin:0 0 6px;font-size:17px;line-height:1.32}
+.small{font-size:13.5px;color:#B7BEC8;line-height:1.3}
+.mono{font-family:"JetBrains Mono",ui-monospace,Menlo,monospace}
+.num{font-family:"Oswald",Impact,"Arial Narrow",sans-serif;font-weight:700;font-size:44px;line-height:1;letter-spacing:-.01em}
+.cols{display:grid;gap:15px}
+.c2{grid-template-columns:1fr 1fr}.c3{grid-template-columns:1fr 1fr 1fr}.c21{grid-template-columns:1.62fr 1fr}
+.card{background:var(--card);border-radius:14px;padding:13px 17px;color:#fff}
+.card.red{background:var(--red);color:#fff}
+.card.lav{background:var(--lav);color:var(--black)}
+.lab{font-family:"JetBrains Mono",ui-monospace,Menlo,monospace;font-size:11.5px;letter-spacing:.07em;text-transform:uppercase;font-weight:600;color:#8E96A2}
+.card.lav .lab{color:rgba(11,11,15,.62)}
+.card.red .lab{color:rgba(255,255,255,.72)}
+table{border-collapse:collapse;width:100%;font-size:14.5px;line-height:1.22}
+th{font-family:"JetBrains Mono",ui-monospace,Menlo,monospace;font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:#8E96A2;text-align:left;padding:0 8px 6px;border-bottom:2px solid #33333D;font-weight:600}
+th.n,td.n{text-align:right}
+td{padding:5px 8px;border-bottom:1px solid #26262E;vertical-align:top}
+td.n{font-family:"JetBrains Mono",ui-monospace,Menlo,monospace;white-space:nowrap;font-size:14.5px}
+.footer{position:absolute;left:64px;right:64px;bottom:20px;display:flex;align-items:flex-end;justify-content:space-between;font-size:12px;color:#8E96A2;font-family:"JetBrains Mono",ui-monospace,Menlo,monospace;letter-spacing:.04em;gap:24px}
+.footer .logos{font-weight:600;letter-spacing:.1em;white-space:nowrap}
+.footer .rt{white-space:nowrap;text-align:right}
+.src{font-family:"JetBrains Mono",ui-monospace,Menlo,monospace;font-size:11.5px;line-height:1.4;color:#767E8A;letter-spacing:.01em}
+ul{margin:0;padding-left:17px}li{margin:0 0 7px;font-size:14.5px;line-height:1.3}
+li b{color:#fff}
+.legend{display:flex;gap:16px;align-items:center;margin-bottom:2px}
+.legend span{display:flex;align-items:center;gap:7px;font-size:12.5px;color:#C9D0D8;white-space:nowrap}
+.legend span.small{font-size:12.5px}
+.sw{width:15px;height:15px;border-radius:4px;display:inline-block}
+/* карта отрицательных результатов */
+table.neg{font-size:13.5px;line-height:1.22}
+table.neg td{padding:8px 9px;border-bottom:1px solid #23232B;vertical-align:middle}
+table.neg th{padding:0 9px 5px}
+table.neg td.h{font-weight:700;color:#fff;width:29%}
+table.neg td.m{color:#C4CBD4;width:49%}
+table.neg td.v{color:var(--lav);font-family:"JetBrains Mono",ui-monospace,Menlo,monospace;font-size:12px;width:22%;letter-spacing:.01em}
+.chip{display:inline-block;background:var(--card2);border-radius:9px;padding:6px 13px;font-size:12.5px;color:#C9D0D8;margin-right:8px}
+.chip b{color:#fff}
+/* финал */
+.fin{background:var(--card);border-radius:14px;padding:14px 18px;height:100%}
+.fin .lab{margin-bottom:9px}
+.finphrase{background:var(--red);border-radius:14px;padding:12px 20px}
+.finphrase p{font-size:18.5px;line-height:1.32;margin:0;font-weight:600}
+</style>
+
+<div class="deck">
+
+<!-- 1 · ЦЕНА ОЖИДАНИЯ -->
+<section class="slide">
+  <div class="eyebrow">Пункт 6 постановки · цена ожидания</div>
+  <h2>Ждать подтверждения выгоднее, чем слать сразу,<span class="l">на пяти коридорах из пяти</span></h2>
+
+  <div class="cols c21">
+    <div>
+      <div class="legend">
+        <span><i class="sw" style="background:var(--red);flex:none"></i>Слать сразу по быстрому сигналу</span>
+        <span><i class="sw" style="background:var(--lav);flex:none"></i>Дождаться подтверждения</span>
+        <span class="small" style="margin-left:auto">бп сверх случайного дня на пуш</span>
+      </div>
+      <svg viewBox="0 0 800 340" width="100%" style="display:block">
+        <line x1="30" y1="177" x2="790" y2="177" stroke="#4A4A57" stroke-width="1.5"/>
+        <text x="24" y="181" text-anchor="end" fill="#8E96A2" font-family="JetBrains Mono, monospace" font-size="12">0</text>
+
+        <!-- TJS -->
+        <rect x="50" y="177" width="52" height="5.2" fill="#EF3124" rx="2"/>
+        <text x="76" y="198" text-anchor="middle" fill="#FF8A7A" font-family="JetBrains Mono, monospace" font-size="14" font-weight="600">−1,9</text>
+        <rect x="110" y="55" width="52" height="122" fill="#B8A8E0" rx="3"/>
+        <text x="136" y="47" text-anchor="middle" fill="#B8A8E0" font-family="JetBrains Mono, monospace" font-size="14" font-weight="600">+45,4</text>
+        <text x="106" y="292" text-anchor="middle" fill="#fff" font-family="Oswald, sans-serif" font-size="23" font-weight="700">TJS</text>
+        <text x="106" y="316" text-anchor="middle" fill="#8E96A2" font-family="JetBrains Mono, monospace" font-size="13">Δ +47,3</text>
+
+        <!-- UZS -->
+        <rect x="202" y="177" width="52" height="27.2" fill="#EF3124" rx="3"/>
+        <text x="228" y="220" text-anchor="middle" fill="#FF8A7A" font-family="JetBrains Mono, monospace" font-size="14" font-weight="600">−10,1</text>
+        <rect x="262" y="80.9" width="52" height="96.1" fill="#B8A8E0" rx="3"/>
+        <text x="288" y="73" text-anchor="middle" fill="#B8A8E0" font-family="JetBrains Mono, monospace" font-size="14" font-weight="600">+35,8</text>
+        <text x="258" y="292" text-anchor="middle" fill="#fff" font-family="Oswald, sans-serif" font-size="23" font-weight="700">UZS</text>
+        <text x="258" y="316" text-anchor="middle" fill="#8E96A2" font-family="JetBrains Mono, monospace" font-size="13">Δ +45,9</text>
+
+        <!-- KGS -->
+        <rect x="354" y="177" width="52" height="21" fill="#EF3124" rx="3"/>
+        <text x="380" y="214" text-anchor="middle" fill="#FF8A7A" font-family="JetBrains Mono, monospace" font-size="14" font-weight="600">−7,8</text>
+        <rect x="414" y="127.4" width="52" height="49.6" fill="#B8A8E0" rx="3"/>
+        <text x="440" y="119" text-anchor="middle" fill="#B8A8E0" font-family="JetBrains Mono, monospace" font-size="14" font-weight="600">+18,5</text>
+        <text x="410" y="292" text-anchor="middle" fill="#fff" font-family="Oswald, sans-serif" font-size="23" font-weight="700">KGS</text>
+        <text x="410" y="316" text-anchor="middle" fill="#8E96A2" font-family="JetBrains Mono, monospace" font-size="13">Δ +26,2</text>
+
+        <!-- AMD -->
+        <rect x="506" y="177" width="52" height="64.8" fill="#EF3124" rx="3"/>
+        <text x="532" y="258" text-anchor="middle" fill="#FF8A7A" font-family="JetBrains Mono, monospace" font-size="14" font-weight="600">−24,1</text>
+        <rect x="566" y="37.4" width="52" height="139.6" fill="#B8A8E0" rx="3"/>
+        <text x="592" y="29" text-anchor="middle" fill="#B8A8E0" font-family="JetBrains Mono, monospace" font-size="14" font-weight="600">+51,9</text>
+        <text x="562" y="292" text-anchor="middle" fill="#fff" font-family="Oswald, sans-serif" font-size="23" font-weight="700">AMD</text>
+        <text x="562" y="316" text-anchor="middle" fill="#8E96A2" font-family="JetBrains Mono, monospace" font-size="13">Δ +76,0</text>
+
+        <!-- KZT -->
+        <rect x="658" y="155.9" width="52" height="21.1" fill="#EF3124" rx="3"/>
+        <text x="684" y="148" text-anchor="middle" fill="#FF8A7A" font-family="JetBrains Mono, monospace" font-size="14" font-weight="600">+7,9</text>
+        <rect x="718" y="94.2" width="52" height="82.8" fill="#B8A8E0" rx="3"/>
+        <text x="744" y="86" text-anchor="middle" fill="#B8A8E0" font-family="JetBrains Mono, monospace" font-size="14" font-weight="600">+30,8</text>
+        <text x="714" y="292" text-anchor="middle" fill="#fff" font-family="Oswald, sans-serif" font-size="23" font-weight="700">KZT</text>
+        <text x="714" y="316" text-anchor="middle" fill="#8E96A2" font-family="JetBrains Mono, monospace" font-size="13">Δ +22,9</text>
+      </svg>
+      <p class="small" style="margin-top:8px">Δ — насколько ожидание подтверждения выгоднее отправки сразу. Стратегия «дождаться» шлёт реже: пуш уходит только там, где медленный индикатор подтвердил быстрый.</p>
+    </div>
+
+    <div style="display:flex;flex-direction:column;gap:11px">
+      <div class="card">
+        <div class="lab">Что с чем сравнивали</div>
+        <p style="font-size:14.5px;margin:5px 0 0">Быстрый индикатор — <b>моментум</b>, медленное подтверждение — <b>уровень</b>, окно ожидания 10 дней публикации. Подтверждение приходит у <b>44–58 %</b> быстрых сигналов, медиана ожидания <b>2,5–3 дня</b>.</p>
+      </div>
+      <div class="card">
+        <div class="lab">Само ожидание не бесплатно</div>
+        <p style="font-size:14.5px;margin:5px 0 0">За эти дни курс уходит вниз ещё на <b>81–115 бп</b>, интервал ниже нуля на всех пяти коридорах. Быстрый сигнал ловит движение, которое продолжается, — поэтому «сразу» и проигрывает.</p>
+      </div>
+      <div class="card">
+        <div class="lab">Граница доказанного</div>
+        <p style="font-size:14.5px;margin:5px 0 0">Интервалы двух стратегий перекрываются везде: это наклон, а не доказательство. По всем быстрым сигналам, а не только подтверждённым, цена ожидания <b>−22…+19 бп</b> — через ноль.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="card red" style="margin-top:14px;padding:11px 20px">
+    <p style="font-size:17px;margin:0;font-weight:600">Так политика и устроена: за 11 окон моментум заглушён в 484 срабатываниях из 988 — быстрый сигнал без подтверждения до клиента не доходит.</p>
+  </div>
+
+  <div class="footer">
+    <div class="src">reports/latest/analysis/price_of_waiting.csv, столбцы send_now_excess_bps и wait_excess_per_sent_bps · analysis/README.md, раздел «Цена ожидания» · reports/latest/stream_decisions.csv · 11 окон walk-forward 2021–2026, h = 20, допуск 25 бп</div>
+    <div class="rt"><div class="logos">AI TALENT HUB · ИТМО · АЛЬФА-БАНК</div><div style="margin-top:5px">Момент · команда 9 · цена ожидания</div></div>
+  </div>
+</section>
+
+<!-- 2 · КАРТА ОТРИЦАТЕЛЬНЫХ РЕЗУЛЬТАТОВ -->
+<section class="slide">
+  <div class="eyebrow">Техника · что не сработало</div>
+  <h2>Двенадцать гипотез замерены и отвергнуты,<span class="l">каждая закрыта числом, а не мнением</span></h2>
+
+  <table class="neg">
+    <tr><th>Гипотеза</th><th>Что показал замер</th><th>Вердикт</th></tr>
+    <tr><td class="h">Моментум: падает N дней — значит выгодно</td><td class="m">lift «по среднему» 0,94–1,02, выгода −11…+21 бп</td><td class="v">не отличим от случайного дня</td></tr>
+    <tr><td class="h">Разворот «окно закрывается» как прогноз</td><td class="m">lift 0,79–1,15, выгода −39…+73 бп, попадание примерно равно базе</td><td class="v">данные не подтверждают</td></tr>
+    <tr><td class="h">Обучаемому поможет EUR/USD</td><td class="m">1,156 → 1,190; на KZT прибавка, на AMD потеря 1,44 → 1,30</td><td class="v">интервал через ноль</td></tr>
+    <tr><td class="h">Обучаемому помогут прогнозы TimesFM 3</td><td class="m">сама модель хуже наивной (0,99–1,03), слот 1,156 → 1,168</td><td class="v">через ноль; и лицензия весов</td></tr>
+    <tr><td class="h">Один обучаемый на пять коридоров</td><td class="m">1,156 → 1,188; коридоры скоррелированы с рублём на 0,82–0,98</td><td class="v">через ноль</td></tr>
+    <tr><td class="h">Уровню поможет поправка на дрейф</td><td class="m">KGS 0,996 → 1,14, но KZT 1,09 → 0,95 и +30 → −23 бп</td><td class="v">ломается на KZT, в стек не идёт</td></tr>
+    <tr><td class="h">Реже слать — значит точнее (0,1–0,3 в нед.)</td><td class="m">lift потока 1,041 → 1,046, поток 735 → 563 пуша</td><td class="v">редкость, а не точность</td></tr>
+    <tr><td class="h">Один сигнал по рублю на все коридоры</td><td class="m">суммарный lift 1,041 → 1,041 при [−0,04; +0,04]; калибровок 66 вместо 330</td><td class="v">дешевле — да, точнее — нет</td></tr>
+    <tr><td class="h">Праздник дома — выгодный момент</td><td class="m">девять видов правила: lift 0,70–0,89; в потоке 0,922 против 1,067</td><td class="v">анти-сигнал, кандидат в фильтр</td></tr>
+    <tr><td class="h">Вечерняя сверка добавит точности</td><td class="m">снимает 15 пушей из 332; у оставшихся попадание 0,543 против 0,551</td><td class="v">честность экрана, не деньги</td></tr>
+    <tr><td class="h">Режим правила Минфина — признак сигнала</td><td class="m">база 0,69 в дни продажи против 0,51 в дни покупки</td><td class="v">двигает базу, не сигнал</td></tr>
+    <tr><td class="h">Стек обгоняет календарное правило</td><td class="m">правило «первый день с 25-го» — 1,12 и +71 бп; поток уступает 36 бп</td><td class="v">календарь — нижний слой</td></tr>
+  </table>
+
+  <div style="margin-top:13px">
+    <span class="chip"><b>9</b> вариантных прогонов со сверкой против основного</span>
+    <span class="chip"><b>8</b> разборов замеров в <span class="mono">docs/decisions/</span></span>
+    <span class="chip">за каждой строкой — <b>CSV в репозитории</b></span>
+  </div>
+
+  <div class="footer">
+    <div class="src">docs/product/limitations.md, «Отрицательные результаты бэктеста» · docs/decisions/README.md, «Замеры — не ADR» · reports/{ml-eurusd, ml-timesfm, ml-pooled, level-drift, precision, ruble-signal}/vs_latest/ · analysis/{holiday_rule, evening_gate, minfin_regime, calendar_vs_stack}.csv</div>
+    <div class="rt"><div class="logos">AI TALENT HUB · ИТМО · АЛЬФА-БАНК</div><div style="margin-top:5px">Момент · команда 9 · что не сработало</div></div>
+  </div>
+</section>
+
+<!-- 3 · ФИНАЛ -->
+<section class="slide">
+  <div class="eyebrow">Готовность · сделано · проверено · планируется</div>
+  <h2>Сигнальный слой собран и проверен,<span class="l">осталось отдать его клиентам в пилоте</span></h2>
+
+  <div class="cols c3" style="margin-bottom:14px">
+    <div class="fin">
+      <div class="lab">Сделано</div>
+      <ul>
+        <li><b>Пакет <span class="mono">fxmoment</span></b>: данные ЦБ и Мосбиржи, шесть индикаторов, разметка, метрики, walk-forward, политика потока.</li>
+        <li><b>14 команд CLI</b> — от выгрузки курсов до печати сигналов на любую дату среза.</li>
+        <li><b>Кликабельный прототип</b>: четыре состояния экрана, включая журнал попаданий.</li>
+        <li><b>Машина времени</b>: срез сигналов на любой день из 735 пушей за 5,5 лет.</li>
+        <li><b>Библиотека текстов с чекером</b>: десять классов запрещённых формулировок.</li>
+        <li><b>118 коммитов</b> в открытом репозитории, работа троих.</li>
+      </ul>
+    </div>
+    <div class="fin">
+      <div class="lab">Проверено</div>
+      <ul>
+        <li><b>155 тестов</b>, среди них тест на заглядывание вперёд: сигнал на дату T считается только по данным до T.</li>
+        <li><b>11 окон walk-forward</b> 2021–2026, зазор 20 дней, калибровка и порог — на своём окне, не на тесте.</li>
+        <li><b>Чистый клон повторил отчёты побайтово</b>: 50 CSV и PNG, разошлись только служебные шапки четырёх файлов.</li>
+        <li><b>12 каталогов прогонов</b>, девять из них вариантные — со сверкой против основного.</li>
+        <li><b>Ограничения названы числом</b>: хвост спреда съедает выгоду пуша, полосу 1–2 в неделю поток не держит.</li>
+      </ul>
+    </div>
+    <div class="fin">
+      <div class="lab">Планируется</div>
+      <ul>
+        <li><b>Пилот 8–12 недель</b>, деление 50/50 со стратификацией по валюте и активности, теневой лог с первого дня.</li>
+        <li><b>Порог мощности — 3 472 клиента в коридоре</b> при базе 50 % и приросте 10 % относительных.</li>
+        <li><b>Правило решения до старта</b>: главная метрика выросла и ограничители в норме — масштабируем, иначе закрываем.</li>
+        <li><b>От банка нужны</b>: слот в канале пушей, курс приложения, лог переводов по коридорам, холдаут.</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="finphrase">
+    <div class="lab" style="color:rgba(255,255,255,.72);margin-bottom:6px">Финальная фраза</div>
+    <p>Момент выбирает день внутри окна, которое у клиента уже есть: 254 рубля с перевода в тридцать тысяч там, где пуш сдвинул день. Это одиннадцать окон walk-forward без взгляда в будущее и 155 тестов. Дальше — пилот на восемь недель: нужны слот в пушах и лог переводов.</p>
+  </div>
+
+  <div class="footer">
+    <div class="src">README репозитория · docs/process/clean-clone-check.md · docs/product/pilot.md, размер выборки · analysis/client_window.csv (+85 бп, 254 ₽) · github.com/daniil-burdygin/fx-moment</div>
+    <div class="rt"><div class="logos">AI TALENT HUB · ИТМО · АЛЬФА-БАНК</div><div style="margin-top:5px">Момент · команда 9 · финал</div></div>
+  </div>
+</section>
+
+</div>
