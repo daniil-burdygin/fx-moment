@@ -268,6 +268,46 @@ def _event_rows(
     return rows
 
 
+def _signal_series(panel: pd.DataFrame, source: str, index: pd.DatetimeIndex) -> pd.Series:
+    """Ряд, по которому считаются индикаторы, когда сигнал общий (`signal_source`): курс `source`,
+    выровненный по оси коридора. Пять коридоров скоррелированы с USD/RUB на 0,83–0,97, поэтому
+    «один сигнал по рублю и пять проверок» честнее пяти независимых сигналов.
+
+    Выравнивание каузальное: дни оси, которых нет у источника, берут ПОСЛЕДНИЙ известный курс
+    (`ffill`), начало ряда до первого курса источника отбрасывается. Индекс результата — подмножество
+    оси коридора, поэтому даты событий заведомо есть в его ряду (`evaluate_events` берёт их `.loc`)."""
+    if source not in panel.columns:
+        raise KeyError(f"нет ряда {source!r} в панели; есть: {', '.join(map(str, panel.columns))}")
+    return panel[source].dropna().reindex(index).ffill().dropna()
+
+
+class _FitCache:
+    """Кэш обучения на прогон: при общем сигнале ряд один на все коридоры, поэтому индикатор в окне
+    калибруется один раз, а не пять. Ключ — (индикатор, окно), но обучающий ряд хранится рядом и
+    сверяется: коридор с другим календарём получит своё обучение, а не чужое молча.
+
+    Живёт внутри одного `run_backtest` и наружу не выходит: поведение прогона от него не зависит,
+    зависит только время."""
+
+    def __init__(self) -> None:
+        self._items: dict[tuple[str, int], tuple[pd.Series, Indicator, dict[str, Any], list[dict]]] = {}
+
+    def get(
+        self, cls: type[Indicator], split: Split, train: pd.Series
+    ) -> tuple[Indicator, dict[str, Any], list[dict]] | None:
+        hit = self._items.get((cls.name, split.id))
+        return None if hit is None or not hit[0].equals(train) else hit[1:]
+
+    def put(
+        self,
+        cls: type[Indicator],
+        split: Split,
+        train: pd.Series,
+        fit: tuple[Indicator, dict[str, Any], list[dict]],
+    ) -> None:
+        self._items[(cls.name, split.id)] = (train, *fit)
+
+
 def context_columns(
     panel: pd.DataFrame,
     context: tuple[str, ...],
@@ -297,38 +337,51 @@ def run_backtest(
     bounds: tuple[float, float, int] | None = None,
     context: tuple[str, ...] = CONTEXT,
     first_test: str = FIRST_TEST,
+    signal_source: str | None = None,
 ) -> BacktestResult:
     """`calibration_h`, `grid_scale` и `context` задаются профилем ряда (ADR-0010): по умолчанию —
     дневная ось ЦБ, на часовой оси Мосбиржи горизонт и окна сеток в барах. `bounds` профилем не
     задаётся: полоса частоты — свойство канала, а не шага ряда. `first_test` — начало первого
     тестового окна (вариант «тест с 2019»): обучение расширяющееся от `analysis_start`, поэтому окна,
-    общие с прогоном по умолчанию, обязаны дать те же строки матрицы."""
+    общие с прогоном по умолчанию, обязаны дать те же строки матрицы.
+
+    `signal_source` — вариант «один сигнал по рублю»: индикаторы (и калибровка, и `compute`) считаются
+    по курсу этой валюты, а попадания и столбец `rate` — по коридору. Сигнал тогда один на пять
+    коридоров: даты и параметры совпадают, различаются только исходы."""
     ana = panel.loc[pd.Timestamp(analysis_start) :]
     splits = splits or make_splits(ana.index, first_test=first_test)
     ctx_all = panel[context_columns(panel, context, corridors, indicators)]
     sig_rows: list[dict] = []
     mat_rows: list[dict] = []
     cal_rows: list[dict] = []
+    fits = _FitCache()
     for corridor in corridors:
         rate = panel[corridor].dropna()
-        ctx = enrich_context(rate, ctx_all, scale=grid_scale)
+        series = rate if signal_source is None else _signal_series(panel, signal_source, rate.index)
+        ctx = enrich_context(series, ctx_all, scale=grid_scale)
         for split in splits:
-            rate_train = rate.loc[: split.train_end]
+            sig_train = series.loc[: split.train_end]
             ctx_train = ctx.loc[: split.train_end]
+            sig_upto = series.loc[: split.test_end]
             rate_upto = rate.loc[: split.test_end]
             ctx_upto = ctx.loc[: split.test_end]
             win = (split.test_start, split.test_end)
             for cls in indicators:
-                ind, params, log = fit_indicator(
-                    cls,
-                    rate_train,
-                    ctx_train,
-                    eval_start=analysis_start,
-                    fixed_params=fixed_params,
-                    calibration_h=calibration_h,
-                    grid_scale=grid_scale,
-                    bounds=bounds,
-                )
+                fit = fits.get(cls, split, sig_train) if signal_source else None
+                if fit is None:
+                    fit = fit_indicator(
+                        cls,
+                        sig_train,
+                        ctx_train,
+                        eval_start=analysis_start,
+                        fixed_params=fixed_params,
+                        calibration_h=calibration_h,
+                        grid_scale=grid_scale,
+                        bounds=bounds,
+                    )
+                    if signal_source:
+                        fits.put(cls, split, sig_train, fit)
+                ind, params, log = fit
                 cal_rows.append(
                     {
                         "corridor": corridor,
@@ -341,7 +394,7 @@ def run_backtest(
                         "fitted": params.get("_fitted"),
                     }
                 )
-                out = ind.compute(rate_upto, ctx_upto).loc[split.test_start : split.test_end]
+                out = ind.compute(sig_upto, ctx_upto).loc[split.test_start : split.test_end]
                 sig_rows.extend(_event_rows(out, ind, corridor, split, rate, params))
                 for h in horizons:
                     for tol in tolerances:
@@ -387,11 +440,13 @@ def signals_as_of(
     splits: list[Split] | None = None,
     lookback: int = 0,
     fixed_params: bool = False,
+    signal_source: str | None = None,
 ) -> pd.DataFrame:
     """Состояние всех индикаторов на дату среза — по данным с pub_date ≤ cutoff и параметрам,
     откалиброванным на окне, которое действует в эту дату; после последнего тестового окна — на
     живом окне (обучение до его начала минус зазор, `split_for_date`). `lookback` — сколько
-    предыдущих дней публикации вернуть вместе с датой среза.
+    предыдущих дней публикации вернуть вместе с датой среза. `signal_source` — тот же вариант
+    «один сигнал по рублю», что и в `run_backtest`: срез обязан совпасть с полным прогоном и на нём.
 
     Функция ДНЕВНАЯ: профиль ряда она не принимает и берёт `CONTEXT` и умолчания `fit_indicator`.
     Живое решение живёт на оси ЦБ (ADR-0010: часовая ось — второй источник, не замена), и
@@ -403,16 +458,23 @@ def signals_as_of(
     avail = panel.loc[:cutoff]
     ctx_all = avail[context_columns(avail, CONTEXT, corridors, indicators)]
     rows: list[dict] = []
+    fits = _FitCache()
     for corridor in corridors:
         rate = avail[corridor].dropna()
-        ctx = enrich_context(rate, ctx_all)
-        rate_train = rate.loc[: split.train_end]
+        series = rate if signal_source is None else _signal_series(avail, signal_source, rate.index)
+        ctx = enrich_context(series, ctx_all)
+        sig_train = series.loc[: split.train_end]
         ctx_train = ctx.loc[: split.train_end]
         for cls in indicators:
-            ind, params, _ = fit_indicator(
-                cls, rate_train, ctx_train, eval_start=analysis_start, fixed_params=fixed_params
-            )
-            out = ind.compute(rate, ctx)
+            fit = fits.get(cls, split, sig_train) if signal_source else None
+            if fit is None:
+                fit = fit_indicator(
+                    cls, sig_train, ctx_train, eval_start=analysis_start, fixed_params=fixed_params
+                )
+                if signal_source:
+                    fits.put(cls, split, sig_train, fit)
+            ind, params, _ = fit
+            out = ind.compute(series, ctx)
             tail = out.iloc[-(lookback + 1) :]
             for t, row in tail.iterrows():
                 facts = {f: _native(row[f]) for f in ind.fact_fields() if f in row.index}

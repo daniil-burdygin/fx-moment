@@ -123,3 +123,40 @@ def test_compare_runs_writes_all_tables(panel, tmp_path):
     assert extra.loc[extra["corridor"] == "all", "windows"].item() == 1
     prov = pd.read_json(out / "provenance.json", typ="series")
     assert prov["variant"]["rank_base"] == "month" and prov["latest"]["rank_base"] == "window"
+
+
+def test_signal_source_gives_one_signal_and_many_checks(panel):
+    """Один сигнал по общему ряду: даты событий и выбранные параметры совпадают на двух коридорах,
+    а исходы (матрица) и курс события — свои у каждого (строка Ш8)."""
+    kw = dict(KW, corridors=("TJS", "KZT"), first_test="2020-01-01")
+    run = run_backtest(panel, signal_source="USD", **kw)
+    dates = {c: sorted(g["date"]) for c, g in run.signals.groupby("corridor")}
+    assert dates["TJS"] and dates["TJS"] == dates["KZT"]
+    params = run.calibration.set_index(["corridor", "indicator", "split"])["params"]
+    a = params.xs("TJS").sort_index().to_numpy()
+    b = params.xs("KZT").sort_index().to_numpy()
+    assert (a == b).all()
+    # курс события — коридорный, поэтому разный; исходы на общем сигнале тоже расходятся
+    rates = run.signals.pivot_table(index="date", columns="corridor", values="rate")
+    assert (rates["TJS"] != rates["KZT"]).all()
+    hits = run.matrix.pivot_table(index=["indicator", "split"], columns="corridor", values="hit_mean")
+    assert not hits["TJS"].equals(hits["KZT"])
+    # без общего сигнала индикатор считается по своему ряду: даты расходятся
+    own = run_backtest(panel, **kw)
+    own_dates = {c: sorted(g["date"]) for c, g in own.signals.groupby("corridor")}
+    assert own_dates["TJS"] != own_dates["KZT"]
+
+
+def test_signal_source_series_is_causal_and_aligned(panel):
+    """Ряд сигнала выровнен по оси коридора и смотрит только назад: пропущенный день берёт вчерашний
+    курс источника, а не завтрашний."""
+    from fxmoment.backtest.engine import _signal_series
+
+    idx = panel.index
+    holed = panel.copy()
+    holed.loc[idx[100], "USD"] = float("nan")
+    s = _signal_series(holed, "USD", idx[:200])
+    assert s.index.equals(idx[:200])
+    assert s.iloc[100] == panel["USD"].iloc[99] != panel["USD"].iloc[100]
+    with pytest.raises(KeyError):
+        _signal_series(panel, "XXX", idx)

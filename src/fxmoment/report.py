@@ -120,6 +120,8 @@ def write_report(
         variant += "; обучаемый один на коридоры прогона"
     if notes.get("extra_indicators"):
         variant += "; добавлен " + ", ".join(f"`{i}`" for i in notes["extra_indicators"])
+    if notes.get("signal_source"):
+        variant += f"; сигнал общий, по курсу {notes['signal_source']}"
     lines = [
         "# Бэктест — сводка (h = 20, допуск 25 бп, медианы по окнам walk-forward" + variant + ")",
         "",

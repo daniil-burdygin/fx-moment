@@ -24,7 +24,15 @@ RUN_LOCAL: tuple[str, ...] = ("split",)  # номер окна свой у ка�
 TOL = 1e-9
 DECISIONS: tuple[str, ...] = ("sent", "muted", "thinned", "cooldown", "storm")
 # что из провенанса прогона переносится в провенанс сравнения
-RUN_KEYS: tuple[str, ...] = ("code", "built_at_utc", "first_test", "rank_base", "ml", "extra_indicators")
+RUN_KEYS: tuple[str, ...] = (
+    "code",
+    "built_at_utc",
+    "first_test",
+    "rank_base",
+    "ml",
+    "extra_indicators",
+    "signal_source",
+)
 
 
 def _read(path: Path) -> pd.DataFrame:
@@ -439,7 +447,8 @@ def compare_runs(
         f"latest: код `{pa.get('code', '?')}`, первое окно {pa.get('first_test', '?')}, база ранга "
         f"{pa.get('rank_base', 'window')}. Вариант: код `{pb.get('code', '?')}`, первое окно "
         f"{pb.get('first_test', '?')}, база ранга {pb.get('rank_base', 'window')}, обучаемый "
-        f"{pb.get('ml') or 'local'}, добавлены индикаторы: "
+        f"{pb.get('ml') or 'local'}, сигнал по {pb.get('signal_source') or 'своему коридору'}, "
+        f"добавлены индикаторы: "
         f"{', '.join(provenance['variant_only_indicators']) or 'нет'}. Сравнение: код "
         f"`{git_hash()}`, {datetime.now(UTC):%Y-%m-%d %H:%M} UTC. Общих окон "
         f"{len(provenance['common_windows'])}, только у варианта {len(provenance['variant_only_windows'])}.",

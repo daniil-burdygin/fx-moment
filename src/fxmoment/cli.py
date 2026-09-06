@@ -12,7 +12,15 @@ from typing import Any
 
 import pandas as pd
 
-from fxmoment.config import ALL_CURRENCIES, ANALYSIS_START, CORRIDORS, FIRST_TEST, MOEX_RAW_START, RAW_START
+from fxmoment.config import (
+    ALL_CURRENCIES,
+    ANALYSIS_START,
+    CONTEXT,
+    CORRIDORS,
+    FIRST_TEST,
+    MOEX_RAW_START,
+    RAW_START,
+)
 
 FORTS_URL_FOR_META = "https://iss.moex.com/iss/engines/futures/markets/forts/securities"
 PROTECTED_RUNS = ("latest", "fixed", "intraday")  # каталоги основных отчётов: варианты сюда не пишутся
@@ -128,11 +136,18 @@ def cmd_backtest(args: argparse.Namespace) -> int:
         or args.rank_base != "window"
         or args.ml != "local"
         or args.with_level_drift
+        or bool(args.signal_source)
     )
     if variant and not args.out:
         print(
-            "вариантный прогон (--first-test, --rank-base, --ml pooled, --with-level-drift) "
-            "пишется только в свой каталог: укажите --out"
+            "вариантный прогон (--first-test, --rank-base, --ml pooled, --with-level-drift, "
+            "--signal-source) пишется только в свой каталог: укажите --out"
+        )
+        return 2
+    if args.signal_source and args.ml == "pooled":
+        print(
+            "--signal-source и --ml pooled вместе не считаются: общий сигнал даёт один ряд на все "
+            "коридоры, и объединять по коридорам в обучении нечего"
         )
         return 2
     if args.out and (args.out in PROTECTED_RUNS or "/" in args.out or args.out.startswith(".")):
@@ -151,11 +166,14 @@ def cmd_backtest(args: argparse.Namespace) -> int:
         analysis_start=args.start,
         fixed_params=args.fixed_params,
         first_test=args.first_test,
+        signal_source=args.signal_source or None,
         **kwargs,
     )
     name = args.out or ("fixed" if args.fixed_params else "latest")
     out_dir = repo_root() / "reports" / name
     notes = {"ml": args.ml, "extra_indicators": ["level_drift"] if args.with_level_drift else []}
+    if args.signal_source:  # только у варианта: провенанс основных отчётов не меняется
+        notes["signal_source"] = args.signal_source
     out = write_report(result, panel, out_dir, policy=PolicyParams(rank_base=args.rank_base), notes=notes)
     pd.set_option("display.width", 250)
     for h in (20, 5):
@@ -506,6 +524,12 @@ def main(argv: list[str] | None = None) -> int:
         "--with-level-drift",
         action="store_true",
         help="добавить `level_drift`: уровень на ряде с вычтенным дрейфом локальной ноги rate / usd",
+    )
+    b.add_argument(
+        "--signal-source",
+        choices=CONTEXT,
+        default="",
+        help="считать индикаторы по этому курсу (один сигнал на все коридоры), попадания — по коридору",
     )
     b.add_argument("--out", default="", help="каталог варианта внутри reports/ (обязателен для вариантов)")
     b.set_defaults(func=cmd_backtest)
