@@ -1,0 +1,83 @@
+<!-- 2 · СИГНАЛ И ФИЛЬТРЫ -->
+<section class="slide" id="s2">
+<style>
+#s2 h2{font-size:33px;margin-bottom:7px}
+#s2 .cols{gap:14px}
+#s2 .cols.c2{align-items:start}
+#s2 .card{padding:11px 14px}
+#s2 .card + .card{margin-top:9px}
+#s2 .lab{margin-bottom:7px}
+#s2 ul{padding-left:15px}
+#s2 li{font-size:13px;line-height:1.26;margin:0 0 3px}
+#s2 li:last-child{margin-bottom:0}
+#s2 .neg li{color:#C4CBD4}
+#s2 .neg li b{color:#fff}
+#s2 .yes{border-left:3px solid var(--lav);padding-left:12px}
+#s2 .filters li{margin:0 0 10px}
+#s2 .filters li:last-child{margin-bottom:0}
+#s2 .row5{display:grid;grid-template-columns:repeat(5,1fr);gap:11px;margin-top:8px}
+#s2 .row5 .card{padding:7px 11px}
+#s2 .big{font-size:25px}
+#s2 .big small{font-size:12px;margin-top:4px;line-height:1.2}
+#s2 .note{font-size:12px;color:#98A0AC;line-height:1.3;margin-top:7px;border-top:1px solid #26262E;padding-top:7px}
+#s2 .card.lav .big small{color:rgba(11,11,15,.68)}
+#s2 .footer .src{max-width:850px}
+#s2 .footer{bottom:13px}
+#s2 .footer .src{color:#666D78}
+</style>
+
+  <div class="eyebrow">Слайд 2 · какой сигнал выбрали и как фильтруем</div>
+  <h2>Сигнал — факт о прошлом: курс в нижней части окна;<span class="l">всё, что оказалось прогнозом, мы выбросили</span></h2>
+
+  <div class="cols c2">
+
+    <div>
+      <div class="card yes">
+        <div class="lab">Сигнал · что считаем</div>
+        <ul>
+          <li><b>Базовый факт — уровень.</b> Курс в нижних 30 % окна 120 дней публикации (гейт прогона агрегатора; в пакете fxmoment — 20 %, ADR-0005 п. 2). Нет факта — нет пуша: текст собирается из факта.</li>
+          <li><b>Решение — обучаемый агрегатор.</b> Логрег на признаках индикаторов поверх гейта уровня; калиброванная вероятность, один порог на пять валют.</li>
+          <li><b>Почему логрег, а не бустинг.</b> Вклад признака = вес × значение, его можно назвать вслух комплаенсу; один рычаг частоты вместо шести порогов.</li>
+        </ul>
+      </div>
+      <div class="card neg">
+        <div class="lab">Почему именно он · отрицательные результаты</div>
+        <ul>
+          <li><b>Моментум</b> «падает N дней подряд» — lift 0,94–1,02, от случайного дня не отличим.</li>
+          <li><b>Разворот как прогноз</b> — 0,79–1,15, монетка на 4 коридорах из 5; оставлен фактом сожаления, а не предсказанием.</li>
+          <li><b>Внешние признаки и общее обучение</b> — EUR/USD, TimesFM 3, режим Минфина, общий обучаемый: все 20 сводных интервалов разницы содержат ноль, по коридорам знак не держится.</li>
+          <li><b>Цена ожидания измерена:</b> ждать подтверждения выгоднее, чем слать сразу, на 5 коридорах из 5: +18…+52 против −24…+8 бп; интервалы перекрываются — наклон, не доказательство.</li>
+        </ul>
+      </div>
+    </div>
+
+    <div>
+      <div class="card filters">
+        <div class="lab">Фильтры · что не доходит до клиента</div>
+        <ul>
+          <li><b>Ранг по надёжности walk-forward.</b> Индикатор без lift или выгоды на прошлых окнах глушится: за 11 окон моментум снят в 484 срабатываниях из 988 (прогон стека).</li>
+          <li><b>Охлаждение.</b> После пуша 3 дня публикации тишины, не больше 2 пушей за скользящие 5 дней.</li>
+          <li><b>Шторм.</b> Волатильность за 20 дней в верхних 5 % своего года — молчим: «переводите сейчас» в день обвала дороже всего (ADR-0006 п. 8).</li>
+          <li><b>Календарь.</b> Ось — дни публикации курса ЦБ; молчание за день до заседания по ставке заложено в план пилота (ADR-0006 п. 9).</li>
+          <li><b>Сверка перед отправкой.</b> Курс приложения расходится с фиксингом, поэтому факт сверяется вечерним курсом: до утра он доживает у 93 % пушей, остальным экран показывает дельту.</li>
+          <li><b>Лимит 1–2 в неделю — потолок канала, а не план.</b> Молчим, пока факта нет: у агрегатора 55 % месяцев пустые, самый долгий перерыв в коридоре 483 дня.</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <div class="row5">
+    <div class="card lav"><div class="big">1,27<small>lift pooled, 570 пушей; по окнам и валютам — 1,39</small></div></div>
+    <div class="card"><div class="big">+97 бп<small>медиана по 55 парам валюта × окно; по пушам +82</small></div></div>
+    <div class="card"><div class="big">0,40<small>пуша в неделю на валюту — редкий по устройству</small></div></div>
+    <div class="card"><div class="big">11<small>окон walk-forward 2021–2026, зазор 20 дней</small></div></div>
+    <div class="card"><div class="big">166<small>тестов пакета fxmoment, в том числе на заглядывание вперёд</small></div></div>
+  </div>
+
+  <div class="note">1,27 · +97 бп · 0,40 — прогон логрег-агрегатора (воспроизведён побайтово); 11 окон, 166 тестов — пакет fxmoment; отрицательные результаты — прогон стека индикаторов; не смешивать.</div>
+
+  <div class="footer">
+    <div class="src">grid_final.csv (experiments/logreg-v1/results) · STATUS.md «Что показал бэктест», «Что готово»<br>product/limitations.md «Отрицательные результаты бэктеста» · decisions/0004, 0005, 0006 · defense/qa.md «Стык»</div>
+    <div class="rt">AI TALENT HUB · ИТМО · АЛЬФА-БАНК<br>Момент · команда 9 · сигнал и фильтры</div>
+  </div>
+</section>

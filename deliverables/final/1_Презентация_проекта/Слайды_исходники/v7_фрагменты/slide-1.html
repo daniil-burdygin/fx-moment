@@ -1,0 +1,43 @@
+<section class="slide" id="s1">
+<style>
+#s1 h2{font-size:35px;margin-bottom:8px}
+#s1 h2 .l{display:inline}
+#s1 .steps{display:grid;grid-template-columns:repeat(8,1fr);gap:6px;margin:0 0 8px}
+#s1 .st{font-size:12.5px;line-height:1.2;color:#C9D0D8;background:var(--card);border-radius:9px;padding:6px 9px;display:flex;align-items:center;gap:7px;white-space:nowrap}
+#s1 .st .n{font-family:"JetBrains Mono",ui-monospace,Menlo,monospace;font-size:12px;font-weight:600;color:#8E96A2}
+#s1 .st.on{background:var(--lav);color:#0B0B0F;font-weight:600}
+#s1 .st.on .n{color:rgba(11,11,15,.62)}
+#s1 .four{display:grid;grid-template-columns:repeat(4,1fr);gap:16px}
+#s1 .four .fr{width:100%;height:372px;object-fit:cover;object-position:50% 0;border-radius:16px;box-shadow:0 8px 24px rgba(0,0,0,.5);display:block;background:#000}
+#s1 .four .cap{font-size:13px;line-height:1.3;margin-top:6px;color:#C9D0D8}
+#s1 .four .cap b{display:block;color:#fff;font-weight:700;font-size:13.5px}
+#s1 .own{margin-top:8px;font-size:13px;line-height:1.3;color:#C9D0D8}
+#s1 .own b{color:#fff}
+#s1 .footer .src{max-width:900px;white-space:normal}
+#s1 .footer{bottom:14px}
+</style>
+  <div class="eyebrow">Слайд 1 · клиентский путь целиком · прототип кликается тапами</div>
+  <h2>Весь путь клиента — восемь экранов, <span class="l">и пуш сам себя оценивает</span></h2>
+
+  <div class="steps">
+    <div class="st on"><span class="n">0</span>Пуш</div>
+    <div class="st on"><span class="n">1</span>Перевод</div>
+    <div class="st"><span class="n">2</span>Получатель</div>
+    <div class="st"><span class="n">3</span>Сумма</div>
+    <div class="st"><span class="n">4</span>Проверка</div>
+    <div class="st on"><span class="n">5</span>Готово</div>
+    <div class="st on"><span class="n">6</span>Открыт позже</div>
+    <div class="st"><span class="n">7</span>Уведомления</div>
+  </div>
+
+  <div class="four">
+    <div><img class="fr" src="Слайды_прототип_кадры/proto-0.png" alt="Пуш на экране блокировки"><div class="cap"><b>0 · Пуш на блокировке</b>число уже в заголовке: 7,67 ₽ за 1 сомони — ниже, чем в 96 % дней за 6 мес.</div></div>
+    <div><img class="fr" src="Слайды_прототип_кадры/proto-1.png" alt="Экран перевода"><div class="cap"><b>1 · Экран перевода</b>карточка факта сверху, ниже родной путь банка: получатель, сумма, проверка</div></div>
+    <div><img class="fr" src="Слайды_прототип_кадры/proto-5.png" style="object-position:50% 25%" alt="Готово и вердикт"><div class="cap"><b>5 · Готово, вердикт «рано судить»</b>что проверяем, порог, дата проверки — через 20 дней вердикт видит клиент</div></div>
+    <div><img class="fr" src="Слайды_прототип_кадры/proto-6.png" style="object-position:50% 30%" alt="Открыт позже"><div class="cap"><b>6 · Открыт позже: честная дельта</b>механика A из четырёх по шести критериям; напоминание — действие на экране, а не второй пуш</div></div>
+  </div>
+
+  <div class="own"><b>Экраны 2–4 — родной Альфа-Онлайн.</b> Токены и правила CSS сняты с живых экранов (замер 06.09.2026) и открытой дизайн-системы core-ds (MIT); на пакет компонентов прототип не переводился. PWA и дизайн-систему разрешили представители банка. Путь приложения не переделан — надстроены два экрана.</div>
+
+  <div class="footer"><div class="src">prototype/journey.html — восемь экранов, шаги 0–7 · docs/product/star-task.md — «Механики», «Прототип»<br>docs/product/concept.md — «Пуш, который сам себя оценивает» · курсы ЦБ РФ, снимок 03.09.2026</div><div class="rt">AI TALENT HUB · ИТМО · АЛЬФА-БАНК<br>Момент · команда 9 · клиентский путь</div></div>
+</section>
