@@ -75,22 +75,22 @@ table.neg td.v{color:var(--lav);font-family:"JetBrains Mono",ui-monospace,Menlo,
 <!-- 2 · СИГНАЛ И ФИЛЬТРЫ -->
 <section class="slide" id="s2">
 <style>
-#s2 h2{font-size:33px;margin-bottom:11px}
+#s2 h2{font-size:31px;margin-bottom:10px}
 #s2 .cols{gap:14px}
-#s2 .card{padding:12px 15px}
-#s2 .card + .card{margin-top:10px}
+#s2 .card{padding:11px 14px}
+#s2 .card + .card{margin-top:9px}
 #s2 .lab{margin-bottom:7px}
 #s2 ul{padding-left:15px}
-#s2 li{font-size:13.5px;line-height:1.28;margin:0 0 6px}
+#s2 li{font-size:13px;line-height:1.26;margin:0 0 5px}
 #s2 li:last-child{margin-bottom:0}
 #s2 .neg li{color:#C4CBD4}
 #s2 .neg li b{color:#fff}
 #s2 .yes{border-left:3px solid var(--lav);padding-left:12px}
-#s2 .row5{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-top:13px}
-#s2 .row5 .card{padding:11px 14px}
-#s2 .big{font-size:33px}
-#s2 .big small{font-size:12px;margin-top:4px}
-#s2 .note{font-size:12px;color:#767E8A;line-height:1.3;margin-top:8px}
+#s2 .row5{display:grid;grid-template-columns:repeat(5,1fr);gap:11px;margin-top:11px}
+#s2 .row5 .card{padding:10px 13px}
+#s2 .big{font-size:29px}
+#s2 .big small{font-size:12px;margin-top:4px;line-height:1.22}
+#s2 .note{font-size:12px;color:#767E8A;line-height:1.3;margin-top:7px}
 #s2 .footer{bottom:16px}
 </style>
 
@@ -103,9 +103,9 @@ table.neg td.v{color:var(--lav);font-family:"JetBrains Mono",ui-monospace,Menlo,
       <div class="card yes">
         <div class="lab">Сигнал · что считаем</div>
         <ul>
-          <li><b>Базовый факт — уровень.</b> Курс в нижних 30 % окна 120 дней публикации. Нет факта — пуша нет: текст собирается из факта, иначе не уходит (ADR-0005 п. 2).</li>
+          <li><b>Базовый факт — уровень.</b> Курс в нижних 30 % окна 120 дней публикации. Нет факта — нет пуша: текст собирается из факта (ADR-0005 п. 2).</li>
           <li><b>Решение — обучаемый агрегатор.</b> Логистическая регрессия на признаках индикаторов поверх гейта уровня, калибровка вероятностей, единый порог на пять валют.</li>
-          <li><b>Почему логрег, а не бустинг.</b> Вклад признака — вес × значение: его можно назвать вслух и показать комплаенсу. Калиброванная вероятность даёт один рычаг частоты вместо шести порогов.</li>
+          <li><b>Почему логрег, а не бустинг.</b> Вклад признака = вес × значение — его можно назвать вслух комплаенсу; калиброванная вероятность даёт один рычаг частоты вместо шести порогов.</li>
         </ul>
       </div>
       <div class="card neg">
@@ -123,11 +123,11 @@ table.neg td.v{color:var(--lav);font-family:"JetBrains Mono",ui-monospace,Menlo,
       <div class="card">
         <div class="lab">Фильтры · что не доходит до клиента</div>
         <ul>
-          <li><b>Ранг по надёжности walk-forward.</b> Индикатор без lift или без выгоды на прошлых окнах глушится: за 11 окон моментум снят в 484 срабатываниях из 988.</li>
+          <li><b>Ранг по надёжности walk-forward.</b> Индикатор без lift или выгоды на прошлых окнах глушится: за 11 окон моментум снят в 484 срабатываниях из 988.</li>
           <li><b>Охлаждение.</b> После пуша 3 дня публикации тишины, не больше 2 пушей за скользящие 5 дней.</li>
           <li><b>Шторм.</b> Волатильность за 20 дней в верхних 5 % своего года — молчим: «переводите сейчас» в день обвала дороже всего (ADR-0006 п. 8).</li>
           <li><b>Календарь.</b> Ось — дни публикации курса ЦБ; молчание за день до заседания по ставке заложено в план пилота (ADR-0006 п. 9).</li>
-          <li><b>Сверка перед отправкой.</b> Курс приложения расходится с фиксингом, поэтому факт проверяется вечерним курсом; до утра он доживает у 93 % пушей, остальным экран показывает дельту.</li>
+          <li><b>Сверка перед отправкой.</b> Курс приложения расходится с фиксингом, поэтому факт сверяется вечерним курсом: до утра он доживает у 93 % пушей, остальным экран показывает дельту.</li>
           <li><b>Лимит 1–2 в неделю — потолок канала, а не план.</b> Молчим, пока факта нет: 55 % месяцев пустые, самый долгий перерыв в коридоре 483 дня.</li>
         </ul>
       </div>
@@ -142,7 +142,7 @@ table.neg td.v{color:var(--lav);font-family:"JetBrains Mono",ui-monospace,Menlo,
     <div class="card"><div class="big">166<small>тестов, включая проверки на заглядывание вперёд</small></div></div>
   </div>
 
-  <div class="note">1,27 и 1,39 — две агрегации одного прогона, а не два результата. Полоса чисел — прогон логрег-агрегатора; отрицательные результаты слева — прогон стека индикаторов; смешивать нельзя.</div>
+  <div class="note">1,27 и 1,39 — две агрегации одного прогона, а не два результата. Полоса чисел — прогон логрег-агрегатора, отрицательные результаты слева — прогон стека индикаторов; смешивать нельзя.</div>
 
   <div class="footer">
     <div class="src">experiments/logreg-v1/results/grid_final.csv · docs/STATUS.md «Что показал бэктест», «Что готово» · docs/product/limitations.md «Отрицательные результаты бэктеста» · docs/decisions/0004, 0005, 0006 · docs/defense/qa.md «Стык: логрег и стек индикаторов»</div>
