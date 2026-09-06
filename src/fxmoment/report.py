@@ -59,6 +59,23 @@ def git_hash() -> str:
         return "nogit"
 
 
+def write_provenance(out: Path, **fields: Any) -> dict[str, Any]:
+    """Провенанс каталога отчётов: код сборки и время, между ними — что дал прогон.
+
+    Имя файла одно на все каталоги — `provenance.json`: его ищут `analysis.backtest_provenance`
+    и `variants._provenance` по каталогу, и отчёт, назвавший свой провенанс иначе, для них
+    неотличим от отчёта без провенанса (так `reports/intraday` и жил до 06.09)."""
+    provenance = {
+        "code": git_hash(),
+        **fields,
+        "built_at_utc": f"{datetime.now(UTC):%Y-%m-%dT%H:%M:%SZ}",
+    }
+    (out / "provenance.json").write_text(
+        json.dumps(provenance, ensure_ascii=False, indent=1), encoding="utf-8"
+    )
+    return provenance
+
+
 def stamp() -> str:
     """Строка происхождения для отчётов: снимок данных, код, время сборки."""
     meta = load_meta()
@@ -108,18 +125,14 @@ def write_report(
     shape_sum = stream_shape_summary(shape)
     shape_sum.to_csv(out / "stream_shape_summary.csv", index=False)
     meta = load_meta()
-    provenance = {
-        "code": git_hash(),
-        "fetched_at_utc": meta.get("fetched_at_utc"),
-        "last_eff_date": meta.get("last_eff_date"),
-        "built_at_utc": f"{datetime.now(UTC):%Y-%m-%dT%H:%M:%SZ}",
-        "windows": [s.label() for s in result.splits],
-        "first_test": f"{result.splits[0].test_start:%Y-%m-%d}" if result.splits else None,
-        "rank_base": policy.rank_base,
+    write_provenance(
+        out,
+        fetched_at_utc=meta.get("fetched_at_utc"),
+        last_eff_date=meta.get("last_eff_date"),
+        windows=[s.label() for s in result.splits],
+        first_test=f"{result.splits[0].test_start:%Y-%m-%d}" if result.splits else None,
+        rank_base=policy.rank_base,
         **notes,
-    }
-    (out / "provenance.json").write_text(
-        json.dumps(provenance, ensure_ascii=False, indent=1), encoding="utf-8"
     )
     variant = "" if policy.rank_base == "window" else f"; ранг индикаторов на базе «{policy.rank_base}»"
     if notes.get("ml") == "pooled":
