@@ -1,0 +1,609 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Момент изменился — прототип экрана</title>
+<style>
+  /* Токены — приближение к core-ds/core-components Альфа-Банка (см. prototype/README.md).
+     Сеть недоступна, npm не подключён: значения выписаны руками, точность — на глаз. */
+  :root {
+    --red: #EF3124;          /* акцент Альфа-Банка */
+    --red-press: #D4291D;
+    --bg: #0B0B0D;
+    --panel: #131316;
+    --screen: #17171B;
+    --card: #202026;
+    --card-2: #2A2A32;
+    --line: rgba(255,255,255,.10);
+    --line-2: rgba(255,255,255,.18);
+    --ink: #FFFFFF;
+    --muted: rgba(255,255,255,.58);
+    --muted-2: rgba(255,255,255,.38);
+    --green: #33C46E;
+    --amber: #F5A623;
+    --r-l: 20px;
+    --r-m: 16px;
+    --r-s: 12px;
+    --font: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  }
+  * { box-sizing: border-box; }
+  html, body { height: 100%; }
+  body {
+    margin: 0; background: var(--bg); color: var(--ink); font-family: var(--font);
+    font-size: 15px; line-height: 1.45; -webkit-font-smoothing: antialiased;
+  }
+  .shell {
+    display: grid;
+    grid-template-columns: minmax(260px, 340px) minmax(430px, 1fr) minmax(240px, 300px);
+    gap: 28px; align-items: start;
+    padding: 28px 32px 12px; max-width: 1520px; margin: 0 auto;
+  }
+
+  /* ── левая колонка: заголовок шага ─────────────────────────────────── */
+  .step-no { font-size: 12px; letter-spacing: .10em; text-transform: uppercase; color: var(--red); font-weight: 600; }
+  h1 { margin: 6px 0 10px; font-size: 30px; line-height: 1.15; letter-spacing: -.01em; }
+  .lede { color: var(--muted); margin: 0 0 18px; }
+  .left h2 { font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted-2); margin: 20px 0 8px; font-weight: 600; }
+  .left ul { margin: 0; padding-left: 18px; color: var(--muted); }
+  .left li { margin-bottom: 6px; }
+  .left li b { color: var(--ink); font-weight: 600; }
+  .prov { margin-top: 20px; padding: 12px 14px; border: 1px solid var(--line); border-radius: var(--r-m); font-size: 12px; color: var(--muted-2); line-height: 1.5; }
+  .prov code { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 11px; color: var(--muted); }
+
+  /* ── центр: рамка телефона ─────────────────────────────────────────── */
+  .stage { display: flex; justify-content: center; }
+  .phone {
+    width: 390px; height: 844px; flex: none; position: relative;
+    background: var(--screen); border-radius: 44px; border: 1px solid var(--line-2);
+    box-shadow: 0 0 0 9px #0F0F12, 0 24px 60px rgba(0,0,0,.6);
+    display: flex; flex-direction: column; overflow: hidden;
+  }
+  .notch { position: absolute; top: 8px; left: 50%; transform: translateX(-50%); width: 118px; height: 26px; background: #000; border-radius: 14px; z-index: 3; }
+  .statusbar { flex: none; display: flex; justify-content: space-between; align-items: center; padding: 12px 24px 2px; font-size: 13px; font-weight: 600; color: var(--ink); }
+  .statusbar .icons { display: flex; gap: 5px; align-items: center; color: var(--muted); font-size: 11px; }
+  .appbar { flex: none; display: flex; align-items: center; gap: 12px; padding: 6px 16px 8px; }
+  .appbar .back { width: 32px; height: 32px; border-radius: 50%; background: var(--card); display: grid; place-items: center; color: var(--muted); font-size: 16px; }
+  .appbar .ttl { font-size: 17px; font-weight: 600; }
+  .appbar .sub { font-size: 12px; color: var(--muted-2); }
+  .viewport { flex: 1 1 auto; overflow-y: auto; overflow-x: hidden; padding: 2px 16px 4px; scrollbar-width: thin; }
+  .viewport::-webkit-scrollbar { width: 4px; }
+  .viewport::-webkit-scrollbar-thumb { background: var(--line-2); border-radius: 4px; }
+  .homebar { flex: none; height: 20px; display: grid; place-items: center; }
+  .homebar i { display: block; width: 134px; height: 5px; border-radius: 3px; background: rgba(255,255,255,.28); }
+
+  /* ── компоненты экрана ─────────────────────────────────────────────── */
+  .push {
+    background: var(--card); border-radius: var(--r-l); padding: 10px 13px; margin-bottom: 6px;
+    border: 1px solid var(--line);
+  }
+  .push .head { display: flex; align-items: center; gap: 8px; font-size: 11px; color: var(--muted-2); margin-bottom: 5px; }
+  .push .logo { width: 18px; height: 18px; border-radius: 5px; background: var(--red); display: grid; place-items: center; font-size: 11px; font-weight: 700; color: #fff; }
+  .push .t { font-size: 14px; font-weight: 600; margin-bottom: 2px; }
+  .push .b { font-size: 13px; line-height: 1.4; color: var(--muted); }
+
+  .group { background: var(--card); border-radius: var(--r-l); margin-bottom: 6px; overflow: hidden; }
+  .group .cap { font-size: 11px; letter-spacing: .06em; text-transform: uppercase; color: var(--muted-2); padding: 9px 16px 1px; }
+  .row { display: flex; align-items: center; gap: 12px; padding: 8px 16px; border-top: 1px solid var(--line); }
+  .row:first-of-type { border-top: none; }
+  .row .k { font-size: 13px; color: var(--muted); flex: none; width: 108px; }
+  .row .v { font-size: 14px; flex: 1 1 auto; }
+  .row .v small { display: block; font-size: 11px; color: var(--muted-2); margin-top: 2px; }
+  .row .chev { color: var(--muted-2); font-size: 15px; }
+  .flag { font-size: 18px; }
+
+  .amount { padding: 11px 16px; }
+  .amount .lab { font-size: 12px; color: var(--muted-2); }
+  .amount .val { font-size: 26px; font-weight: 600; letter-spacing: -.02em; margin-top: 1px; }
+  .amount .caret { display: inline-block; width: 2px; height: 24px; background: var(--red); vertical-align: -4px; margin-left: 2px; }
+
+  .rate { padding: 10px 16px; border-top: 1px solid var(--line); }
+  .rate .line { display: flex; justify-content: space-between; gap: 12px; font-size: 14px; }
+  .rate .line + .line { margin-top: 5px; }
+  .rate .line .m { color: var(--muted); }
+  .rate .big { font-size: 20px; font-weight: 600; }
+
+  .fact {
+    background: var(--card); border-radius: var(--r-l); padding: 11px 16px; margin-bottom: 10px;
+    border-left: 3px solid var(--red);
+  }
+  .fact.inline { border-radius: 0; margin-bottom: 0; border-top: 1px solid var(--line); }
+  .fact.neutral { border-left-color: var(--muted-2); }
+  .fact.warn { border-left-color: var(--amber); }
+  .fact .t { font-size: 14px; font-weight: 600; margin-bottom: 3px; }
+  .fact .b { font-size: 13px; color: var(--muted); }
+  .fact .src { font-size: 11px; color: var(--muted-2); flex: 1 1 auto; }
+  .factfoot { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-top: 8px; }
+  .how {
+    flex: none; background: none; border: 1px solid var(--line-2); color: var(--ink);
+    border-radius: 999px; padding: 5px 12px; font: inherit; font-size: 12px; cursor: pointer;
+  }
+  .how:hover { border-color: var(--red); }
+  .how[aria-expanded="true"] { border-color: var(--red); color: var(--red); }
+  .howbody { margin-top: 10px; font-size: 13px; color: var(--muted); }
+  .howbody dl { margin: 0; display: grid; grid-template-columns: auto 1fr; gap: 4px 12px; }
+  .howbody dt { color: var(--muted-2); }
+  .howbody dd { margin: 0; color: var(--ink); }
+  .howbody p { margin: 10px 0 0; color: var(--muted-2); font-size: 12px; line-height: 1.5; }
+
+  .delta { background: var(--card); border-radius: var(--r-l); padding: 12px 16px; margin-bottom: 10px; }
+  .delta .hd { font-size: 16px; font-weight: 600; margin-bottom: 10px; }
+  .delta .note { font-size: 13px; color: var(--muted); margin: -6px 0 10px; }
+  .delta .pair { display: flex; align-items: stretch; gap: 10px; }
+  .delta .cell { flex: 1 1 0; background: var(--card-2); border-radius: var(--r-s); padding: 10px 12px; }
+  .delta .cell .k { font-size: 11px; color: var(--muted-2); min-height: 26px; }
+  .delta .cell .n { font-size: 21px; font-weight: 600; letter-spacing: -.02em; margin-top: 2px; }
+  .delta .cell .u { font-size: 11px; color: var(--muted-2); }
+  .delta .cell.now { background: rgba(239,49,36,.12); }
+  .badge { display: inline-block; border-radius: 999px; padding: 2px 8px; font-size: 12px; font-weight: 600; vertical-align: 3px; }
+  .badge.up { background: rgba(239,49,36,.16); color: #FF8A7E; }
+  .badge.flat { background: rgba(255,255,255,.10); color: var(--muted); }
+  .delta .money { margin-top: 10px; font-size: 13px; color: var(--muted); }
+  .delta .money b { color: var(--ink); font-weight: 600; }
+  .delta .money div + div { margin-top: 6px; }
+
+  .saved { background: none; border: 1px dashed var(--line-2); border-radius: var(--r-m); padding: 10px 14px; margin-bottom: 10px; }
+  .saved .k { font-size: 11px; letter-spacing: .06em; text-transform: uppercase; color: var(--muted-2); margin-bottom: 4px; }
+  .saved .v { font-size: 13px; color: var(--muted); }
+  .hintline { font-size: 12px; color: var(--muted-2); line-height: 1.5; padding: 2px 2px 0; }
+
+  .actionbar { flex: none; padding: 10px 16px 4px; border-top: 1px solid var(--line); background: var(--screen); }
+  .actionbar:empty { display: none; }
+  .btn { display: block; width: 100%; border: none; border-radius: var(--r-m); padding: 14px 16px; font: inherit; font-size: 16px; font-weight: 600; cursor: pointer; }
+  .btn.primary { background: var(--red); color: #fff; }
+  .btn.primary:hover { background: var(--red-press); }
+  .btn.ghost { background: var(--card); color: var(--ink); margin-top: 8px; }
+  .btn.ghost:hover { background: var(--card-2); }
+  .foot-note { font-size: 11px; color: var(--muted-2); text-align: center; margin-top: 8px; line-height: 1.45; }
+
+  /* ── журнал попаданий ──────────────────────────────────────────────── */
+  .jsum { display: flex; gap: 8px; margin-bottom: 10px; }
+  .jsum div { flex: 1 1 0; background: var(--card); border-radius: var(--r-m); padding: 8px 12px; }
+  .jsum .n { font-size: 20px; font-weight: 600; line-height: 1.2; }
+  .jsum .k { font-size: 11px; color: var(--muted-2); }
+  .jrule { font-size: 12px; color: var(--muted-2); line-height: 1.5; background: var(--card); border-radius: var(--r-m); padding: 10px 14px; margin-bottom: 10px; }
+  .jrule b { color: var(--muted); font-weight: 600; }
+  .jitem { background: var(--card); border-radius: var(--r-m); padding: 10px 14px; margin-bottom: 8px; }
+  .jitem .top { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+  .jitem .d { font-size: 14px; font-weight: 600; }
+  .jitem .f { font-size: 13px; color: var(--muted); margin-top: 4px; }
+  .jitem .m { font-size: 12px; color: var(--muted-2); margin-top: 6px; }
+  .chip { border-radius: 999px; padding: 3px 10px; font-size: 12px; font-weight: 600; white-space: nowrap; }
+  .chip.hit { background: rgba(51,196,110,.16); color: var(--green); }
+  .chip.miss { background: rgba(255,255,255,.10); color: var(--muted); }
+  .chip.open { background: rgba(245,166,35,.16); color: var(--amber); }
+
+  /* ── правая колонка: действия ──────────────────────────────────────── */
+  .right h2 { font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted-2); margin: 0 0 10px; font-weight: 600; }
+  .act {
+    display: flex; align-items: flex-start; gap: 10px; width: 100%; text-align: left;
+    background: var(--panel); color: var(--ink);
+    border: 1px solid var(--line); border-radius: var(--r-m); padding: 12px 14px; margin-bottom: 8px;
+    font: inherit; cursor: pointer;
+  }
+  .act:hover { border-color: var(--line-2); }
+  .act[aria-current="true"] { border-color: var(--red); background: rgba(239,49,36,.10); }
+  .act .txt { flex: 1 1 auto; min-width: 0; }
+  .act .n { display: block; font-size: 14px; font-weight: 600; }
+  .act .s { display: block; font-size: 12px; color: var(--muted-2); margin-top: 3px; line-height: 1.35; }
+  .act kbd { flex: none; margin-top: 1px; font-family: var(--font); font-size: 11px; color: var(--muted-2); border: 1px solid var(--line); border-radius: 5px; padding: 0 5px; }
+  .sep { height: 1px; background: var(--line); margin: 16px 0; }
+  .right .hint { font-size: 12px; color: var(--muted-2); line-height: 1.5; }
+  .right .hint code { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 11px; color: var(--muted); white-space: nowrap; }
+
+  /* ── дисклеймер ────────────────────────────────────────────────────── */
+  .disclaimer {
+    text-align: center; font-size: 12px; color: var(--muted-2);
+    padding: 14px 32px 26px; border-top: 1px solid var(--line); margin: 18px 32px 0;
+  }
+
+  @media (max-width: 1180px) {
+    .shell { grid-template-columns: 1fr; }
+    .stage { order: -1; }
+  }
+</style>
+</head>
+<body>
+
+<div class="shell">
+  <aside class="left">
+    <div class="step-no" id="stepNo">Шаг 1 из 4</div>
+    <h1 id="stepTitle">—</h1>
+    <p class="lede" id="stepLede">—</p>
+    <h2>Что на экране</h2>
+    <ul id="stepList"></ul>
+    <div class="prov" id="prov"></div>
+  </aside>
+
+  <main class="stage">
+    <div class="phone">
+      <div class="notch" aria-hidden="true"></div>
+      <div class="statusbar">
+        <span id="clock">19:05</span>
+        <span class="icons">●●●&nbsp;&nbsp;WiFi&nbsp;&nbsp;100%</span>
+      </div>
+      <div class="appbar">
+        <div class="back" aria-hidden="true">‹</div>
+        <div>
+          <div class="ttl" id="screenTitle">Перевод за рубеж</div>
+          <div class="sub" id="screenSub">—</div>
+        </div>
+      </div>
+      <div class="viewport" id="viewport"></div>
+      <div class="actionbar" id="actionbar"></div>
+      <div class="homebar"><i></i></div>
+    </div>
+  </main>
+
+  <aside class="right">
+    <h2>Действия</h2>
+    <div id="acts"></div>
+    <div class="sep"></div>
+    <button class="act" id="howToggle" type="button"><span class="txt"><span class="n">Раскрыть «Как рассчитано»</span><span class="s">Индикатор, окно, процентиль, дата публикации курса</span></span></button>
+    <div class="sep"></div>
+    <p class="hint">Состояние открывается ссылкой: <code id="permalink">?state=actual</code>. Клавиши <b>1</b>–<b>4</b> переключают экраны.</p>
+  </aside>
+</div>
+
+<div class="disclaimer">Демо: курсы — публикации ЦБ РФ, сумма перевода условная. Деньги не отправляются.</div>
+
+<script>
+"use strict";
+
+/* ═══ Данные ═════════════════════════════════════════════════════════════
+   Всё, кроме получателя и банка, взято из снимка проекта:
+   пуш — reports/latest/stream_decisions.csv (TJS, decision=sent, 2026-06-09);
+   курсы — data/raw/cbr_daily.csv (ЦБ РФ, снимок 2026-09-03);
+   тексты пуша — fxmoment.texts.library.render (шаблон level_stall);
+   вердикты журнала считает функция verdict() ниже по правилу ADR-0003.
+   Получатель, банк и назначение вымышлены: клиентских данных у нас нет. */
+
+var TOL_BPS = 25;          // рабочий допуск ADR-0003
+var HORIZON = 20;          // дней публикации
+var AMOUNT_RUB = 10000;    // сумма по умолчанию
+
+var PUSH = {
+  pubDate: "09.06.2026",
+  effDate: "10.06.2026",
+  sentAt: "19:05",
+  corridor: "сомони",
+  rate: 7.66882,
+  indicator: "уровень курса в скользящем окне (level)",
+  window: 120,
+  pctRank: 0.041666666666666664,
+  daysSinceMin: 14,
+  title: "Курс сомони остановился на низком уровне",
+  body: "7,67 ₽ за 1 сомони — ниже, чем в 96 % дней за 6 мес. Снижение остановилось 14 дн. назад."
+};
+
+var OPENED = {
+  changed: { date: "22.06.2026", effDate: "23.06.2026", lag: 8,  rate: 7.93983, pctRank: 0.2833 },
+  closed:  { date: "01.07.2026", effDate: "02.07.2026", lag: 15, rate: 8.43411, pctRank: 0.8667 }
+};
+
+var FORM = {
+  country: "Таджикистан", flag: "🇹🇯", method: "По номеру телефона",
+  phone: "+992 ·· ··· 45", bank: "Амонатбонк", purpose: "Помощь семье"
+};
+
+/* Журнал попаданий: последние 12 пушей коридора TJS из stream_decisions.csv.
+   mean20 — средний курс следующих 20 дней публикации (labels.future_mean);
+   null означает «горизонт ещё не закрылся на дату журнала». */
+var JOURNAL_AS_OF = "22.06.2026";
+var JOURNAL = [
+  { date: "23.01.2026", ind: "обучаемый",  rate: 8.11550, mean20: 8.16457, known: "20.02.2026", fact: "ниже, чем в 99 % дней за 6 мес." },
+  { date: "29.01.2026", ind: "уровень",    rate: 8.10701, mean20: 8.15675, known: "27.02.2026", fact: "ниже, чем в 99 % дней за 6 мес." },
+  { date: "06.02.2026", ind: "уровень",    rate: 8.21471, mean20: 8.15112, known: "10.03.2026", fact: "ниже, чем в 92 % дней за 6 мес.; снижение остановилось 5 дн. назад" },
+  { date: "12.02.2026", ind: "уровень",    rate: 8.19066, mean20: 8.16698, known: "16.03.2026", fact: "ниже, чем в 92 % дней за 6 мес.; снижение остановилось 9 дн. назад" },
+  { date: "20.02.2026", ind: "уровень",    rate: 8.11537, mean20: 8.33846, known: "24.03.2026", fact: "ниже, чем в 95 % дней за 6 мес." },
+  { date: "10.04.2026", ind: "уровень",    rate: 8.08169, mean20: 7.96827, known: "12.05.2026", fact: "ниже, чем в 97 % дней за 6 мес.; снижение остановилось 35 дн. назад" },
+  { date: "20.04.2026", ind: "уровень",    rate: 7.95519, mean20: 7.89487, known: "20.05.2026", fact: "ниже, чем в 98 % дней за 6 мес.; снижение остановилось 3 дн. назад" },
+  { date: "28.04.2026", ind: "уровень",    rate: 7.92735, mean20: 7.81936, known: "28.05.2026", fact: "ниже, чем в 98 % дней за 6 мес.; снижение остановилось 5 дн. назад" },
+  { date: "07.05.2026", ind: "уровень",    rate: 7.96058, mean20: 7.77605, known: "05.06.2026", fact: "ниже, чем в 92 % дней за 6 мес.; снижение остановилось 11 дн. назад" },
+  { date: "18.05.2026", ind: "обучаемый",  rate: 7.74208, mean20: 7.74548, known: "16.06.2026", fact: "ниже, чем в 99 % дней за 6 мес." },
+  { date: "26.05.2026", ind: "уровень",    rate: 7.74622, mean20: null,    known: "24.06.2026", fact: "ниже, чем в 94 % дней за 6 мес.; снижение остановилось 4 дн. назад" },
+  { date: "09.06.2026", ind: "уровень",    rate: 7.66882, mean20: null,    known: "08.07.2026", fact: "ниже, чем в 96 % дней за 6 мес.; снижение остановилось 14 дн. назад" }
+];
+
+/* ═══ Счёт ═══════════════════════════════════════════════════════════════ */
+
+function verdict(item) {                       // ADR-0003, прочтение «по среднему»
+  if (item.mean20 === null) return "open";
+  return item.mean20 >= item.rate * (1 - TOL_BPS / 1e4) ? "hit" : "miss";
+}
+function threshold(item) { return item.rate * (1 - TOL_BPS / 1e4); }
+
+function num(x, digits) {
+  return x.toLocaleString("ru-RU", { minimumFractionDigits: digits, maximumFractionDigits: digits });
+}
+function rub(x) { return num(Math.round(x), 0) + " ₽"; }
+function somoni(rateRub) { return AMOUNT_RUB / rateRub; }
+
+var BASE_SOM = somoni(PUSH.rate);
+
+/* ═══ Экраны ═════════════════════════════════════════════════════════════ */
+
+function esc(s) { return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;"); }
+
+function pushCard() {
+  return '<div class="push">' +
+    '<div class="head"><span class="logo">А</span><span>Альфа-Банк · ' + PUSH.pubDate + ', ' + PUSH.sentAt + '</span></div>' +
+    '<div class="t">' + esc(PUSH.title) + '</div>' +
+    '<div class="b">' + esc(PUSH.body) + '</div></div>';
+}
+
+function howFoot(open, opened, src) {
+  var pct = Math.round(PUSH.pctRank * 100);
+  var rows =
+    '<dl>' +
+    '<dt>Индикатор</dt><dd>' + PUSH.indicator + '</dd>' +
+    '<dt>Окно</dt><dd>' + PUSH.window + ' дней публикации (≈ 6 мес.)</dd>' +
+    '<dt>Процентиль</dt><dd>' + pct + '-й: курс ниже, чем в ' + (100 - pct) + ' % дней окна</dd>' +
+    '<dt>Курс опубликован</dt><dd>' + PUSH.pubDate + ', действует с ' + PUSH.effDate + '</dd>' +
+    (opened ? '<dt>Экран открыт</dt><dd>' + opened.date + ', через ' + opened.lag + ' дней публикации</dd>' : '') +
+    '</dl>' +
+    '<p>Сигнал считается по данным, опубликованным не позже даты пуша. Курс и факт на экране берутся ' +
+    'в момент открытия, а не из уведомления.</p>';
+  return '<div class="factfoot"><div class="src">' + src + '</div>' +
+    '<button class="how" type="button" data-how aria-expanded="' + (open ? "true" : "false") + '">Как рассчитано</button></div>' +
+    (open ? '<div class="howbody">' + rows + '</div>' : '');
+}
+
+function srcLine(effDate) {
+  return 'ЦБ РФ · курс на ' + effDate + ' · окно ' + PUSH.window + ' дней';
+}
+
+function formGroup(dim) {
+  return '<div class="group"' + (dim ? ' style="opacity:.75"' : '') + '>' +
+    '<div class="cap">Куда и кому · из последних переводов</div>' +
+    '<div class="row"><span class="k">Страна</span><span class="v"><span class="flag">' + FORM.flag + '</span> ' + FORM.country + '</span><span class="chev">›</span></div>' +
+    '<div class="row"><span class="k">Способ</span><span class="v">' + FORM.method + '</span><span class="chev">›</span></div>' +
+    '<div class="row"><span class="k">Номер</span><span class="v">' + FORM.phone + '</span><span class="chev">›</span></div>' +
+    '<div class="row"><span class="k">Банк</span><span class="v">' + FORM.bank + '</span><span class="chev">›</span></div>' +
+    '<div class="row"><span class="k">Назначение</span><span class="v">' + FORM.purpose + '</span><span class="chev">›</span></div>' +
+    '</div>';
+}
+
+function amountGroup(rate, factHtml) {
+  var som = somoni(rate);
+  return '<div class="group">' +
+    '<div class="amount"><div class="lab">Сумма перевода</div>' +
+    '<div class="val">' + num(AMOUNT_RUB, 0) + ' ₽<span class="caret"></span></div></div>' +
+    '<div class="rate">' +
+    '<div class="line"><span class="m">Курс ЦБ РФ</span><span>' + num(rate, 5) + ' ₽ за 1 сомони</span></div>' +
+    '<div class="line"><span class="m">Получатель получит</span><span class="big">' + num(som, 2) + ' сомони</span></div>' +
+    '</div>' + (factHtml || "") + '</div>';
+}
+
+function deltaBlock(opened, head, note) {
+  var nowSom = somoni(opened.rate);
+  var pct = (opened.rate / PUSH.rate - 1) * 100;
+  var lostSom = BASE_SOM - nowSom;
+  var extraRub = BASE_SOM * opened.rate - AMOUNT_RUB;
+  return '<div class="delta">' +
+    '<div class="hd">' + head + '</div>' +
+    (note ? '<div class="note">' + note + '</div>' : '') +
+    '<div class="pair">' +
+      '<div class="cell"><div class="k">В уведомлении ' + PUSH.pubDate + ', ' + PUSH.sentAt + '</div>' +
+        '<div class="n">' + num(PUSH.rate, 2) + ' ₽</div><div class="u">за 1 сомони</div></div>' +
+      '<div class="cell now"><div class="k">Сейчас, ' + opened.date + '</div>' +
+        '<div class="n">' + num(opened.rate, 2) + ' ₽ <span class="badge up">+' + num(pct, 1) + ' %</span></div>' +
+        '<div class="u">за 1 сомони</div></div>' +
+    '</div>' +
+    '<div class="money">' +
+      '<div>На ' + num(AMOUNT_RUB, 0) + ' ₽ получатель получит <b>' + num(nowSom, 2) + ' сомони</b> — на ' + num(lostSom, 2) + ' сомони меньше.</div>' +
+      '<div>Те же ' + num(BASE_SOM, 2) + ' сомони сейчас стоят <b>' + rub(BASE_SOM * opened.rate) + '</b>, на ' + rub(extraRub) + ' больше.</div>' +
+    '</div></div>';
+}
+
+function oneButton() {
+  return '<button class="btn primary" type="button">Перевести</button>' +
+    '<div class="foot-note">Расчёт по официальному курсу ЦБ РФ. Комиссия и спред банка в демо не учтены.</div>';
+}
+
+function twoButtons() {
+  return '<button class="btn primary" type="button">Перевести по текущему курсу</button>' +
+    '<button class="btn ghost" type="button">Уведомлять о новом сигнале</button>' +
+    '<div class="foot-note">Расчёт по официальному курсу ЦБ РФ. Комиссия и спред банка в демо не учтены.</div>';
+}
+
+var SCREENS = {
+
+  actual: {
+    step: "Шаг 1 из 4",
+    title: "Момент актуален",
+    lede: "Пуш открыт в тот же вечер. Страна и способ уже выбраны, сумма — 10 000 ₽ по умолчанию.",
+    list: [
+      "<b>Предзаполненная форма</b>: страна, способ, получатель и назначение — из последних переводов клиента.",
+      "<b>Факт с окном измерения</b>: «ниже, чем в&nbsp;96&nbsp;% дней за последние 6&nbsp;мес.», рядом источник и период.",
+      "<b>«Как рассчитано»</b> раскрывает индикатор, окно, процентиль и дату публикации курса.",
+      "Курс и факт берутся в момент открытия экрана, а не из уведомления."
+    ],
+    screenTitle: "Перевод за рубеж",
+    screenSub: "Проверьте данные и сумму",
+    clock: "19:07",
+    render: function (state) {
+      var fact = '<div class="fact inline"><div class="t">Ниже, чем в 96 % дней за последние 6 мес.</div>' +
+        '<div class="b">Снижение остановилось 14 дн. назад.</div>' +
+        howFoot(state.how, null, srcLine(PUSH.effDate)) + '</div>';
+      return pushCard() + formGroup(false) + amountGroup(PUSH.rate, fact);
+    },
+    actions: oneButton
+  },
+
+  changed: {
+    step: "Шаг 2 из 4",
+    title: "Момент изменился",
+    lede: "Пуш открыт через 8 дней публикации. Курс ушёл против клиента; форма сохранена, решение остаётся за ним.",
+    list: [
+      "<b>Две цифры сразу</b>: курс в уведомлении и курс сейчас, разница в процентах.",
+      "<b>Дельта в рублях и сомони</b> на введённую сумму — проценты за две секунды не считываются.",
+      "<b>Факт пересчитан на дату открытия</b>: он ещё выполняется, но слабее.",
+      "Кнопки: перевести по текущему курсу или ждать нового сигнала. Экран ничего не исполняет сам."
+    ],
+    screenTitle: "Проверка перевода",
+    screenSub: "Открыто " + OPENED.changed.date,
+    clock: "10:24",
+    render: function (state) {
+      var o = OPENED.changed, pct = Math.round(o.pctRank * 100);
+      return deltaBlock(o, "Курс изменился с момента уведомления", null) +
+        '<div class="fact"><div class="t">Факт из уведомления на ' + o.date + '</div>' +
+        '<div class="b">Курс ниже, чем в ' + (100 - pct) + ' % дней за последние 6 мес.</div>' +
+        howFoot(state.how, o, srcLine(o.effDate)) + '</div>' +
+        '<div class="saved"><div class="k">Форма сохранена</div><div class="v">' +
+        FORM.country + ' · ' + FORM.method.toLowerCase() + ' · ' + FORM.phone + ' · ' + FORM.bank + ' · ' +
+        FORM.purpose.toLowerCase() + ' · ' + num(AMOUNT_RUB, 0) + ' ₽. Сумму можно изменить до подтверждения.</div></div>' +
+        '<div class="hintline">Порог экрана — ' + TOL_BPS +
+        ' бп, половина медианного дневного шага. Расхождение меньше — открывается обычная форма.</div>';
+    },
+    actions: twoButtons
+  },
+
+  closed: {
+    step: "Шаг 3 из 4",
+    title: "Окно закрылось",
+    lede: "Пуш открыт через 15 дней публикации. Факт, ради которого ушло уведомление, больше не выполняется.",
+    list: [
+      "<b>Прямая формулировка</b>: сигнал устарел, и экран говорит об этом первой строкой.",
+      "<b>Ни одного обещания</b>: ни прогноза, ни «вернётся», ни таймера.",
+      "<b>Те же две кнопки</b> и та же сохранённая форма — тупика без следующего шага нет.",
+      "Факт пересчитан: курс сейчас выше, чем в 87 % дней окна."
+    ],
+    screenTitle: "Проверка перевода",
+    screenSub: "Открыто " + OPENED.closed.date,
+    clock: "08:41",
+    render: function (state) {
+      var o = OPENED.closed, pct = Math.round(o.pctRank * 100);
+      return deltaBlock(o, "Извините, сигнал устарел",
+          "Когда мы писали, курс был ниже обычного. Сейчас уже нет.") +
+        '<div class="fact warn"><div class="t">Факт из уведомления на ' + o.date + '</div>' +
+        '<div class="b">Курс выше, чем в ' + pct + ' % дней за последние 6 мес. Условие индикатора не выполняется.</div>' +
+        howFoot(state.how, o, srcLine(o.effDate)) + '</div>' +
+        '<div class="saved"><div class="k">Форма сохранена</div><div class="v">' +
+        FORM.country + ' · ' + FORM.method.toLowerCase() + ' · ' + FORM.phone + ' · ' + FORM.bank + ' · ' +
+        FORM.purpose.toLowerCase() + ' · ' + num(AMOUNT_RUB, 0) + ' ₽</div></div>';
+    },
+    actions: twoButtons
+  },
+
+  journal: {
+    step: "Шаг 4 из 4",
+    title: "Журнал попаданий",
+    lede: "Пуш, который сам себя оценивает: каждое уведомление коридора получает вердикт и дату, когда вердикт стал известен.",
+    list: [
+      "<b>Правило одно на все пуши</b>: средний курс следующих 20 дней публикации против курса пуша с допуском 25 бп.",
+      "<b>«Ещё идёт»</b> — горизонт не закрылся на дату журнала; вердикт не подгоняется задним числом.",
+      "<b>Отрицательный результат виден</b>: 4 попадания из 10 закрытых, и это ниже базы случайного дня.",
+      "Тот же журнал — метрика пилота: сходимость вердиктов со стороны клиента и со стороны бэктеста."
+    ],
+    screenTitle: "Журнал попаданий",
+    screenSub: "Сомони · на " + JOURNAL_AS_OF,
+    clock: "12:00",
+    render: function () {
+      var hit = 0, miss = 0, open = 0, i, v, it, out = "";
+      for (i = 0; i < JOURNAL.length; i++) {
+        v = verdict(JOURNAL[i]);
+        if (v === "hit") hit++; else if (v === "miss") miss++; else open++;
+      }
+      out += '<div class="jsum">' +
+        '<div><div class="n" style="color:var(--green)">' + hit + '</div><div class="k">сбылось</div></div>' +
+        '<div><div class="n">' + miss + '</div><div class="k">не сбылось</div></div>' +
+        '<div><div class="n" style="color:var(--amber)">' + open + '</div><div class="k">ещё идёт</div></div>' +
+        '</div>';
+      out += '<div class="jrule"><b>Сбылось</b> — средний курс следующих ' + HORIZON +
+        ' дней публикации не ниже курса пуша больше чем на ' + TOL_BPS +
+        ' бп. Ниже курс — лучше для отправителя.</div>';
+      for (i = JOURNAL.length - 1; i >= 0; i--) {
+        it = JOURNAL[i]; v = verdict(it);
+        out += '<div class="jitem"><div class="top">' +
+          '<span class="d">' + it.date + ' · ' + num(it.rate, 2) + ' ₽</span>' +
+          '<span class="chip ' + v + '">' + (v === "hit" ? "сбылось" : v === "miss" ? "не сбылось" : "ещё идёт") + '</span>' +
+          '</div><div class="f">' + it.ind + ': ' + it.fact + '</div>' +
+          '<div class="m">' + (it.mean20 === null
+            ? "Вердикт станет известен " + it.known + "."
+            : "Средний курс 20 дней — " + num(it.mean20, 3) + " ₽ при пороге " + num(threshold(it), 3) +
+              " ₽. Вердикт известен " + it.known + ".") +
+          '</div></div>';
+      }
+      out += '<div class="jrule" style="margin-top:12px">Прочтение «по среднему»: альтернатива клиента — ' +
+        'его типичный день, а не лучший. Поток по сомони за 11 окон walk-forward: попадания ' +
+        '0,531 против базы случайного дня 0,551 — сценарий BUY_NOW на этом коридоре не отличим от случайного дня ' +
+        '(<b>reports/latest/README.md</b>). Журнал показывает, как это выглядит на последних 12 пушах.</div>';
+      return out;
+    }
+  }
+};
+
+var ORDER = ["actual", "changed", "closed", "journal"];
+var ACT_LABELS = {
+  actual:  ["Момент актуален", "Пуш открыт в тот же вечер"],
+  changed: ["Момент изменился", "Курс ушёл против клиента"],
+  closed:  ["Окно закрылось", "Факт больше не выполняется"],
+  journal: ["Журнал попаданий", "Вердикт по правилу 20 дней"]
+};
+
+var state = { name: "actual", how: false };
+
+function readState() {
+  var m = /[?&]state=([a-z]+)/.exec(window.location.search);
+  if (m && SCREENS[m[1]]) state.name = m[1];
+  if (/[?&]how=1/.test(window.location.search)) state.how = true;
+}
+
+function renderActs() {
+  var html = "", i, k;
+  for (i = 0; i < ORDER.length; i++) {
+    k = ORDER[i];
+    html += '<button class="act" type="button" data-state="' + k + '" aria-current="' + (k === state.name) + '">' +
+      '<span class="txt"><span class="n">' + ACT_LABELS[k][0] + '</span>' +
+      '<span class="s">' + ACT_LABELS[k][1] + '</span></span><kbd>' + (i + 1) + '</kbd></button>';
+  }
+  document.getElementById("acts").innerHTML = html;
+}
+
+function render() {
+  var s = SCREENS[state.name], i, li = "";
+  document.getElementById("stepNo").textContent = s.step;
+  document.getElementById("stepTitle").textContent = s.title;
+  document.getElementById("stepLede").textContent = s.lede;
+  for (i = 0; i < s.list.length; i++) li += "<li>" + s.list[i] + "</li>";
+  document.getElementById("stepList").innerHTML = li;
+  document.getElementById("screenTitle").textContent = s.screenTitle;
+  document.getElementById("screenSub").textContent = s.screenSub;
+  document.getElementById("clock").textContent = s.clock;
+  var vp = document.getElementById("viewport");
+  vp.innerHTML = s.render(state);
+  vp.scrollTop = 0;
+  document.getElementById("actionbar").innerHTML = s.actions ? s.actions() : "";
+  document.getElementById("permalink").textContent = "?state=" + state.name + (state.how ? "&how=1" : "");
+  document.getElementById("howToggle").querySelector(".n").textContent =
+    (state.how ? "Свернуть" : "Раскрыть") + " «Как рассчитано»";
+  document.getElementById("prov").innerHTML =
+    "Пуш — <code>reports/latest/stream_decisions.csv</code>, TJS, 09.06.2026, код <code>c6a7e90</code>.<br>" +
+    "Курсы — <code>data/raw/cbr_daily.csv</code>, снимок ЦБ РФ 03.09.2026.<br>" +
+    "Тексты уведомления — шаблон <code>level_stall</code> из <code>fxmoment.texts.library</code>.<br>" +
+    "Получатель, банк и назначение вымышлены: клиентских данных в проекте нет.";
+  renderActs();
+  if (state.how) {                                   // раскрытое «Как рассчитано» — показать целиком
+    var hb = vp.querySelector(".howbody");
+    if (hb) vp.scrollTop = hb.offsetTop - 40;
+  }
+}
+
+document.addEventListener("click", function (e) {
+  var act = e.target.closest ? e.target.closest("[data-state]") : null;
+  if (act) { state.name = act.getAttribute("data-state"); render(); return; }
+  if (e.target.closest && e.target.closest("[data-how]")) { state.how = !state.how; render(); return; }
+  if (e.target.closest && e.target.closest("#howToggle")) { state.how = !state.how; render(); }
+});
+
+document.addEventListener("keydown", function (e) {
+  var i = "1234".indexOf(e.key);
+  if (i >= 0) { state.name = ORDER[i]; render(); }
+});
+
+readState();
+render();
+</script>
+</body>
+</html>
