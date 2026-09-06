@@ -103,6 +103,8 @@ h1{margin:5px 0 8px;font-size:26px;line-height:1.15;letter-spacing:-.01em;font-w
 .navbar .back{width:48px;height:48px;flex:0 0 48px;display:flex;align-items:center;justify-content:center;
   border-radius:50%;background:var(--color-icon-button-bg);color:var(--color-text-primary);
   font-size:24px;line-height:1;cursor:default}
+.navbar .back.go{cursor:pointer}
+.navbar .back.go:active{background:rgba(255,255,255,.10)}
 .navbar .sub{font-size:13px;color:var(--color-text-secondary);line-height:18px}
 
 /* ── заголовки экранов (замер 06.09: форма 26/500, списки 30/700, модалка 32/500) ── */
@@ -123,7 +125,8 @@ h1{margin:5px 0 8px;font-size:26px;line-height:1.15;letter-spacing:-.01em;font-w
 .tabbar{flex:0 0 auto;display:flex;justify-content:center;gap:2px;padding:4px 6px 2px;
   background:var(--color-bg-primary)}
 .tabbar .tab{flex:1 0 0;display:flex;flex-direction:column;align-items:center;
-  padding:8px 0 7px;color:var(--color-text-secondary);gap:3px;border-radius:var(--border-radius-16)}
+  padding:8px 0 7px;color:var(--color-text-secondary);gap:3px;border-radius:var(--border-radius-16);
+  cursor:default}
 /* Активная вкладка — на плашке #1c1c1e с радиусом 16 (замер 06.09), а не подсветкой цветом. */
 .tabbar .tab.on{background:var(--color-bg-secondary);color:var(--color-text-primary)}
 .tabbar .tab .lb{font-size:14px;line-height:18px;font-weight:400;color:inherit;letter-spacing:-.2px}
@@ -140,7 +143,16 @@ h1{margin:5px 0 8px;font-size:26px;line-height:1.15;letter-spacing:-.01em;font-w
 
 /* карточка уведомления (notification) */
 .push{background:var(--color-bg-secondary);border-radius:var(--border-radius-20);
-  padding:var(--gap-12) var(--gap-16) var(--gap-16);backdrop-filter:blur(20px)}
+  padding:var(--gap-12) var(--gap-16) var(--gap-16);backdrop-filter:blur(20px);cursor:pointer}
+.push:active{background:#232326}
+/* Развилка даты открытия — строка экрана блокировки, а не элемент приложения:
+   тот же вторичный кегль 12, пилюли на полупрозрачной подложке. */
+.opens{display:flex;align-items:center;justify-content:center;flex-wrap:wrap;gap:6px;
+  margin-top:var(--gap-12);font-size:12px;line-height:16px;color:var(--color-text-tertiary)}
+.opens .cap{margin-right:2px}
+.opens button{border:0;border-radius:99px;padding:3px 10px;font:inherit;font-size:12px;line-height:16px;
+  background:rgba(255,255,255,.07);color:var(--color-text-secondary);cursor:pointer}
+.opens button.on{background:rgba(255,255,255,.18);color:var(--color-text-primary);font-weight:500}
 .push .head{display:flex;align-items:center;gap:var(--gap-8);font-size:12px;color:var(--color-text-secondary);
   margin-bottom:var(--gap-8)}
 .push .head .when{margin-left:auto}
@@ -192,7 +204,7 @@ h1{margin:5px 0 8px;font-size:26px;line-height:1.15;letter-spacing:-.01em;font-w
 /* ── карточки способа перевода (замер 06.09, модалка «Перевод в Таджикистан») ── */
 .mcard{display:flex;align-items:center;gap:var(--gap-12);width:100%;background:var(--color-bg-secondary);
   border-radius:var(--border-radius-16);padding:var(--gap-14) var(--gap-16);margin-bottom:var(--gap-8);
-  text-align:left}
+  text-align:left;cursor:pointer}
 .mcard .txt{flex:1 1 auto;min-width:0}
 .mcard .n{font-size:16px;font-weight:500;line-height:22px}
 .mcard .s{font-size:13px;font-weight:400;line-height:18px;color:var(--color-text-secondary);margin-top:2px}
@@ -250,6 +262,8 @@ h1{margin:5px 0 8px;font-size:26px;line-height:1.15;letter-spacing:-.01em;font-w
 .keys{display:grid;grid-template-columns:repeat(3,1fr);gap:var(--gap-8);margin-top:var(--gap-8)}
 .keys span{background:var(--color-specialbg-transparent);border-radius:var(--border-radius-8);
   text-align:center;padding:9px 0;font-size:19px;font-weight:500;color:var(--color-text-primary)}
+.keys span[data-do]{cursor:pointer;-webkit-user-select:none;user-select:none}
+.keys span[data-do]:active{background:rgba(214,214,229,.16)}
 
 /* ── строки проверки ────────────────────────────────────────────────────── */
 .kv{display:flex;justify-content:space-between;gap:var(--gap-12);padding:var(--gap-12) 0;
@@ -311,6 +325,8 @@ h1{margin:5px 0 8px;font-size:26px;line-height:1.15;letter-spacing:-.01em;font-w
 .btn+.btn{margin-top:var(--gap-8)}
 .btn.primary{background:var(--color-accent-secondary);color:var(--color-text-primary-inverted)}
 .btn.primary:active{background:#dcdee2}
+/* Недоступная кнопка приложения — тот же фон под прозрачностью, замер 06.09. */
+.btn:disabled{opacity:.38;cursor:default}
 .btn.secondary{background:var(--color-specialbg-transparent);color:var(--color-text-primary)}
 .footnote{margin-top:6px;font-size:11.5px;color:var(--color-text-tertiary);text-align:center;line-height:1.4}
 
@@ -333,6 +349,7 @@ h1{margin:5px 0 8px;font-size:26px;line-height:1.15;letter-spacing:-.01em;font-w
 .steps .act[aria-current="true"] .n{color:var(--color-text-primary);font-weight:500}
 .sep{height:1px;background:var(--color-border-secondary);margin:14px 0}
 .hint{font-size:11.5px;color:var(--color-text-tertiary);line-height:1.5;margin:0}
+.hint.lead{margin:-2px 0 10px}
 .hint code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:11px}
 
 .disclaimer{flex:0 0 auto;text-align:center;font-size:11.5px;color:var(--color-text-tertiary);
@@ -380,13 +397,14 @@ h1{margin:5px 0 8px;font-size:26px;line-height:1.15;letter-spacing:-.01em;font-w
 
   <aside class="right">
     <h2>Действия</h2>
+    <p class="hint lead">Путь можно пройти прямо в телефоне: тапайте по экрану.</p>
     <div id="acts"></div>
     <div class="sep"></div>
     <h2>Экраны</h2>
     <div id="steps" class="steps"></div>
     <div class="sep"></div>
-    <p class="hint">Экран открывается ссылкой: <code id="permalink">?step=0</code>. Клавиши
-      <b>0</b>–<b>7</b> переключают экраны, <b>Esc</b> закрывает шторку.</p>
+    <p class="hint">Экран открывается ссылкой: <code id="permalink">?step=0</code>. Панель и клавиши
+      <b>0</b>–<b>7</b> дублируют тапы по экрану, <b>Esc</b> закрывает шторку.</p>
   </aside>
 </div>
 
@@ -456,6 +474,8 @@ var FORM = {
 var CDN_ILL = "https://alfaonline.servicecdn.ru/public/s3/static/transfers/transfer-type-groups/";
 
 /* Список назначений перевода — как в шторке приложения; выбран второй пункт. */
+var PURPOSE_DEFAULT = 1;   /* «Безвозмездный перевод на текущие расходы» — тот же пункт, что в FORM */
+var METHOD_DEFAULT = 0;    /* «По номеру телефона» — так же был сделан прошлый перевод */
 var PURPOSES = [
   ["Себе на свой счёт", "Transfer on my own account"],
   ["Безвозмездный перевод на текущие расходы", "Non-repayable transfer for current expenses"],
@@ -467,7 +487,11 @@ var PURPOSES = [
 
 function num(x, d){ return x.toLocaleString("ru-RU",{minimumFractionDigits:d,maximumFractionDigits:d}); }
 function rub(x){ return num(Math.round(x),0) + " ₽"; }
-function somoni(rate){ return AMOUNT_RUB / rate; }
+/* Сумму правит клавиатура на экране 3; по умолчанию — те же 30 000 ₽. */
+function amt(){ return state.amount === "" ? 0 : +state.amount; }
+function amtText(){ return state.amount === "" ? "" : num(+state.amount, 0); }
+function purposeName(){ return PURPOSES[state.purpose][0]; }
+function somoni(rate){ return amt() / rate; }
 function pctBelow(r){ return 100 - Math.round(r*100); }
 
 /* verdict() — то же правило, что в index.html и в labels.hit_buy_now(mode="mean"):
@@ -514,8 +538,10 @@ function tabbar(active){
 
 /* Навигационная строка приложения: круглая иконка-кнопка 48 px и больше ничего —
    заголовок экрана живёт в самом экране (замер 06.09). */
-function navbar(icon){
-  return '<div class="navbar"><div class="back" aria-hidden="true">'+(icon || "‹")+'</div></div>';
+function navbar(icon, back){
+  if (!back) return '<div class="navbar"><div class="back" aria-hidden="true">'+(icon || "‹")+'</div></div>';
+  return '<div class="navbar"><div class="back go" role="button" tabindex="0" data-do="'+back+
+    '" aria-label="'+(icon === "×" ? "Закрыть" : "Назад")+'">'+(icon || "‹")+'</div></div>';
 }
 
 function heading(cls, title, sub){
@@ -599,7 +625,7 @@ function sheetWhy(ctx){
 function methodCards(){
   var rows = [
     { n:"По номеру телефона", s:["Мгновенно до 1 млн ₽", "Без комиссии", "Как в прошлом переводе · " + FORM.bank],
-      tag:["Быстро","info"], ill:"phone.png", on:true },
+      tag:["Быстро","info"], ill:"phone.png" },
     { n:"По номеру карты", s:["За 1 день до 500 000 ₽", "Без комиссии"], ill:"card.png" },
     { n:"По номеру счёта", s:["За 2-5 дней до 20 млн ₽", "Комиссия 1%"],
       tag:["Высокий лимит","mute"], ill:"account.png" }
@@ -608,7 +634,9 @@ function methodCards(){
   for (var i=0;i<rows.length;i++){
     var r = rows[i], subs = "";
     for (var j=0;j<r.s.length;j++) subs += '<div class="s">'+r.s[j]+'</div>';
-    out += '<div class="mcard'+(r.on ? " on" : "")+'">'+
+    var on = i === state.method;
+    out += '<div class="mcard'+(on ? " on" : "")+'" role="radio" aria-checked="'+on+
+      '" tabindex="0" data-do="method:'+i+'">'+
       '<div class="txt"><div class="n">'+r.n+'</div>'+subs+
       (r.tag ? '<span class="tag '+r.tag[1]+'">'+r.tag[0]+'</span>' : '')+'</div>'+
       '<div class="ill" style="background-image:url('+CDN_ILL+r.ill+')" aria-hidden="true"></div>'+
@@ -622,8 +650,8 @@ function sheetPurpose(){
     '<div class="hdr"><h3>Выберите назначение перевода</h3>'+
     '<button class="close" type="button" data-sheet="" aria-label="Закрыть">×</button></div>';
   for (var i=0;i<PURPOSES.length;i++){
-    var on = PURPOSES[i][0] === FORM.purpose;
-    out += '<button class="opt" type="button" data-sheet="">'+
+    var on = i === state.purpose;
+    out += '<button class="opt" type="button" role="radio" aria-checked="'+on+'" data-do="purpose:'+i+'">'+
       '<span class="txt"><span class="n">'+PURPOSES[i][0]+'</span>'+
       '<span class="en">'+PURPOSES[i][1]+'</span></span>'+
       '<span class="mark">'+(on ? "✓" : "")+'</span></button>';
@@ -634,7 +662,7 @@ function sheetPurpose(){
 function deltaCard(ctx){
   var baseSom = somoni(PUSH.rate), nowSom = somoni(ctx.rate);
   var pct = (ctx.rate/PUSH.rate - 1) * 100;
-  var lostSom = baseSom - nowSom, extraRub = baseSom * ctx.rate - AMOUNT_RUB;
+  var lostSom = baseSom - nowSom, extraRub = baseSom * ctx.rate - amt();
   var below = pctBelow(ctx.pctRank);
   var head = below >= 50
     ? 'Курс изменился: факт из уведомления ещё выполняется, но слабее'
@@ -649,7 +677,7 @@ function deltaCard(ctx){
         '<div class="u">за 1 сомони</div></div>'+
     '</div>'+
     '<div class="money">'+
-      '<div>На '+num(AMOUNT_RUB,0)+' ₽ получатель получит <b>'+num(nowSom,2)+' сомони</b> — на '+
+      '<div>На '+num(amt(),0)+' ₽ получатель получит <b>'+num(nowSom,2)+' сомони</b> — на '+
         num(lostSom,2)+' сомони меньше, чем по курсу из уведомления.</div>'+
       '<div>Те же '+num(baseSom,2)+' сомони сейчас стоят <b>'+rub(baseSom*ctx.rate)+'</b>, на '+
         rub(extraRub)+' больше.</div>'+
@@ -661,8 +689,19 @@ function savedForm(){
     '<div class="cell edit"><div class="txt"><div class="k">Форма сохранена</div>'+
     '<div class="v" style="font-size:14px;font-weight:400;color:var(--color-text-secondary);line-height:1.45">'+
     FORM.country+' · '+FORM.method.toLowerCase()+' · '+FORM.phone+' · '+FORM.bank+' · '+
-    FORM.purpose.toLowerCase()+' · '+num(AMOUNT_RUB,0)+' ₽. Сумму можно изменить до подтверждения.</div>'+
+    purposeName().toLowerCase()+' · '+num(amt(),0)+' ₽. Сумму можно изменить до подтверждения.</div>'+
     '</div></div></div>';
+}
+
+/* Цифровая клавиатура экрана суммы: цифра дописывается, «⌫» стирает.
+   Пустая клетка между «9» и «0» — как в приложении, тапа не принимает. */
+function keypad(){
+  var rows = ["1","2","3","4","5","6","7","8","9","","0","⌫"], out = '<div class="keys">';
+  for (var i=0;i<rows.length;i++)
+    out += rows[i] === ""
+      ? '<span aria-hidden="true"></span>'
+      : '<span role="button" tabindex="0" data-do="key:'+(rows[i] === "⌫" ? "back" : rows[i])+'">'+rows[i]+'</span>';
+  return out + '</div>';
 }
 
 function ctaFootnote(){
@@ -683,15 +722,23 @@ var SCREENS = [
     "Три кнопки справа открывают тот же пуш в три разные даты — отсюда развилка «сигнал устарел»."
   ],
   clock:"19:07", bare:true,
-  render:function(){
+  render:function(ctx){
+    /* Развилка живёт под уведомлением: 09.06 открывает сигнал живым, две поздние даты —
+       экран «курс изменился» с тем же контекстом, что даёт панель справа. */
+    var opens = [["live","09.06","go:1:live"],["changed","22.06","go:6:changed"],["closed","01.07","go:6:closed"]],
+        pills = '', i;
+    for (i=0;i<opens.length;i++)
+      pills += '<button type="button" class="'+(ctx.key === opens[i][0] ? "on" : "")+
+        '" data-do="'+opens[i][2]+'">'+opens[i][1]+'</button>';
     return '<div class="lock">'+
       '<div class="date">вторник, 9 июня</div>'+
       '<div class="clock">19:07</div>'+
-      '<div class="push-wrap"><div class="push">'+
+      '<div class="push-wrap"><div class="push" role="button" tabindex="0" data-do="go:1:live">'+
         '<div class="head"><span class="logo">А</span><span>Альфа-Банк</span><span class="when">сейчас</span></div>'+
         '<div class="t">'+PUSH.title+'</div>'+
         '<div class="b">'+PUSH.body+'</div>'+
-      '</div></div>'+
+      '</div>'+
+      '<div class="opens"><span class="cap">Открыть как</span>'+pills+'</div></div>'+
       '<div class="hint">Нажатие на уведомление открывает перевод в Таджикистан</div>'+
       '</div>';
   },
@@ -713,7 +760,7 @@ var SCREENS = [
     "Курс и факт берутся в момент открытия экрана, а не из уведомления."
   ],
   nav:["Перевод<br>в Таджикистан","Сомони · курс ЦБ РФ"], head:"h-modal", navIcon:"×",
-  tab:"Платежи",
+  back:"go:0", tab:"Платежи",
   render:function(ctx){ return factCard(ctx) + methodCards(); },
   cta:[["Продолжить","primary","go:2"]],
   acts:[
@@ -733,7 +780,7 @@ var SCREENS = [
     "Диплинк несёт коридор, получателя и идентификатор сигнала."
   ],
   nav:["Перевод по номеру телефона","Таджикистан · сомони"],
-  tab:"Платежи",
+  back:"go:1", tab:"Платежи",
   render:function(){
     return '<p class="caption">Заполнено из ваших последних переводов в Таджикистан</p>'+
       field("Счёт списания", FORM.account, {chevron:true})+
@@ -741,7 +788,7 @@ var SCREENS = [
       field("Банк получателя", FORM.bank, {chevron:true})+
       '<button class="field" type="button" data-sheet="purpose">'+
         '<span class="txt"><span class="lb">Назначение перевода</span>'+
-        '<span class="vl">'+FORM.purpose+'</span></span><span class="chev">▾</span></button>'+
+        '<span class="vl">'+purposeName()+'</span></span><span class="chev">▾</span></button>'+
       /* Подсказка приложения набрана в будущем времени («его будет знать»); чекер текстов
          запрещает будущее, поэтому та же мысль стоит в настоящем. */
       '<p class="field-hint">Назначение знает только банк получателя. Выбор назначения не влияет '+
@@ -766,23 +813,22 @@ var SCREENS = [
     "Поле редактируется: решение о сумме остаётся за клиентом."
   ],
   nav:["Сумма перевода","Таджикистан · сомони"],
-  tab:"Платежи",
+  back:"go:2", tab:"Платежи",
   render:function(ctx){
     return field("Счёт списания", FORM.account, {chevron:true})+
       '<div class="amt">'+
       '<div class="lab">Сумма перевода</div>'+
-      '<div class="val">'+num(AMOUNT_RUB,0)+'<span class="cur">₽</span><span class="caret"></span></div>'+
+      '<div class="val">'+amtText()+'<span class="cur">₽</span><span class="caret"></span></div>'+
       '<div class="hint">Получатель получит <b>'+num(somoni(ctx.rate),2)+' сомони</b> по курсу ЦБ '+
         num(ctx.rate,5)+' ₽ за 1 сомони</div>'+
       '<div class="free">Без комиссии</div>'+
       '</div>'+
       '<p class="caption">Сумма из ваших последних переводов. Её можно изменить.</p>'+
-      '<div class="keys">'+
-        '<span>1</span><span>2</span><span>3</span><span>4</span><span>5</span><span>6</span>'+
-        '<span>7</span><span>8</span><span>9</span><span></span><span>0</span><span>⌫</span>'+
-      '</div>';
+      keypad();
   },
   cta:[["Продолжить","primary","go:4"]],
+  /* Пустая сумма гасит главную кнопку — как в приложении, тем же светлым фоном под прозрачностью. */
+  ctaOff:function(){ return amt() <= 0; },
   acts:[
     ["Продолжить", "К проверке перевода", "go:4", true],
     ["Назад к получателю", "Экран получателя", "go:2", false]
@@ -799,10 +845,10 @@ var SCREENS = [
     "Кнопка «Перевести» — единственный призыв к действию во всём пути."
   ],
   nav:["Проверка перевода","Подтвердите данные"],
-  tab:"Платежи",
+  back:"go:3", tab:"Платежи",
   render:function(ctx){
     return '<div class="card pad0">'+
-      '<div class="kv total"><span class="k">К списанию</span><span class="v">'+num(AMOUNT_RUB,0)+' ₽</span></div>'+
+      '<div class="kv total"><span class="k">К списанию</span><span class="v">'+num(amt(),0)+' ₽</span></div>'+
       '<div class="kv"><span class="k">Получатель получит</span><span class="v">'+num(somoni(ctx.rate),2)+' сомони</span></div>'+
       '<div class="kv"><span class="k">Курс ЦБ РФ</span><span class="v">'+num(ctx.rate,5)+' ₽<br>за 1 сомони</span></div>'+
       '<div class="kv"><span class="k">Комиссия</span><span class="v">0 ₽</span></div>'+
@@ -813,7 +859,7 @@ var SCREENS = [
       '<div class="cell edit"><div class="ic">'+svg(ICO.bank)+'</div><div class="txt">'+
         '<div class="k">Банк получателя</div><div class="v">'+FORM.bank+'</div></div></div>'+
       '<div class="cell edit"><div class="ic">'+svg(ICO.note)+'</div><div class="txt">'+
-        '<div class="k">Назначение</div><div class="v">'+FORM.purpose+'</div></div></div>'+
+        '<div class="k">Назначение</div><div class="v">'+purposeName()+'</div></div></div>'+
       '</div>'+
       '<p class="caption">Курс ЦБ РФ на '+ctx.eff+'. Спред и комиссия банка в демо не моделируются.</p>';
   },
@@ -844,7 +890,7 @@ var SCREENS = [
     return '<div class="done">'+
       '<div class="ok">'+svg('<path d="M5 12.5 10 17.5 19 7"/>',2.4)+'</div>'+
       '<div class="t">Перевод подтверждён</div>'+
-      '<div class="s">'+num(AMOUNT_RUB,0)+' ₽ · '+num(somoni(ctx.rate),2)+' сомони</div>'+
+      '<div class="s">'+num(amt(),0)+' ₽ · '+num(somoni(ctx.rate),2)+' сомони</div>'+
       '<div class="demo">Демонстрация завершена. Деньги не отправляются.</div>'+
       '</div>'+
       '<div class="card vcard">'+
@@ -874,7 +920,7 @@ var SCREENS = [
     "<b>Дельта в сомони и в рублях</b> на 30 000 ₽: проценты за две секунды не считываются.",
     "<b>Ни обещания, ни таймера</b>: «напомнить при новом сигнале» — действие внутри экрана, а не второй пуш."
   ],
-  nav:["Перевод в Таджикистан","Открыто позже уведомления"],
+  nav:["Перевод в Таджикистан","Открыто позже уведомления"], back:"go:0",
   render:function(ctx){
     return deltaCard(ctx) + savedForm() +
       '<p class="caption" style="margin-top:12px">Порог экрана — '+TOL_BPS+
@@ -932,7 +978,15 @@ var STEP_NAMES = ["Пуш на блокировке","Экран перевод�
 
 /* ═══ Состояние и отрисовка ════════════════════════════════════════════════ */
 
-var state = { step:0, ctx:"live", sheet:"" };
+var state = { step:0, ctx:"live", sheet:"",
+  method:METHOD_DEFAULT, purpose:PURPOSE_DEFAULT, amount:String(AMOUNT_RUB) };
+
+/* «В начало» перезапускает демонстрацию: форма возвращается к значениям по умолчанию. */
+function resetForm(){
+  state.method = METHOD_DEFAULT;
+  state.purpose = PURPOSE_DEFAULT;
+  state.amount = String(AMOUNT_RUB);
+}
 
 function readState(){
   var q = window.location.search;
@@ -947,6 +1001,16 @@ function readState(){
 
 function currentCtx(){ return CTX[state.ctx] || CTX.live; }
 
+/* Адрес переписывается на каждом переходе, чтобы панель, клавиши и адресная строка
+   показывали один и тот же экран. Файл открывают и двойным щелчком: у file:// источник
+   «null», и замена адреса там запрещена — поэтому отказ гасится. */
+function syncUrl(){
+  var q = "?step=" + state.step + (state.ctx !== "live" ? "&ctx=" + state.ctx : "") +
+    (state.sheet ? "&sheet=" + state.sheet : "");
+  try { window.history.replaceState(null, "", q); } catch (e) { /* file:// адрес не меняет */ }
+  return q;
+}
+
 function render(){
   var s = SCREENS[state.step], ctx = currentCtx(), i;
 
@@ -960,15 +1024,16 @@ function render(){
   document.getElementById("clock").textContent = s.clock || ctx.clock;
 
   var html = "";
-  if (s.nav) html += navbar(s.navIcon);
+  if (s.nav) html += navbar(s.navIcon, s.back);
   html += s.bare ? s.render(ctx)
     : '<div class="viewport">' +
       (s.nav ? heading(s.head, s.nav[0], s.nav[1]) : "") + s.render(ctx) + '</div>';
   if (s.cta){
+    var off = s.ctaOff ? s.ctaOff() : false;
     html += '<div class="ctabar">';
     for (i=0;i<s.cta.length;i++)
-      html += '<button class="btn ' + s.cta[i][1] + '" type="button" data-do="' + s.cta[i][2] + '">' +
-        s.cta[i][0] + '</button>';
+      html += '<button class="btn ' + s.cta[i][1] + '" type="button"' + (off && i === 0 ? ' disabled' : '') +
+        ' data-do="' + s.cta[i][2] + '">' + s.cta[i][0] + '</button>';
     html += (s.foot === false ? '' : ctaFootnote()) + '</div>';
   }
   if (s.tab) html += tabbar(s.tab);
@@ -993,9 +1058,7 @@ function render(){
   }
   document.getElementById("steps").innerHTML = steps;
 
-  document.getElementById("permalink").textContent =
-    "?step=" + state.step + (state.ctx !== "live" ? "&ctx=" + state.ctx : "") +
-    (state.sheet ? "&sheet=" + state.sheet : "");
+  document.getElementById("permalink").textContent = syncUrl();
 
   document.getElementById("prov").innerHTML =
     "Пуш — <code>reports/latest/stream_decisions.csv</code>, TJS, 09.06.2026, код <code>" + RUN_HASH + "</code>.<br>" +
@@ -1022,12 +1085,20 @@ function act(cmd){
     state.step = +p[1];
     if (p[2]) state.ctx = p[2];
     if (state.step === 6 && state.ctx === "live") state.ctx = "changed";
-    if (state.step === 0) state.ctx = "live";
+    if (state.step === 0){ state.ctx = "live"; resetForm(); }
     state.sheet = "";
   } else if (p[0] === "ctx"){
     state.ctx = p[1];
   } else if (p[0] === "sheet"){
     state.sheet = p[1] || "";
+  } else if (p[0] === "method"){
+    state.method = +p[1];
+  } else if (p[0] === "purpose"){
+    state.purpose = +p[1];
+    state.sheet = "";
+  } else if (p[0] === "key"){
+    if (p[1] === "back") state.amount = state.amount.slice(0, -1);
+    else if (state.amount.length < 7) state.amount = (state.amount === "0" ? "" : state.amount) + p[1];
   }
   render();
 }
@@ -1038,6 +1109,7 @@ document.addEventListener("click", function(e){
     if (e.target.closest && e.target.closest("#sheetBack")) { state.sheet = ""; render(); }
     return;
   }
+  if (t.disabled) return;
   if (t.hasAttribute("data-do")) act(t.getAttribute("data-do"));
   else { state.sheet = t.getAttribute("data-sheet") || ""; render(); }
 });
